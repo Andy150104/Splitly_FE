@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Next.js
+.next/
+out/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+
+# TypeScript generated files
+*.tsbuildinfo
+next-env.d.ts
+
+# Testing
+coverage/
+
+# Vercel
+.vercel/
+
+# Cache
+.turbo/
+.cache/
+.eslintcache
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini

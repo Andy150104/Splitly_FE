@@ -1,0 +1,15 @@
+import { FileText, UsersRound } from "lucide-react";
+import { notFound } from "next/navigation";
+
+import { PageHeader } from "@/components/common/page-header";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { BillStatusBadge } from "@/features/bills/components/bill-status-badge";
+import { AddGroupMembers, CloseGroupButton, RemoveGroupMember } from "@/features/groups/components/group-actions";
+import { api } from "@/lib/api/server/api";
+import { formatCurrency } from "@/lib/formatters/currency";
+
+export default async function GroupDetailPage({ params }: { params: Promise<{ groupId: string }> }) {
+  const { groupId } = await params; const group = await api.groups.getById(groupId); if (!group.groupId) notFound();
+  return <div className="space-y-7"><PageHeader title={group.name || "Chi tiết nhóm"} description={group.description || "Quản lý thành viên và các hóa đơn của nhóm."} actions={group.isOwner && group.status === "Active" ? <CloseGroupButton groupId={groupId} /> : undefined} /><div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]"><Card><CardHeader><CardTitle className="flex items-center gap-2"><UsersRound className="size-5 text-primary" />Thành viên <Badge variant="secondary">{group.members?.length ?? 0}</Badge></CardTitle></CardHeader><CardContent><div className="divide-y divide-border">{(group.members ?? []).map((member) => <div key={member.memberId} className="flex items-center gap-3 py-3"><div className="grid size-9 place-items-center rounded-full bg-muted text-xs font-bold">{(member.name || member.email || "U").slice(0, 2).toUpperCase()}</div><div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{member.name || member.email}</p><p className="truncate text-xs text-muted-foreground">{member.email}</p></div><Badge variant={member.status === "Active" ? "success" : "warning"}>{member.role === "Owner" ? "Chủ nhóm" : member.status}</Badge>{group.isOwner && member.role !== "Owner" && member.memberId ? <RemoveGroupMember groupId={groupId} memberId={member.memberId} /> : null}</div>)}</div>{group.isOwner && group.status === "Active" ? <div className="mt-6 border-t border-border pt-5"><AddGroupMembers groupId={groupId} /></div> : null}</CardContent></Card><Card><CardHeader><CardTitle className="flex items-center gap-2"><FileText className="size-5 text-primary" />Hóa đơn của nhóm</CardTitle></CardHeader><CardContent><div className="space-y-3">{(group.bills ?? []).length ? group.bills!.map((bill) => <a key={bill.billId} href={`/bills/${bill.billId}`} className="flex items-center justify-between rounded-xl border border-border p-4 hover:border-primary/30"><div><p className="text-sm font-semibold">{bill.title}</p><div className="mt-1"><BillStatusBadge status={bill.status} /></div></div><p className="font-semibold">{formatCurrency(bill.totalAmount, bill.currency ?? "VND")}</p></a>) : <p className="py-10 text-center text-sm text-muted-foreground">Nhóm chưa có hóa đơn.</p>}</div></CardContent></Card></div></div>;
+}
