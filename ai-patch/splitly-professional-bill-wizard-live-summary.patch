@@ -1,0 +1,510 @@
+diff --git a/src/app/(protected)/bills/new/page.tsx b/src/app/(protected)/bills/new/page.tsx
+index a9de924..91fadf2 100644
+--- a/src/app/(protected)/bills/new/page.tsx
++++ b/src/app/(protected)/bills/new/page.tsx
+@@ -12,16 +12,27 @@ export default async function NewBillPage() {
+   ]);
+ 
+   return (
+-    <div className="flex flex-col gap-3">
+-      <PageHeader
+-        compact
+-        title="Tạo hóa đơn"
+-        description="Thiết lập khoản chi, chọn người tham gia và chia tiền trong vài bước."
+-      />
+-      <CreateBillFlow
+-        groups={groups.items ?? []}
+-        ownerEmail={user?.email ?? ""}
++    <div className="relative mx-auto w-full max-w-[1320px]">
++      <div
++        aria-hidden="true"
++        className="bg-primary/[0.035] pointer-events-none absolute -top-28 left-1/2 -z-10 h-72 w-[72%] -translate-x-1/2 rounded-full blur-3xl dark:bg-primary/[0.025]"
+       />
++      <div className="relative flex flex-col gap-4">
++        <PageHeader
++          compact
++          title="Tạo hóa đơn"
++          description="Thiết lập khoản chi, chọn người tham gia và chia tiền trong vài bước."
++          actions={
++            <span className="border-border/70 bg-card/70 text-muted-foreground rounded-full border px-3 py-1.5 text-xs font-semibold shadow-[0_1px_2px_rgb(15_23_42/0.035)] dark:bg-card/45">
++              Quy trình 4 bước
++            </span>
++          }
++        />
++        <CreateBillFlow
++          groups={groups.items ?? []}
++          ownerEmail={user?.email ?? ""}
++        />
++      </div>
+     </div>
+   );
+ }
+diff --git a/src/components/ui/input.tsx b/src/components/ui/input.tsx
+index 3fb30d9..84db5eb 100644
+--- a/src/components/ui/input.tsx
++++ b/src/components/ui/input.tsx
+@@ -72,7 +72,21 @@ export interface InputProps extends React.ComponentProps<"input"> {
+ }
+ 
+ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
+-  ({ className, type, money, value, onChange, ...props }, ref) => {
++  (
++    {
++      className,
++      type,
++      money,
++      value,
++      onChange,
++      onFocus,
++      onBlur,
++      ...props
++    },
++    ref,
++  ) => {
++    const [showMoneySuggestions, setShowMoneySuggestions] = React.useState(false);
++
+     const baseClassName = cn(
+       "border-input/90 bg-card/70 text-foreground placeholder:text-muted-foreground/60 caret-primary flex h-11 w-full rounded-[11px] border px-3.5 py-2 text-sm shadow-[0_1px_2px_rgb(15_23_42/0.035),inset_0_1px_0_rgb(255_255_255/0.30)] outline-none transition-[border-color,box-shadow,background-color] duration-150 ease-out hover:border-foreground/15 hover:bg-card focus-visible:border-primary/70 focus-visible:bg-card focus-visible:ring-4 focus-visible:ring-primary/15 disabled:cursor-not-allowed disabled:bg-muted/45 disabled:text-muted-foreground disabled:opacity-70 dark:bg-background/45 dark:shadow-[0_1px_2px_rgb(0_0_0/0.18),inset_0_1px_0_rgb(255_255_255/0.025)] dark:hover:border-foreground/20 dark:hover:bg-background/60 dark:focus-visible:bg-background/65 aria-invalid:border-destructive aria-invalid:bg-destructive/[0.045] aria-invalid:ring-2 aria-invalid:ring-destructive/20 aria-invalid:shadow-[0_0_0_1px_color-mix(in_oklab,var(--destructive)_18%,transparent)] aria-invalid:hover:border-destructive aria-invalid:focus-visible:border-destructive aria-invalid:focus-visible:ring-4 aria-invalid:focus-visible:ring-destructive/25 dark:aria-invalid:bg-destructive/[0.075] dark:aria-invalid:ring-destructive/25",
+       className,
+@@ -85,6 +99,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
+           type={type}
+           value={value}
+           onChange={onChange}
++          onFocus={onFocus}
++          onBlur={onBlur}
+           className={baseClassName}
+           {...props}
+         />
+@@ -114,10 +130,19 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
+             type="text"
+             inputMode="numeric"
+             value={formattedValue}
++            onFocus={(event) => {
++              setShowMoneySuggestions(true);
++              onFocus?.(event);
++            }}
++            onBlur={(event) => {
++              setShowMoneySuggestions(false);
++              onBlur?.(event);
++            }}
+             onChange={(event) => {
+               const digits = event.currentTarget.value.replace(/[^\d]/g, "");
+               const nextValue = digits ? Number(digits) : "";
+ 
++              setShowMoneySuggestions(true);
+               money.onValueChange?.(
+                 typeof nextValue === "number" && Number.isFinite(nextValue)
+                   ? nextValue
+@@ -138,19 +163,23 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
+           </span>
+         </div>
+ 
+-        {suggestions.length ? (
++        {showMoneySuggestions && suggestions.length ? (
+           <div
+-            className="flex flex-wrap items-center gap-1.5"
++            className="animate-expand flex flex-wrap items-center gap-1.5"
+             aria-label="Gợi ý số tiền theo số đang nhập"
+           >
+             <span className="text-muted-foreground mr-0.5 text-[11px] font-medium">
+-              Chọn nhanh
++              Có phải bạn muốn nhập?
+             </span>
+             {suggestions.map((amount) => (
+               <button
+                 key={amount}
+                 type="button"
+-                onClick={() => money.onValueChange?.(amount)}
++                onMouseDown={(event) => event.preventDefault()}
++                onClick={() => {
++                  money.onValueChange?.(amount);
++                  setShowMoneySuggestions(false);
++                }}
+                 className="border-border/70 bg-background/70 text-muted-foreground hover:border-primary/30 hover:bg-primary/[0.055] hover:text-primary focus-visible:ring-primary/20 min-h-8 rounded-lg border px-2.5 py-1 text-xs font-semibold tabular-nums shadow-[0_1px_2px_rgb(15_23_42/0.025)] outline-none transition-[color,background-color,border-color,box-shadow,transform] duration-150 hover:-translate-y-px focus-visible:ring-4 active:translate-y-0 dark:bg-background/35 dark:hover:bg-primary/[0.11]"
+               >
+                 {formatMoney(amount)}
+diff --git a/src/features/bills/components/create-bill/create-bill-flow.tsx b/src/features/bills/components/create-bill/create-bill-flow.tsx
+index 5d40fc4..cc10354 100644
+--- a/src/features/bills/components/create-bill/create-bill-flow.tsx
++++ b/src/features/bills/components/create-bill/create-bill-flow.tsx
+@@ -5,9 +5,14 @@ import { useQuery } from "@tanstack/react-query";
+ import {
+   ArrowLeft,
+   ArrowRight,
++  BadgeCheck,
+   Check,
+   CircleAlert,
+   LoaderCircle,
++  ReceiptText,
++  Scale,
++  UsersRound,
++  type LucideIcon,
+ } from "lucide-react";
+ import { useRouter } from "next/navigation";
+ import { useMemo, useState } from "react";
+@@ -34,10 +39,26 @@ import { bffFetch } from "@/lib/http/browser-http-client";
+ import { cn } from "@/lib/utils";
+ 
+ const steps = [
+-  { label: "Thông tin", description: "Nhập thông tin khoản chi" },
+-  { label: "Người tham gia", description: "Chọn người cùng chia" },
+-  { label: "Chia tiền", description: "Chọn cách phân bổ" },
+-  { label: "Xác nhận", description: "Kiểm tra và hoàn tất" },
++  {
++    label: "Thông tin",
++    description: "Nhập thông tin khoản chi",
++    icon: ReceiptText,
++  },
++  {
++    label: "Người tham gia",
++    description: "Chọn người cùng chia",
++    icon: UsersRound,
++  },
++  {
++    label: "Chia tiền",
++    description: "Chọn cách phân bổ",
++    icon: Scale,
++  },
++  {
++    label: "Xác nhận",
++    description: "Kiểm tra và hoàn tất",
++    icon: BadgeCheck,
++  },
+ ] as const;
+ const emailsFrom = (value?: string) =>
+   Array.from(
+@@ -177,16 +198,27 @@ export function CreateBillFlow({
+           );
+         },
+       )}
+-      className="mx-auto w-full max-w-5xl"
++      className="w-full"
+     >
+-      <Card className="border-border/80 overflow-hidden shadow-[0_14px_42px_rgb(15_23_42/0.055)] dark:shadow-[0_18px_50px_rgb(0_0_0/0.22)]">
+-        <div className="lg:grid lg:grid-cols-[220px_minmax(0,1fr)]">
++      <Card className="border-border/80 bg-card/95 overflow-hidden shadow-[0_18px_52px_rgb(15_23_42/0.065)] dark:bg-card/90 dark:shadow-[0_22px_60px_rgb(0_0_0/0.26)]">
++        <div className="lg:grid lg:grid-cols-[210px_minmax(0,1fr)] xl:grid-cols-[210px_minmax(0,1fr)_280px]">
+           <aside className="border-border/70 bg-muted/20 hidden border-r lg:block dark:bg-muted/[0.08]">
+             <div className="sticky top-20 p-5">
+-              <p className="text-muted-foreground text-[11px] font-bold tracking-[0.16em] uppercase">
+-                Tiến độ
+-              </p>
+-              <ol className="mt-5" aria-label="Tiến độ tạo hóa đơn">
++              <div className="flex items-center justify-between gap-3">
++                <p className="text-muted-foreground text-[11px] font-bold tracking-[0.16em] uppercase">
++                  Tiến độ
++                </p>
++                <span className="text-primary text-xs font-bold tabular-nums">
++                  {Math.round(((step + 1) / steps.length) * 100)}%
++                </span>
++              </div>
++              <div className="bg-muted mt-3 h-1.5 overflow-hidden rounded-full">
++                <div
++                  className="bg-primary h-full rounded-full transition-[width] duration-300 ease-out"
++                  style={{ width: `${((step + 1) / steps.length) * 100}%` }}
++                />
++              </div>
++              <ol className="mt-6" aria-label="Tiến độ tạo hóa đơn">
+                 {steps.map((item, index) => {
+                   const completed = index < step;
+                   const active = index === step;
+@@ -281,15 +313,11 @@ export function CreateBillFlow({
+               <div key={step} className="animate-step-in">
+             {step === 0 ? (
+               <div className="space-y-5">
+-                <div className="border-border/70 border-b pb-4">
+-                  <h2 className="text-lg font-semibold tracking-tight">
+-                    Thông tin hóa đơn
+-                  </h2>
+-                  <p className="text-muted-foreground mt-1 text-sm leading-5">
+-                    Cho mọi người biết khoản chi này là gì và khi nào cần thanh
+-                    toán.
+-                  </p>
+-                </div>
++                <StepSectionHeader
++                  icon={steps[0].icon}
++                  title="Thông tin hóa đơn"
++                  description="Cho mọi người biết khoản chi này là gì và khi nào cần thanh toán."
++                />
+                 <Field
+                   label="Tên hóa đơn"
+                   htmlFor="bill-title"
+@@ -303,46 +331,32 @@ export function CreateBillFlow({
+                     {...form.register("title")}
+                   />
+                 </Field>
+-                <div className="grid gap-4 sm:grid-cols-[1fr_130px]">
+-                  <Field
+-                    label="Tổng tiền"
+-                    htmlFor="bill-total-amount"
+-                    error={form.formState.errors.totalAmount?.message}
+-                  >
+-                    <Controller
+-                      control={form.control}
+-                      name="totalAmount"
+-                      render={({ field }) => (
+-                        <Input
+-                          id="bill-total-amount"
+-                          aria-invalid={Boolean(form.formState.errors.totalAmount)}
+-                          name={field.name}
+-                          ref={field.ref}
+-                          value={field.value ?? ""}
+-                          onBlur={field.onBlur}
+-                          placeholder="0"
+-                          money={{
+-                            currency: values.currency || "VND",
+-                            onValueChange: (amount) => field.onChange(amount),
+-                          }}
+-                        />
+-                      )}
+-                    />
+-                  </Field>
+-                  <Field
+-                    label="Tiền tệ"
+-                    htmlFor="bill-currency"
+-                    error={form.formState.errors.currency?.message}
+-                  >
+-                    <Input
+-                      id="bill-currency"
+-                      aria-invalid={Boolean(form.formState.errors.currency)}
+-                      maxLength={3}
+-                      className="font-medium uppercase"
+-                      {...form.register("currency")}
+-                    />
+-                  </Field>
+-                </div>
++                <Field
++                  label="Tổng tiền"
++                  htmlFor="bill-total-amount"
++                  error={form.formState.errors.totalAmount?.message}
++                >
++                  <Controller
++                    control={form.control}
++                    name="totalAmount"
++                    render={({ field }) => (
++                      <Input
++                        id="bill-total-amount"
++                        aria-invalid={Boolean(form.formState.errors.totalAmount)}
++                        name={field.name}
++                        ref={field.ref}
++                        value={field.value ?? ""}
++                        onBlur={field.onBlur}
++                        placeholder="Nhập số tiền"
++                        money={{
++                          currency: values.currency || "VND",
++                          onValueChange: (amount) => field.onChange(amount),
++                        }}
++                      />
++                    )}
++                  />
++                  <input type="hidden" {...form.register("currency")} />
++                </Field>
+                 <div className="grid gap-4 sm:grid-cols-2">
+                   <Field
+                     label="Ngày hóa đơn"
+@@ -404,15 +418,11 @@ export function CreateBillFlow({
+ 
+             {step === 1 ? (
+               <div className="space-y-5">
+-                <div className="border-border/70 border-b pb-4">
+-                  <h2 className="text-lg font-semibold tracking-tight">
+-                    Chọn người tham gia
+-                  </h2>
+-                  <p className="text-muted-foreground mt-1 text-sm leading-5">
+-                    Thêm trực tiếp bằng email, hoặc chọn thành viên từ một nhóm
+-                    có sẵn.
+-                  </p>
+-                </div>
++                <StepSectionHeader
++                  icon={steps[1].icon}
++                  title="Chọn người tham gia"
++                  description="Thêm trực tiếp bằng email, hoặc chọn thành viên từ một nhóm có sẵn."
++                />
+                 <label
+                   className={cn(
+                     "border-border hover:border-primary/30 hover:bg-primary/[0.025] focus-within:border-primary/40 focus-within:ring-primary/10 flex cursor-pointer items-start gap-3 rounded-xl border p-3.5 transition-[border-color,background-color,box-shadow,transform] duration-150 focus-within:ring-4 active:scale-[0.995]",
+@@ -535,14 +545,11 @@ export function CreateBillFlow({
+ 
+             {step === 2 ? (
+               <div className="space-y-5">
+-                <div className="border-border/70 border-b pb-4">
+-                  <h2 className="text-lg font-semibold tracking-tight">
+-                    Chọn cách chia
+-                  </h2>
+-                  <p className="text-muted-foreground mt-1 text-sm leading-5">
+-                    Chia đều hoặc nhập chính xác số tiền mỗi người cần trả.
+-                  </p>
+-                </div>
++                <StepSectionHeader
++                  icon={steps[2].icon}
++                  title="Chọn cách chia"
++                  description="Chia đều hoặc nhập chính xác số tiền mỗi người cần trả."
++                />
+                 <div className="grid gap-3 sm:grid-cols-2">
+                   {[
+                     {
+@@ -622,14 +629,11 @@ export function CreateBillFlow({
+ 
+             {step === 3 ? (
+               <div className="space-y-5">
+-                <div className="border-border/70 border-b pb-4">
+-                  <h2 className="text-lg font-semibold tracking-tight">
+-                    Kiểm tra trước khi tạo
+-                  </h2>
+-                  <p className="text-muted-foreground mt-1 text-sm leading-5">
+-                    Bạn có thể quay lại để chỉnh sửa mà không mất dữ liệu.
+-                  </p>
+-                </div>
++                <StepSectionHeader
++                  icon={steps[3].icon}
++                  title="Kiểm tra trước khi tạo"
++                  description="Bạn có thể quay lại để chỉnh sửa mà không mất dữ liệu."
++                />
+                 <div className="rounded-2xl bg-gradient-to-br from-[#16366b] to-[#0b234b] p-6 text-white shadow-[0_18px_40px_rgb(15_42_86/0.2)]">
+                   <p className="text-sm text-blue-100/70">{values.title}</p>
+                   <p className="money mt-2 text-3xl font-bold">
+@@ -705,12 +709,144 @@ export function CreateBillFlow({
+               )}
+             </div>
+           </section>
++
++          <LiveBillSummary
++            values={values}
++            participants={participants}
++            step={step}
++          />
+         </div>
+       </Card>
+     </form>
+   );
+ }
+ 
++function StepSectionHeader({
++  icon: Icon,
++  title,
++  description,
++}: {
++  icon: LucideIcon;
++  title: string;
++  description: string;
++}) {
++  return (
++    <div className="border-border/70 flex items-start gap-3 border-b pb-4">
++      <span className="bg-primary/10 text-primary grid size-9 shrink-0 place-items-center rounded-xl border border-primary/10">
++        <Icon className="size-[18px]" aria-hidden="true" />
++      </span>
++      <div className="min-w-0">
++        <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
++        <p className="text-muted-foreground mt-0.5 text-sm leading-5">
++          {description}
++        </p>
++      </div>
++    </div>
++  );
++}
++
++function formatSummaryDate(value?: string) {
++  if (!value) return "Chưa chọn";
++
++  const parsed = new Date(`${value}T00:00:00`);
++  if (Number.isNaN(parsed.getTime())) return "Chưa chọn";
++
++  return new Intl.DateTimeFormat("vi-VN").format(parsed);
++}
++
++function LiveBillSummary({
++  values,
++  participants,
++  step,
++}: {
++  values: CreateBillValues;
++  participants: string[];
++  step: number;
++}) {
++  const amount = Number(values.totalAmount);
++  const hasAmount = Number.isFinite(amount) && amount > 0;
++  const currency = values.currency || "VND";
++  const equalShare =
++    hasAmount && participants.length > 0 ? amount / participants.length : 0;
++  const splitLabel =
++    step < 2
++      ? "Thiết lập ở bước 3"
++      : values.splitMethod === "Equal"
++        ? "Chia đều"
++        : "Tùy chỉnh";
++
++  return (
++    <aside className="border-border/70 bg-muted/[0.14] hidden border-l xl:block dark:bg-muted/[0.055]">
++      <div className="sticky top-20 p-5">
++        <div className="flex items-center justify-between gap-3">
++          <div className="flex items-center gap-2.5">
++            <span className="bg-primary/10 text-primary grid size-9 place-items-center rounded-xl border border-primary/10">
++              <ReceiptText className="size-[18px]" aria-hidden="true" />
++            </span>
++            <div>
++              <p className="text-sm font-semibold">Tóm tắt hóa đơn</p>
++              <p className="text-muted-foreground text-[11px]">
++                Cập nhật theo dữ liệu bạn nhập
++              </p>
++            </div>
++          </div>
++          <span className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 rounded-full px-2 py-1 text-[10px] font-bold tracking-wide uppercase">
++            Live
++          </span>
++        </div>
++
++        <div className="border-border/70 mt-5 border-b pb-5">
++          <p className="text-muted-foreground text-xs font-medium">Hóa đơn</p>
++          <p className="mt-1.5 line-clamp-2 text-base font-semibold tracking-tight">
++            {values.title?.trim() || "Hóa đơn chưa đặt tên"}
++          </p>
++          <p
++            className={cn(
++              "money mt-3 text-2xl font-bold tracking-[-0.03em] tabular-nums",
++              !hasAmount && "text-muted-foreground",
++            )}
++          >
++            {hasAmount ? formatCurrency(amount, currency) : "—"}
++          </p>
++        </div>
++
++        <dl className="divide-border/60 mt-1 divide-y text-sm">
++          <SummaryRow label="Người tham gia" value={`${participants.length} người`} />
++          <SummaryRow label="Cách chia" value={splitLabel} />
++          <SummaryRow
++            label="Hạn thanh toán"
++            value={formatSummaryDate(values.dueDate)}
++          />
++          <SummaryRow label="Bước hiện tại" value={steps[step].label} />
++        </dl>
++
++        {values.splitMethod === "Equal" && equalShare > 0 ? (
++          <div className="border-primary/10 bg-primary/[0.045] mt-5 rounded-xl border p-3.5">
++            <p className="text-muted-foreground text-[11px] font-semibold tracking-wide uppercase">
++              Ước tính mỗi người
++            </p>
++            <p className="money text-primary mt-1.5 text-lg font-bold tabular-nums">
++              {formatCurrency(equalShare, currency)}
++            </p>
++            <p className="text-muted-foreground mt-1 text-[11px] leading-4">
++              Dựa trên {participants.length} người đang được chọn.
++            </p>
++          </div>
++        ) : null}
++      </div>
++    </aside>
++  );
++}
++
++function SummaryRow({ label, value }: { label: string; value: string }) {
++  return (
++    <div className="flex items-start justify-between gap-4 py-3">
++      <dt className="text-muted-foreground text-xs">{label}</dt>
++      <dd className="max-w-[145px] text-right text-xs font-semibold">{value}</dd>
++    </div>
++  );
++}
++
+ function Field({
+   label,
+   htmlFor,

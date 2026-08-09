@@ -14,6 +14,7 @@ export const createBillSchema = z.object({
   splitMethod: z.enum(["Equal", "CustomAmount"]),
   allocations: z.record(z.string(), z.coerce.number().nonnegative()).default({}),
   publish: z.boolean().default(true),
+  payoutAccountId: z.string().optional(),
 });
 
 export type CreateBillValues = z.input<typeof createBillSchema>;

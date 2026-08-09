@@ -8,6 +8,7 @@ import type {
   BillSplitServiceApiControllersBillsControllerManualPaymentRequest as ManualPaymentRequest,
   BillSplitServiceApiControllersBillsControllerSaveBillRequest as SaveBillRequest,
   BillSplitServiceApiControllersBillsControllerSendRemindersRequest as SendRemindersRequest,
+  BillSplitServiceApplicationFeaturesBillsPublishBillPublishBillHandlerRequest as PublishBillRequest,
   GetApiBillsParams,
 } from "@/generated/api/models";
 import { unwrap } from "@/lib/api/shared/unwrap";
@@ -51,9 +52,9 @@ export const billsApi = {
       unwrap(await generated.postApiBillsBillIdCalculate(billId, input, opts)),
     );
   },
-  async publish(billId: string) {
+  async publish(billId: string, input?: PublishBillRequest) {
     return authenticatedCall(async (opts) =>
-      unwrap(await generated.postApiBillsBillIdPublish(billId, opts)),
+      unwrap(await generated.postApiBillsBillIdPublish(billId, input, opts)),
     );
   },
   async cancel(billId: string, input: CancelBillRequest) {

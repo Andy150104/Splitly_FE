@@ -1,6 +1,6 @@
 "use client";
 
-import { BellRing, LoaderCircle, Rocket, XCircle } from "lucide-react";
+import { BellRing, Rocket, XCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -20,5 +20,5 @@ export function BillActions({ billId, status, unpaidMemberIds }: { billId: strin
     finally { setPending(null); }
   }
   if (["Paid", "Cancelled"].includes(status ?? "")) return null;
-  return <div className="flex flex-wrap gap-2">{status === "Draft" ? <Button onClick={() => act("publish")} disabled={Boolean(pending)}>{pending === "publish" ? <LoaderCircle className="size-4 animate-spin" /> : <Rocket className="size-4" />}Công bố</Button> : null}{status !== "Draft" && unpaidMemberIds.length ? <Button variant="outline" onClick={() => act("remind")} disabled={Boolean(pending)}>{pending === "remind" ? <LoaderCircle className="size-4 animate-spin" /> : <BellRing className="size-4" />}Nhắc thanh toán</Button> : null}<Button variant="ghost" onClick={() => act("cancel")} disabled={Boolean(pending)}><XCircle className="size-4" />Hủy hóa đơn</Button></div>;
+  return <div className="flex flex-wrap gap-2">{status === "Draft" ? <Button onClick={() => act("publish")} disabled={Boolean(pending)} isLoading={pending === "publish"} loadingText="Đang công bố…"><Rocket className="size-4" />Công bố</Button> : null}{status !== "Draft" && unpaidMemberIds.length ? <Button variant="outline" onClick={() => act("remind")} disabled={Boolean(pending)} isLoading={pending === "remind"} loadingText="Đang gửi nhắc…"><BellRing className="size-4" />Nhắc thanh toán</Button> : null}<Button variant="ghost" onClick={() => act("cancel")} disabled={Boolean(pending)} isLoading={pending === "cancel"} loadingText="Đang hủy…"><XCircle className="size-4" />Hủy hóa đơn</Button></div>;
 }

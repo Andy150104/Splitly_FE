@@ -14,7 +14,8 @@ export function LogoutButton({ compact = false }: { compact?: boolean }) {
       className={compact ? "size-10 px-0" : "w-full justify-start"}
       variant="ghost"
       size="sm"
-      disabled={pending}
+      isLoading={pending}
+      loadingText={compact ? undefined : "Đang thoát…"}
       aria-label={compact ? "Đăng xuất" : undefined}
       title={compact ? "Đăng xuất" : undefined}
       onClick={async () => {
@@ -25,7 +26,7 @@ export function LogoutButton({ compact = false }: { compact?: boolean }) {
       }}
     >
       <LogOut className="size-4 shrink-0" />{" "}
-      {!compact ? (pending ? "Đang thoát…" : "Đăng xuất") : null}
+      {!compact ? "Đăng xuất" : null}
     </Button>
   );
 }

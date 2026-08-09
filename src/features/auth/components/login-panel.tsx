@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { GoogleLogin } from "@react-oauth/google";
-import { ArrowRight, CircleAlert, LoaderCircle, ShieldCheck } from "lucide-react";
+import { ArrowRight, CircleAlert, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -62,7 +62,7 @@ export function LoginPanel() {
               catch (error) { toast.error(error instanceof Error ? error.message : "Đăng nhập thất bại."); }
             })} className="space-y-4">
               <div className="space-y-2"><Label htmlFor="email">Email seed</Label><Input id="email" type="email" autoComplete="email" {...form.register("email")} />{form.formState.errors.email ? <p className="text-xs text-destructive">{form.formState.errors.email.message}</p> : null}</div>
-              <Button className="w-full" type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting ? <LoaderCircle className="size-4 animate-spin" /> : <ArrowRight className="size-4" />}Vào ứng dụng</Button>
+              <Button className="w-full" type="submit" isLoading={form.formState.isSubmitting} loadingText="Đang đăng nhập…"><ArrowRight className="size-4" />Vào ứng dụng</Button>
             </form>
           </>
         ) : null}

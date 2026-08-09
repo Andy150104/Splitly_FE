@@ -1,0 +1,462 @@
+diff --git a/src/app/(protected)/bills/new/page.tsx b/src/app/(protected)/bills/new/page.tsx
+index 91fadf2..d20bcb4 100644
+--- a/src/app/(protected)/bills/new/page.tsx
++++ b/src/app/(protected)/bills/new/page.tsx
+@@ -12,12 +12,12 @@ export default async function NewBillPage() {
+   ]);
+ 
+   return (
+-    <div className="relative mx-auto w-full max-w-[1320px]">
++    <div className="relative mx-auto w-full max-w-[1560px]">
+       <div
+         aria-hidden="true"
+         className="bg-primary/[0.035] pointer-events-none absolute -top-28 left-1/2 -z-10 h-72 w-[72%] -translate-x-1/2 rounded-full blur-3xl dark:bg-primary/[0.025]"
+       />
+-      <div className="relative flex flex-col gap-4">
++      <div className="relative flex flex-col gap-3">
+         <PageHeader
+           compact
+           title="Tạo hóa đơn"
+diff --git a/src/features/bills/components/create-bill/create-bill-flow.tsx b/src/features/bills/components/create-bill/create-bill-flow.tsx
+index cc10354..f90897f 100644
+--- a/src/features/bills/components/create-bill/create-bill-flow.tsx
++++ b/src/features/bills/components/create-bill/create-bill-flow.tsx
+@@ -130,6 +130,33 @@ export function CreateBillFlow({
+     (sum, email) => sum + Number(values.allocations?.[email] ?? 0),
+     0,
+   );
++  const allocationDifference = Number(values.totalAmount) - allocationTotal;
++
++  function getAllocationAmount(email: string): number | "" {
++    const amount = Number(values.allocations?.[email] ?? 0);
++    return Number.isFinite(amount) && amount > 0 ? amount : "";
++  }
++
++  function setAllocationAmount(email: string, amount: number | "") {
++    const nextAllocations: Record<string, number> = {};
++
++    for (const [key, value] of Object.entries(values.allocations ?? {})) {
++      const parsed = Number(value);
++      if (Number.isFinite(parsed) && parsed >= 0) nextAllocations[key] = parsed;
++    }
++
++    if (amount === "") {
++      delete nextAllocations[email];
++    } else {
++      nextAllocations[email] = amount;
++    }
++
++    form.setValue("allocations", nextAllocations, {
++      shouldDirty: true,
++      shouldTouch: true,
++      shouldValidate: true,
++    });
++  }
+ 
+   async function next() {
+     if (
+@@ -201,9 +228,9 @@ export function CreateBillFlow({
+       className="w-full"
+     >
+       <Card className="border-border/80 bg-card/95 overflow-hidden shadow-[0_18px_52px_rgb(15_23_42/0.065)] dark:bg-card/90 dark:shadow-[0_22px_60px_rgb(0_0_0/0.26)]">
+-        <div className="lg:grid lg:grid-cols-[210px_minmax(0,1fr)] xl:grid-cols-[210px_minmax(0,1fr)_280px]">
++        <div className="lg:grid lg:grid-cols-[190px_minmax(0,1fr)] xl:grid-cols-[190px_minmax(0,1fr)_260px] 2xl:grid-cols-[200px_minmax(0,1fr)_270px]">
+           <aside className="border-border/70 bg-muted/20 hidden border-r lg:block dark:bg-muted/[0.08]">
+-            <div className="sticky top-20 p-5">
++            <div className="sticky top-16 p-4 xl:p-5">
+               <div className="flex items-center justify-between gap-3">
+                 <p className="text-muted-foreground text-[11px] font-bold tracking-[0.16em] uppercase">
+                   Tiến độ
+@@ -218,7 +245,7 @@ export function CreateBillFlow({
+                   style={{ width: `${((step + 1) / steps.length) * 100}%` }}
+                 />
+               </div>
+-              <ol className="mt-6" aria-label="Tiến độ tạo hóa đơn">
++              <ol className="mt-5" aria-label="Tiến độ tạo hóa đơn">
+                 {steps.map((item, index) => {
+                   const completed = index < step;
+                   const active = index === step;
+@@ -226,7 +253,7 @@ export function CreateBillFlow({
+                   return (
+                     <li
+                       key={item.label}
+-                      className="relative flex gap-3 pb-7 last:pb-0"
++                      className="relative flex gap-3 pb-5 last:pb-0"
+                     >
+                       {index < steps.length - 1 ? (
+                         <span
+@@ -309,10 +336,10 @@ export function CreateBillFlow({
+               </div>
+             </div>
+ 
+-            <CardContent className="p-4 sm:p-5 lg:p-6">
++            <CardContent className="p-4 sm:p-5 lg:p-5">
+               <div key={step} className="animate-step-in">
+             {step === 0 ? (
+-              <div className="space-y-5">
++              <div className="space-y-4">
+                 <StepSectionHeader
+                   icon={steps[0].icon}
+                   title="Thông tin hóa đơn"
+@@ -417,7 +444,7 @@ export function CreateBillFlow({
+             ) : null}
+ 
+             {step === 1 ? (
+-              <div className="space-y-5">
++              <div className="space-y-4">
+                 <StepSectionHeader
+                   icon={steps[1].icon}
+                   title="Chọn người tham gia"
+@@ -444,96 +471,107 @@ export function CreateBillFlow({
+                     </span>
+                   </span>
+                 </label>
+-                <Field label="Thêm bằng email">
+-                  <Textarea
+-                    className="min-h-24"
+-                    autoComplete="off"
+-                    spellCheck={false}
+-                    placeholder={"anna@example.com\nminh@example.com"}
+-                    {...form.register("emailsText")}
+-                  />
+-                  <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+-                    <p className="text-muted-foreground text-xs">
+-                      Mỗi dòng một email. Email chưa có tài khoản sẽ được backend
+-                      tạo ở trạng thái Pending.
+-                    </p>
+-                    {directEmails.length ? (
+-                      <span className="bg-primary/10 text-primary rounded-full px-2.5 py-1 text-xs font-semibold">
+-                        {directEmails.length} email
+-                      </span>
+-                    ) : null}
+-                  </div>
+-                </Field>
+-                {groups.length ? (
+-                  <Field label="Chọn từ nhóm">
+-                    <Select
+-                      value={values.groupId || ""}
+-                      onChange={(value) => {
+-                        form.setValue("groupId", value, {
+-                          shouldDirty: true,
+-                          shouldTouch: true,
+-                          shouldValidate: true,
+-                        });
+-                        form.setValue("groupMemberIds", [], {
+-                          shouldDirty: true,
+-                        });
+-                      }}
+-                      options={[
+-                        { value: "", label: "Không dùng nhóm" },
+-                        ...groups.flatMap((item) =>
+-                          item.groupId
+-                            ? [
+-                                {
+-                                  value: item.groupId,
+-                                  label: item.name || "Nhóm chưa đặt tên",
+-                                },
+-                              ]
+-                            : [],
+-                        ),
+-                      ]}
+-                      placeholder="Chọn nhóm"
++                <div
++                  className={cn(
++                    "grid gap-4",
++                    groups.length &&
++                      "xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] xl:items-start",
++                  )}
++                >
++                  <Field label="Thêm bằng email">
++                    <Textarea
++                      className="min-h-20"
++                      autoComplete="off"
++                      spellCheck={false}
++                      placeholder={"anna@example.com\nminh@example.com"}
++                      {...form.register("emailsText")}
+                     />
++                    <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
++                      <p className="text-muted-foreground text-xs">
++                        Mỗi dòng một email. Email chưa có tài khoản sẽ được backend
++                        tạo ở trạng thái Pending.
++                      </p>
++                      {directEmails.length ? (
++                        <span className="bg-primary/10 text-primary rounded-full px-2.5 py-1 text-xs font-semibold">
++                          {directEmails.length} email
++                        </span>
++                      ) : null}
++                    </div>
+                   </Field>
+-                ) : null}
+-                {loadingGroup ? (
+-                  <p className="text-muted-foreground flex items-center gap-2 text-sm">
+-                    <LoaderCircle className="size-4 animate-spin" />
+-                    Đang tải thành viên…
+-                  </p>
+-                ) : null}
+-                {group ? (
+-                  <div>
+-                    <Label>Thành viên nhóm</Label>
+-                    <div className="divide-border border-border mt-2 divide-y overflow-hidden rounded-xl border shadow-[0_1px_2px_rgb(15_23_42/0.03)]">
+-                      {(group.members ?? []).map((member) => (
+-                        <label
+-                          key={member.memberId}
+-                          className={cn(
+-                            "hover:bg-muted/60 focus-within:bg-primary/[0.035] flex cursor-pointer items-center gap-3 p-3 text-sm transition-colors",
+-                            member.memberId &&
+-                              values.groupMemberIds?.includes(member.memberId) &&
+-                              "bg-primary/[0.035]",
+-                          )}
+-                        >
+-                          <input
+-                            type="checkbox"
+-                            value={member.memberId}
+-                            className="accent-primary size-5 cursor-pointer"
+-                            {...form.register("groupMemberIds")}
+-                          />
+-                          <span className="min-w-0">
+-                            <span className="block font-medium">
+-                              {member.name || member.email}
+-                            </span>
+-                            <span className="text-muted-foreground block truncate text-xs">
+-                              {member.email}
+-                            </span>
+-                          </span>
+-                        </label>
+-                      ))}
++
++                  {groups.length ? (
++                    <div className="space-y-3">
++                      <Field label="Chọn từ nhóm">
++                        <Select
++                          value={values.groupId || ""}
++                          onChange={(value) => {
++                            form.setValue("groupId", value, {
++                              shouldDirty: true,
++                              shouldTouch: true,
++                              shouldValidate: true,
++                            });
++                            form.setValue("groupMemberIds", [], {
++                              shouldDirty: true,
++                            });
++                          }}
++                          options={[
++                            { value: "", label: "Không dùng nhóm" },
++                            ...groups.flatMap((item) =>
++                              item.groupId
++                                ? [
++                                    {
++                                      value: item.groupId,
++                                      label: item.name || "Nhóm chưa đặt tên",
++                                    },
++                                  ]
++                                : [],
++                            ),
++                          ]}
++                          placeholder="Chọn nhóm"
++                        />
++                      </Field>
++                      {loadingGroup ? (
++                        <p className="text-muted-foreground flex items-center gap-2 text-sm">
++                          <LoaderCircle className="size-4 animate-spin" />
++                          Đang tải thành viên…
++                        </p>
++                      ) : null}
++                      {group ? (
++                        <div>
++                          <Label>Thành viên nhóm</Label>
++                          <div className="divide-border border-border mt-2 max-h-36 divide-y overflow-y-auto rounded-xl border shadow-[0_1px_2px_rgb(15_23_42/0.03)]">
++                            {(group.members ?? []).map((member) => (
++                              <label
++                                key={member.memberId}
++                                className={cn(
++                                  "hover:bg-muted/60 focus-within:bg-primary/[0.035] flex cursor-pointer items-center gap-3 p-2.5 text-sm transition-colors",
++                                  member.memberId &&
++                                    values.groupMemberIds?.includes(member.memberId) &&
++                                    "bg-primary/[0.035]",
++                                )}
++                              >
++                                <input
++                                  type="checkbox"
++                                  value={member.memberId}
++                                  className="accent-primary size-5 cursor-pointer"
++                                  {...form.register("groupMemberIds")}
++                                />
++                                <span className="min-w-0">
++                                  <span className="block font-medium">
++                                    {member.name || member.email}
++                                  </span>
++                                  <span className="text-muted-foreground block truncate text-xs">
++                                    {member.email}
++                                  </span>
++                                </span>
++                              </label>
++                            ))}
++                          </div>
++                        </div>
++                      ) : null}
+                     </div>
+-                  </div>
+-                ) : null}
++                  ) : null}
++                </div>
+                 <div className="border-primary/10 bg-primary/[0.035] rounded-xl border p-3 text-sm transition-colors">
+                   <span className="text-primary font-semibold">
+                     {participants.length}
+@@ -544,7 +582,7 @@ export function CreateBillFlow({
+             ) : null}
+ 
+             {step === 2 ? (
+-              <div className="space-y-5">
++              <div className="space-y-4">
+                 <StepSectionHeader
+                   icon={steps[2].icon}
+                   title="Chọn cách chia"
+@@ -589,38 +627,57 @@ export function CreateBillFlow({
+                 </div>
+                 {values.splitMethod === "CustomAmount" ? (
+                   <div className="animate-expand space-y-3">
+-                    {participants.map((email) => (
+-                      <div
+-                        key={email}
+-                        className="grid grid-cols-[1fr_150px] items-center gap-3"
+-                      >
+-                        <span className="truncate text-sm">{email}</span>
+-                        <Input
+-                          type="number"
+-                          min="0"
+-                          step="any"
+-                          aria-label={`Số tiền của ${email}`}
+-                          {...form.register(`allocations.${email}`)}
+-                        />
+-                      </div>
+-                    ))}
++                    <div className="border-border/70 divide-border/70 max-h-[min(38vh,360px)] divide-y overflow-y-auto overscroll-contain rounded-xl border">
++                      {participants.map((email) => (
++                        <div
++                          key={email}
++                          className="grid gap-2 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(220px,280px)] sm:items-start"
++                        >
++                          <div className="min-w-0 pt-1">
++                            <p className="truncate text-sm font-medium">{email}</p>
++                            <p className="text-muted-foreground mt-0.5 text-xs">
++                              Số tiền phải trả
++                            </p>
++                          </div>
++                          <Input
++                            aria-label={`Số tiền của ${email}`}
++                            value={getAllocationAmount(email)}
++                            placeholder="Nhập số tiền"
++                            money={{
++                              currency: values.currency || "VND",
++                              suggestionCount: 3,
++                              onValueChange: (amount) =>
++                                setAllocationAmount(email, amount),
++                            }}
++                          />
++                        </div>
++                      ))}
++                    </div>
+                     <div
+                       className={cn(
+-                        "money flex justify-between rounded-xl p-3 text-sm transition-colors duration-200",
+-                        Math.abs(allocationTotal - Number(values.totalAmount)) <
+-                          0.001
+-                          ? "bg-emerald-500/10 text-emerald-700"
+-                          : "bg-amber-500/10 text-amber-700",
++                        "money rounded-xl border p-3 text-sm transition-colors duration-200",
++                        Math.abs(allocationDifference) < 0.001
++                          ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
++                          : "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-400",
+                       )}
+                     >
+-                      <span>Đã phân bổ</span>
+-                      <strong>
+-                        {formatCurrency(allocationTotal, values.currency)} /{" "}
+-                        {formatCurrency(
+-                          Number(values.totalAmount),
+-                          values.currency,
+-                        )}
+-                      </strong>
++                      <div className="flex items-center justify-between gap-4">
++                        <span>Đã phân bổ</span>
++                        <strong className="tabular-nums">
++                          {formatCurrency(allocationTotal, values.currency)} /{" "}
++                          {formatCurrency(
++                            Number(values.totalAmount),
++                            values.currency,
++                          )}
++                        </strong>
++                      </div>
++                      <p className="mt-1 text-xs font-medium">
++                        {Math.abs(allocationDifference) < 0.001
++                          ? "Đã phân bổ đủ tổng tiền hóa đơn."
++                          : allocationDifference > 0
++                            ? `Còn thiếu ${formatCurrency(allocationDifference, values.currency)}.`
++                            : `Đang vượt ${formatCurrency(Math.abs(allocationDifference), values.currency)}.`}
++                      </p>
+                     </div>
+                   </div>
+                 ) : null}
+@@ -628,7 +685,7 @@ export function CreateBillFlow({
+             ) : null}
+ 
+             {step === 3 ? (
+-              <div className="space-y-5">
++              <div className="space-y-4">
+                 <StepSectionHeader
+                   icon={steps[3].icon}
+                   title="Kiểm tra trước khi tạo"
+@@ -680,7 +737,7 @@ export function CreateBillFlow({
+               </div>
+             </CardContent>
+ 
+-            <div className="border-border/70 bg-card/95 sticky bottom-0 z-10 flex items-center justify-between gap-3 border-t px-3 py-3 backdrop-blur-xl sm:px-5 lg:static lg:bg-card/80 lg:px-6 dark:bg-card/95">
++            <div className="border-border/70 bg-card/95 sticky bottom-0 z-10 flex items-center justify-between gap-3 border-t px-4 py-2.5 backdrop-blur-xl sm:px-5 lg:static lg:bg-card/80 lg:px-6 dark:bg-card/95">
+               <Button
+                 type="button"
+                 variant="ghost"
+@@ -731,7 +788,7 @@ function StepSectionHeader({
+   description: string;
+ }) {
+   return (
+-    <div className="border-border/70 flex items-start gap-3 border-b pb-4">
++    <div className="border-border/70 flex items-start gap-3 border-b pb-3.5">
+       <span className="bg-primary/10 text-primary grid size-9 shrink-0 place-items-center rounded-xl border border-primary/10">
+         <Icon className="size-[18px]" aria-hidden="true" />
+       </span>
+@@ -777,7 +834,7 @@ function LiveBillSummary({
+ 
+   return (
+     <aside className="border-border/70 bg-muted/[0.14] hidden border-l xl:block dark:bg-muted/[0.055]">
+-      <div className="sticky top-20 p-5">
++      <div className="sticky top-16 p-4">
+         <div className="flex items-center justify-between gap-3">
+           <div className="flex items-center gap-2.5">
+             <span className="bg-primary/10 text-primary grid size-9 place-items-center rounded-xl border border-primary/10">
+@@ -795,7 +852,7 @@ function LiveBillSummary({
+           </span>
+         </div>
+ 
+-        <div className="border-border/70 mt-5 border-b pb-5">
++        <div className="border-border/70 mt-4 border-b pb-4">
+           <p className="text-muted-foreground text-xs font-medium">Hóa đơn</p>
+           <p className="mt-1.5 line-clamp-2 text-base font-semibold tracking-tight">
+             {values.title?.trim() || "Hóa đơn chưa đặt tên"}
+@@ -821,7 +878,7 @@ function LiveBillSummary({
+         </dl>
+ 
+         {values.splitMethod === "Equal" && equalShare > 0 ? (
+-          <div className="border-primary/10 bg-primary/[0.045] mt-5 rounded-xl border p-3.5">
++          <div className="border-primary/10 bg-primary/[0.045] mt-4 rounded-xl border p-3">
+             <p className="text-muted-foreground text-[11px] font-semibold tracking-wide uppercase">
+               Ước tính mỗi người
+             </p>
+@@ -840,7 +897,7 @@ function LiveBillSummary({
+ 
+ function SummaryRow({ label, value }: { label: string; value: string }) {
+   return (
+-    <div className="flex items-start justify-between gap-4 py-3">
++    <div className="flex items-start justify-between gap-4 py-2.5">
+       <dt className="text-muted-foreground text-xs">{label}</dt>
+       <dd className="max-w-[145px] text-right text-xs font-semibold">{value}</dd>
+     </div>

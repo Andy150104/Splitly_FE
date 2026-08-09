@@ -6,13 +6,13 @@
  * OpenAPI spec version: v1
  */
 import type { BillSplitServiceApiResponsesApiError } from './billSplitServiceApiResponsesApiError';
-import type { PagedResultListGroups } from './pagedResultListGroups';
+import type { BillSplitServiceApplicationFeaturesPayoutAccountsAddPayoutAccountAddPayoutAccountHandlerResponse } from './billSplitServiceApplicationFeaturesPayoutAccountsAddPayoutAccountAddPayoutAccountHandlerResponse';
 
-export interface ApiResponsePagedListGroups {
+export interface ApiResponseAddPayoutAccount {
   success?: boolean;
   /** @nullable */
   message?: string | null;
-  data?: PagedResultListGroups;
+  data?: BillSplitServiceApplicationFeaturesPayoutAccountsAddPayoutAccountAddPayoutAccountHandlerResponse;
   /** @nullable */
   errors?: BillSplitServiceApiResponsesApiError[] | null;
   /** @nullable */

@@ -6,6 +6,7 @@
  * OpenAPI spec version: v1
  */
 import type { BillSplitServiceApplicationFeaturesBillsGetBillGetBillHandlerMemberItem } from './billSplitServiceApplicationFeaturesBillsGetBillGetBillHandlerMemberItem';
+import type { BillSplitServiceApplicationFeaturesBillsGetBillGetBillHandlerPaymentDestinationItem } from './billSplitServiceApplicationFeaturesBillsGetBillGetBillHandlerPaymentDestinationItem';
 
 export interface BillSplitServiceApplicationFeaturesBillsGetBillGetBillHandlerResponse {
   billId?: string;
@@ -29,6 +30,7 @@ export interface BillSplitServiceApplicationFeaturesBillsGetBillGetBillHandlerRe
   unpaidMemberCount?: number;
   overdueMemberCount?: number;
   completionPercentage?: number;
+  paymentDestination?: BillSplitServiceApplicationFeaturesBillsGetBillGetBillHandlerPaymentDestinationItem;
   /** @nullable */
   members?: BillSplitServiceApplicationFeaturesBillsGetBillGetBillHandlerMemberItem[] | null;
 }

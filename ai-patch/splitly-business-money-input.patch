@@ -1,0 +1,194 @@
+diff --git a/src/components/ui/input.tsx b/src/components/ui/input.tsx
+index f80458a..815f470 100644
+--- a/src/components/ui/input.tsx
++++ b/src/components/ui/input.tsx
+@@ -2,18 +2,122 @@ import * as React from "react";
+ 
+ import { cn } from "@/lib/utils";
+ 
+-export const Input = React.forwardRef<
+-  HTMLInputElement,
+-  React.ComponentProps<"input">
+->(({ className, type, ...props }, ref) => (
+-  <input
+-    ref={ref}
+-    type={type}
+-    className={cn(
++const DEFAULT_MONEY_SUGGESTIONS = [50_000, 100_000, 200_000, 500_000, 1_000_000] as const;
++
++function toMoneyNumber(value: React.ComponentProps<"input">["value"]) {
++  if (typeof value === "number") return Number.isFinite(value) ? value : null;
++  if (typeof value !== "string" || !value.trim()) return null;
++
++  const digits = value.replace(/[^\d]/g, "");
++  if (!digits) return null;
++
++  const parsed = Number(digits);
++  return Number.isFinite(parsed) ? parsed : null;
++}
++
++function formatMoney(value: number) {
++  return new Intl.NumberFormat("vi-VN", {
++    maximumFractionDigits: 0,
++  }).format(value);
++}
++
++export interface MoneyInputOptions {
++  currency?: string;
++  suggestions?: readonly number[];
++  onValueChange?: (value: number | "") => void;
++}
++
++export interface InputProps extends React.ComponentProps<"input"> {
++  /**
++   * Business-only money mode. Plain Input behavior is unchanged when omitted.
++   */
++  money?: MoneyInputOptions;
++}
++
++export const Input = React.forwardRef<HTMLInputElement, InputProps>(
++  ({ className, type, money, value, onChange, ...props }, ref) => {
++    const baseClassName = cn(
+       "border-input/90 bg-card/70 text-foreground placeholder:text-muted-foreground/60 caret-primary flex h-11 w-full rounded-[11px] border px-3.5 py-2 text-sm shadow-[0_1px_2px_rgb(15_23_42/0.035),inset_0_1px_0_rgb(255_255_255/0.30)] outline-none transition-[border-color,box-shadow,background-color] duration-150 ease-out hover:border-foreground/15 hover:bg-card focus-visible:border-primary/70 focus-visible:bg-card focus-visible:ring-4 focus-visible:ring-primary/15 disabled:cursor-not-allowed disabled:bg-muted/45 disabled:text-muted-foreground disabled:opacity-70 dark:bg-background/45 dark:shadow-[0_1px_2px_rgb(0_0_0/0.18),inset_0_1px_0_rgb(255_255_255/0.025)] dark:hover:border-foreground/20 dark:hover:bg-background/60 dark:focus-visible:bg-background/65 aria-invalid:border-destructive aria-invalid:bg-destructive/[0.045] aria-invalid:ring-2 aria-invalid:ring-destructive/20 aria-invalid:shadow-[0_0_0_1px_color-mix(in_oklab,var(--destructive)_18%,transparent)] aria-invalid:hover:border-destructive aria-invalid:focus-visible:border-destructive aria-invalid:focus-visible:ring-4 aria-invalid:focus-visible:ring-destructive/25 dark:aria-invalid:bg-destructive/[0.075] dark:aria-invalid:ring-destructive/25",
+       className,
+-    )}
+-    {...props}
+-  />
+-));
++    );
++
++    if (!money) {
++      return (
++        <input
++          ref={ref}
++          type={type}
++          value={value}
++          onChange={onChange}
++          className={baseClassName}
++          {...props}
++        />
++      );
++    }
++
++    const numericValue = toMoneyNumber(value);
++    const formattedValue = numericValue === null ? "" : formatMoney(numericValue);
++    const currency = (money.currency || "VND").trim().toUpperCase();
++    const suggestions = money.suggestions?.length
++      ? money.suggestions
++      : DEFAULT_MONEY_SUGGESTIONS;
++
++    return (
++      <div className="space-y-2.5">
++        <div className="relative">
++          <input
++            ref={ref}
++            type="text"
++            inputMode="numeric"
++            value={formattedValue}
++            onChange={(event) => {
++              const digits = event.currentTarget.value.replace(/[^\d]/g, "");
++              const nextValue = digits ? Number(digits) : "";
++
++              money.onValueChange?.(
++                typeof nextValue === "number" && Number.isFinite(nextValue)
++                  ? nextValue
++                  : "",
++              );
++            }}
++            className={cn(
++              baseClassName,
++              "pr-20 text-[15px] font-semibold tracking-[0.01em] tabular-nums",
++            )}
++            {...props}
++          />
++          <span
++            aria-hidden="true"
++            className="border-border/70 bg-muted/65 text-muted-foreground pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 rounded-lg border px-2 py-1 text-[11px] font-bold tracking-[0.08em] shadow-[0_1px_2px_rgb(15_23_42/0.035)] dark:bg-muted/30"
++          >
++            {currency}
++          </span>
++        </div>
++
++        <div className="flex flex-wrap items-center gap-1.5" aria-label="Gợi ý số tiền">
++          <span className="text-muted-foreground mr-0.5 text-[11px] font-medium">
++            Chọn nhanh
++          </span>
++          {suggestions.map((amount) => {
++            const selected = numericValue === amount;
++
++            return (
++              <button
++                key={amount}
++                type="button"
++                onClick={() => money.onValueChange?.(amount)}
++                className={cn(
++                  "border-border/70 bg-background/70 text-muted-foreground hover:border-primary/30 hover:bg-primary/[0.055] hover:text-primary focus-visible:ring-primary/20 min-h-8 rounded-lg border px-2.5 py-1 text-xs font-semibold tabular-nums shadow-[0_1px_2px_rgb(15_23_42/0.025)] outline-none transition-[color,background-color,border-color,box-shadow,transform] duration-150 hover:-translate-y-px focus-visible:ring-4 active:translate-y-0 dark:bg-background/35 dark:hover:bg-primary/[0.11]",
++                  selected &&
++                    "border-primary/35 bg-primary/10 text-primary shadow-[0_1px_3px_color-mix(in_oklab,var(--primary)_10%,transparent)] dark:bg-primary/15",
++                )}
++              >
++                {formatMoney(amount)}
++              </button>
++            );
++          })}
++        </div>
++      </div>
++    );
++  },
++);
+ Input.displayName = "Input";
+diff --git a/src/features/bills/components/create-bill/create-bill-flow.tsx b/src/features/bills/components/create-bill/create-bill-flow.tsx
+index 5bbebcd..207a3e3 100644
+--- a/src/features/bills/components/create-bill/create-bill-flow.tsx
++++ b/src/features/bills/components/create-bill/create-bill-flow.tsx
+@@ -11,7 +11,7 @@ import {
+ } from "lucide-react";
+ import { useRouter } from "next/navigation";
+ import { useMemo, useState } from "react";
+-import { useForm, useWatch } from "react-hook-form";
++import { Controller, useForm, useWatch } from "react-hook-form";
+ import { toast } from "sonner";
+ 
+ import type {
+@@ -309,16 +309,31 @@ export function CreateBillFlow({
+                     htmlFor="bill-total-amount"
+                     error={form.formState.errors.totalAmount?.message}
+                   >
+-                    <Input
+-                      id="bill-total-amount"
+-                      aria-invalid={Boolean(form.formState.errors.totalAmount)}
+-                      type="number"
+-                      min="0"
+-                      step="any"
+-                      inputMode="decimal"
+-                      placeholder="149.000"
+-                      className="money font-medium"
+-                      {...form.register("totalAmount")}
++                    <Controller
++                      control={form.control}
++                      name="totalAmount"
++                      render={({ field }) => (
++                        <Input
++                          id="bill-total-amount"
++                          aria-invalid={Boolean(form.formState.errors.totalAmount)}
++                          name={field.name}
++                          ref={field.ref}
++                          value={field.value ?? ""}
++                          onBlur={field.onBlur}
++                          placeholder="0"
++                          money={{
++                            currency: values.currency || "VND",
++                            suggestions: [
++                              50_000,
++                              100_000,
++                              200_000,
++                              500_000,
++                              1_000_000,
++                            ],
++                            onValueChange: (amount) => field.onChange(amount),
++                          }}
++                        />
++                      )}
+                     />
+                   </Field>
+                   <Field

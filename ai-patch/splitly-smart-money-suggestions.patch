@@ -1,0 +1,145 @@
+diff --git a/src/components/ui/input.tsx b/src/components/ui/input.tsx
+index 815f470..3fb30d9 100644
+--- a/src/components/ui/input.tsx
++++ b/src/components/ui/input.tsx
+@@ -2,8 +2,6 @@ import * as React from "react";
+ 
+ import { cn } from "@/lib/utils";
+ 
+-const DEFAULT_MONEY_SUGGESTIONS = [50_000, 100_000, 200_000, 500_000, 1_000_000] as const;
+-
+ function toMoneyNumber(value: React.ComponentProps<"input">["value"]) {
+   if (typeof value === "number") return Number.isFinite(value) ? value : null;
+   if (typeof value !== "string" || !value.trim()) return null;
+@@ -21,9 +19,48 @@ function formatMoney(value: number) {
+   }).format(value);
+ }
+ 
++function getSmartMoneySuggestions(value: number | null, count = 4) {
++  if (value === null || value <= 0 || !Number.isFinite(value)) return [];
++
++  // Bank-style behavior for VND-like amounts:
++  // 12  -> 12.000 / 120.000 / 1.200.000 / 12.000.000
++  // 490 -> 490.000 / 4.900.000 / 49.000.000 / 490.000.000
++  // Once the user already entered a real amount (>= 1.000), suggest the
++  // next orders of magnitude instead of repeating the current amount.
++  const multipliers =
++    value < 1_000
++      ? [1_000, 10_000, 100_000, 1_000_000, 10_000_000]
++      : [10, 100, 1_000, 10_000, 100_000];
++
++  const suggestions: number[] = [];
++
++  for (const multiplier of multipliers) {
++    const amount = value * multiplier;
++
++    if (
++      !Number.isSafeInteger(amount) ||
++      amount <= 0 ||
++      amount === value ||
++      suggestions.includes(amount)
++    ) {
++      continue;
++    }
++
++    suggestions.push(amount);
++    if (suggestions.length >= Math.max(1, count)) break;
++  }
++
++  return suggestions;
++}
++
+ export interface MoneyInputOptions {
+   currency?: string;
+-  suggestions?: readonly number[];
++  /**
++   * Omit to use smart suggestions based on the number currently entered.
++   * Pass an array to fully control suggestions, or false to hide them.
++   */
++  suggestions?: readonly number[] | false;
++  suggestionCount?: number;
+   onValueChange?: (value: number | "") => void;
+ }
+ 
+@@ -57,9 +94,17 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
+     const numericValue = toMoneyNumber(value);
+     const formattedValue = numericValue === null ? "" : formatMoney(numericValue);
+     const currency = (money.currency || "VND").trim().toUpperCase();
+-    const suggestions = money.suggestions?.length
+-      ? money.suggestions
+-      : DEFAULT_MONEY_SUGGESTIONS;
++    const suggestions =
++      money.suggestions === false
++        ? []
++        : Array.isArray(money.suggestions)
++          ? [...new Set(money.suggestions)].filter(
++              (amount) =>
++                Number.isSafeInteger(amount) &&
++                amount > 0 &&
++                amount !== numericValue,
++            )
++          : getSmartMoneySuggestions(numericValue, money.suggestionCount ?? 4);
+ 
+     return (
+       <div className="space-y-2.5">
+@@ -93,29 +138,26 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
+           </span>
+         </div>
+ 
+-        <div className="flex flex-wrap items-center gap-1.5" aria-label="Gợi ý số tiền">
+-          <span className="text-muted-foreground mr-0.5 text-[11px] font-medium">
+-            Chọn nhanh
+-          </span>
+-          {suggestions.map((amount) => {
+-            const selected = numericValue === amount;
+-
+-            return (
++        {suggestions.length ? (
++          <div
++            className="flex flex-wrap items-center gap-1.5"
++            aria-label="Gợi ý số tiền theo số đang nhập"
++          >
++            <span className="text-muted-foreground mr-0.5 text-[11px] font-medium">
++              Chọn nhanh
++            </span>
++            {suggestions.map((amount) => (
+               <button
+                 key={amount}
+                 type="button"
+                 onClick={() => money.onValueChange?.(amount)}
+-                className={cn(
+-                  "border-border/70 bg-background/70 text-muted-foreground hover:border-primary/30 hover:bg-primary/[0.055] hover:text-primary focus-visible:ring-primary/20 min-h-8 rounded-lg border px-2.5 py-1 text-xs font-semibold tabular-nums shadow-[0_1px_2px_rgb(15_23_42/0.025)] outline-none transition-[color,background-color,border-color,box-shadow,transform] duration-150 hover:-translate-y-px focus-visible:ring-4 active:translate-y-0 dark:bg-background/35 dark:hover:bg-primary/[0.11]",
+-                  selected &&
+-                    "border-primary/35 bg-primary/10 text-primary shadow-[0_1px_3px_color-mix(in_oklab,var(--primary)_10%,transparent)] dark:bg-primary/15",
+-                )}
++                className="border-border/70 bg-background/70 text-muted-foreground hover:border-primary/30 hover:bg-primary/[0.055] hover:text-primary focus-visible:ring-primary/20 min-h-8 rounded-lg border px-2.5 py-1 text-xs font-semibold tabular-nums shadow-[0_1px_2px_rgb(15_23_42/0.025)] outline-none transition-[color,background-color,border-color,box-shadow,transform] duration-150 hover:-translate-y-px focus-visible:ring-4 active:translate-y-0 dark:bg-background/35 dark:hover:bg-primary/[0.11]"
+               >
+                 {formatMoney(amount)}
+               </button>
+-            );
+-          })}
+-        </div>
++            ))}
++          </div>
++        ) : null}
+       </div>
+     );
+   },
+diff --git a/src/features/bills/components/create-bill/create-bill-flow.tsx b/src/features/bills/components/create-bill/create-bill-flow.tsx
+index 207a3e3..5d40fc4 100644
+--- a/src/features/bills/components/create-bill/create-bill-flow.tsx
++++ b/src/features/bills/components/create-bill/create-bill-flow.tsx
+@@ -323,13 +323,6 @@ export function CreateBillFlow({
+                           placeholder="0"
+                           money={{
+                             currency: values.currency || "VND",
+-                            suggestions: [
+-                              50_000,
+-                              100_000,
+-                              200_000,
+-                              500_000,
+-                              1_000_000,
+-                            ],
+                             onValueChange: (amount) => field.onChange(amount),
+                           }}
+                         />

@@ -4,13 +4,25 @@ function normalizedName(name: string) {
   if (/^[a-zA-Z0-9.\-_]+$/.test(name)) return name;
   if (name.includes("System.Boolean")) return "ApiResponseBoolean";
 
-  const feature = name.match(/Features\.([^.]+)\.([^.]+)\./)?.[2];
+  const isReadOnlyCollection =
+    name.includes("IReadOnlyCollection") ||
+    name.includes("IEnumerable") ||
+    name.includes("List");
   const isPagedResult = name.includes("Application.Models.PagedResult");
 
+  const featureMatch = name.match(/Features\.([^.]+)\.([^.]+)\./);
+  const feature = featureMatch ? featureMatch[2] : null;
+
+  if (name.includes("VietQrBankInfo")) {
+    return isReadOnlyCollection
+      ? "ApiResponseListVietQrBankInfo"
+      : "ApiResponseVietQrBankInfo";
+  }
+
   if (feature && name.includes("Api.Responses.ApiResponse")) {
-    return isPagedResult
-      ? `ApiResponsePaged${feature}`
-      : `ApiResponse${feature}`;
+    if (isReadOnlyCollection) return `ApiResponseList${feature}`;
+    if (isPagedResult) return `ApiResponsePaged${feature}`;
+    return `ApiResponse${feature}`;
   }
 
   if (feature && isPagedResult) return `PagedResult${feature}`;

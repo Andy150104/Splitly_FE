@@ -8,18 +8,26 @@
 import type {
   ApiResponseAddBillMembers,
   ApiResponseAddGroupMembers,
+  ApiResponseAddPayoutAccount,
   ApiResponseBoolean,
   ApiResponseCalculateBill,
   ApiResponseChangeUserAccess,
+  ApiResponseConfigureVietQrPayment,
   ApiResponseCreateBill,
   ApiResponseCreateGroup,
+  ApiResponseCreatePaymentOrder,
   ApiResponseDevLogin,
   ApiResponseGetBill,
   ApiResponseGetGroup,
+  ApiResponseGetPaymentOrder,
   ApiResponseGoogleLogin,
-  ApiResponsePagedListBills,
-  ApiResponsePagedListGroups,
-  ApiResponsePagedListUsers,
+  ApiResponseListListBills,
+  ApiResponseListListGroups,
+  ApiResponseListListPaymentAccounts,
+  ApiResponseListListPayoutAccounts,
+  ApiResponseListListReviewRequiredPayouts,
+  ApiResponseListListUsers,
+  ApiResponseListVietQrBankInfo,
   ApiResponsePublishBill,
   ApiResponseRecordManualPayment,
   ApiResponseRefreshSession,
@@ -31,11 +39,16 @@ import type {
   BillSplitServiceApiControllersBillsControllerAddBillMembersRequest,
   BillSplitServiceApiControllersBillsControllerCalculateBillRequest,
   BillSplitServiceApiControllersBillsControllerCancelBillRequest,
+  BillSplitServiceApiControllersBillsControllerConfigureVietQrPaymentRequest,
   BillSplitServiceApiControllersBillsControllerManualPaymentRequest,
   BillSplitServiceApiControllersBillsControllerSaveBillRequest,
   BillSplitServiceApiControllersBillsControllerSendRemindersRequest,
   BillSplitServiceApiControllersGroupsControllerAddGroupMembersRequest,
   BillSplitServiceApiControllersGroupsControllerCreateGroupRequest,
+  BillSplitServiceApplicationFeaturesAdminManualResolvePayoutManualResolvePayoutHandlerRequest,
+  BillSplitServiceApplicationFeaturesAdminRetryPayoutRetryPayoutHandlerRequest,
+  BillSplitServiceApplicationFeaturesBillsPublishBillPublishBillHandlerRequest,
+  BillSplitServiceApplicationFeaturesPayoutAccountsAddPayoutAccountAddPayoutAccountHandlerRequest,
   GetApiAdminUsersParams,
   GetApiBillsParams,
   GetApiGroupsParams
@@ -46,14 +59,47 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
   export const getBillSplitServiceAPI = () => {
+const getApiAdminPayoutsReviewRequired = (
+
+ options?: SecondParameter<typeof orvalMutator<ApiResponseListListReviewRequiredPayouts>>,) => {
+      return orvalMutator<ApiResponseListListReviewRequiredPayouts>(
+      {url: `/api/admin/payouts/review-required`, method: 'GET'
+    },
+      options);
+    }
+
+const postApiAdminPayoutsIdRetry = (
+    id: string,
+    billSplitServiceApplicationFeaturesAdminRetryPayoutRetryPayoutHandlerRequest?: BillSplitServiceApplicationFeaturesAdminRetryPayoutRetryPayoutHandlerRequest,
+ options?: SecondParameter<typeof orvalMutator<ApiResponseBoolean>>,) => {
+      return orvalMutator<ApiResponseBoolean>(
+      {url: `/api/admin/payouts/${id}/retry`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: billSplitServiceApplicationFeaturesAdminRetryPayoutRetryPayoutHandlerRequest
+    },
+      options);
+    }
+
+const postApiAdminPayoutsIdManualResolve = (
+    id: string,
+    billSplitServiceApplicationFeaturesAdminManualResolvePayoutManualResolvePayoutHandlerRequest?: BillSplitServiceApplicationFeaturesAdminManualResolvePayoutManualResolvePayoutHandlerRequest,
+ options?: SecondParameter<typeof orvalMutator<ApiResponseBoolean>>,) => {
+      return orvalMutator<ApiResponseBoolean>(
+      {url: `/api/admin/payouts/${id}/manual-resolve`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: billSplitServiceApplicationFeaturesAdminManualResolvePayoutManualResolvePayoutHandlerRequest
+    },
+      options);
+    }
+
 /**
  * Administrator-only endpoint. Supports search by text, optional status filter and pagination.
  * @summary Lists users for administration.
  */
 const getApiAdminUsers = (
     params?: GetApiAdminUsersParams,
- options?: SecondParameter<typeof orvalMutator<ApiResponsePagedListUsers>>,) => {
-      return orvalMutator<ApiResponsePagedListUsers>(
+ options?: SecondParameter<typeof orvalMutator<ApiResponseListListUsers>>,) => {
+      return orvalMutator<ApiResponseListListUsers>(
       {url: `/api/admin/users`, method: 'GET',
         params
     },
@@ -161,8 +207,8 @@ const postApiBills = (
  */
 const getApiBills = (
     params?: GetApiBillsParams,
- options?: SecondParameter<typeof orvalMutator<ApiResponsePagedListBills>>,) => {
-      return orvalMutator<ApiResponsePagedListBills>(
+ options?: SecondParameter<typeof orvalMutator<ApiResponseListListBills>>,) => {
+      return orvalMutator<ApiResponseListListBills>(
       {url: `/api/bills`, method: 'GET',
         params
     },
@@ -247,15 +293,35 @@ const postApiBillsBillIdCalculate = (
     }
 
 /**
+ * Only the bill owner can configure it, and only while the bill is Draft.
+ * Each member will receive a VietQR containing their own remaining split amount.
+ * @summary Configures the bank account that will receive VietQR payments for this bill.
+ */
+const putApiBillsBillIdVietqrPayment = (
+    billId: string,
+    billSplitServiceApiControllersBillsControllerConfigureVietQrPaymentRequest?: BillSplitServiceApiControllersBillsControllerConfigureVietQrPaymentRequest,
+ options?: SecondParameter<typeof orvalMutator<ApiResponseConfigureVietQrPayment>>,) => {
+      return orvalMutator<ApiResponseConfigureVietQrPayment>(
+      {url: `/api/bills/${billId}/vietqr-payment`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: billSplitServiceApiControllersBillsControllerConfigureVietQrPaymentRequest
+    },
+      options);
+    }
+
+/**
  * Only the bill owner can publish. The bill must have members and calculated split amounts
  * whose total equals the bill total.
  * @summary Publishes a bill and starts payment tracking.
  */
 const postApiBillsBillIdPublish = (
     billId: string,
+    billSplitServiceApplicationFeaturesBillsPublishBillPublishBillHandlerRequest?: BillSplitServiceApplicationFeaturesBillsPublishBillPublishBillHandlerRequest,
  options?: SecondParameter<typeof orvalMutator<ApiResponsePublishBill>>,) => {
       return orvalMutator<ApiResponsePublishBill>(
-      {url: `/api/bills/${billId}/publish`, method: 'POST'
+      {url: `/api/bills/${billId}/publish`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: billSplitServiceApplicationFeaturesBillsPublishBillPublishBillHandlerRequest
     },
       options);
     }
@@ -334,8 +400,8 @@ const postApiGroups = (
  */
 const getApiGroups = (
     params?: GetApiGroupsParams,
- options?: SecondParameter<typeof orvalMutator<ApiResponsePagedListGroups>>,) => {
-      return orvalMutator<ApiResponsePagedListGroups>(
+ options?: SecondParameter<typeof orvalMutator<ApiResponseListListGroups>>,) => {
+      return orvalMutator<ApiResponseListListGroups>(
       {url: `/api/groups`, method: 'GET',
         params
     },
@@ -400,7 +466,102 @@ const postApiGroupsGroupIdClose = (
       options);
     }
 
-return {getApiAdminUsers,putApiAdminUsersMemberIdAccess,postApiAuthGoogle,postApiAuthDevLogin,postApiAuthRefresh,postApiAuthLogout,postApiBills,getApiBills,putApiBillsBillId,getApiBillsBillId,postApiBillsBillIdMembers,deleteApiBillsBillIdMembersMemberId,postApiBillsBillIdCalculate,postApiBillsBillIdPublish,postApiBillsBillIdCancel,postApiBillsBillIdReminders,postApiBillsBillIdMembersMemberIdManualPayments,postApiGroups,getApiGroups,getApiGroupsGroupId,postApiGroupsGroupIdMembers,deleteApiGroupsGroupIdMembersMemberId,postApiGroupsGroupIdClose}};
+/**
+ * @summary Lists bank accounts connected by the authenticated member.
+ */
+const getApiPaymentAccounts = (
+
+ options?: SecondParameter<typeof orvalMutator<ApiResponseListListPaymentAccounts>>,) => {
+      return orvalMutator<ApiResponseListListPaymentAccounts>(
+      {url: `/api/payment-accounts`, method: 'GET'
+    },
+      options);
+    }
+
+/**
+ * @summary Makes one connected bank account the default receiving account for future bills.
+ */
+const putApiPaymentAccountsPaymentAccountIdDefault = (
+    paymentAccountId: string,
+ options?: SecondParameter<typeof orvalMutator<ApiResponseBoolean>>,) => {
+      return orvalMutator<ApiResponseBoolean>(
+      {url: `/api/payment-accounts/${paymentAccountId}/default`, method: 'PUT'
+    },
+      options);
+    }
+
+const postApiBillSplitsBillSplitIdPaymentOrder = (
+    billSplitId: string,
+ options?: SecondParameter<typeof orvalMutator<ApiResponseCreatePaymentOrder>>,) => {
+      return orvalMutator<ApiResponseCreatePaymentOrder>(
+      {url: `/api/bill-splits/${billSplitId}/payment-order`, method: 'POST'
+    },
+      options);
+    }
+
+const getApiPaymentOrdersId = (
+    id: string,
+ options?: SecondParameter<typeof orvalMutator<ApiResponseGetPaymentOrder>>,) => {
+      return orvalMutator<ApiResponseGetPaymentOrder>(
+      {url: `/api/payment-orders/${id}`, method: 'GET'
+    },
+      options);
+    }
+
+const postApiIntegrationsPayosWebhook = (
+
+ options?: SecondParameter<typeof orvalMutator<void>>,) => {
+      return orvalMutator<void>(
+      {url: `/api/integrations/payos/webhook`, method: 'POST'
+    },
+      options);
+    }
+
+const postApiPayoutAccounts = (
+    billSplitServiceApplicationFeaturesPayoutAccountsAddPayoutAccountAddPayoutAccountHandlerRequest?: BillSplitServiceApplicationFeaturesPayoutAccountsAddPayoutAccountAddPayoutAccountHandlerRequest,
+ options?: SecondParameter<typeof orvalMutator<ApiResponseAddPayoutAccount>>,) => {
+      return orvalMutator<ApiResponseAddPayoutAccount>(
+      {url: `/api/payout-accounts`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: billSplitServiceApplicationFeaturesPayoutAccountsAddPayoutAccountAddPayoutAccountHandlerRequest
+    },
+      options);
+    }
+
+const getApiPayoutAccounts = (
+
+ options?: SecondParameter<typeof orvalMutator<ApiResponseListListPayoutAccounts>>,) => {
+      return orvalMutator<ApiResponseListListPayoutAccounts>(
+      {url: `/api/payout-accounts`, method: 'GET'
+    },
+      options);
+    }
+
+const putApiPayoutAccountsIdDefault = (
+    id: string,
+ options?: SecondParameter<typeof orvalMutator<ApiResponseBoolean>>,) => {
+      return orvalMutator<ApiResponseBoolean>(
+      {url: `/api/payout-accounts/${id}/default`, method: 'PUT'
+    },
+      options);
+    }
+
+/**
+ * @summary Returns the bank directory currently supported by VietQR.
+ */
+const getApiVietqrBanks = (
+
+ options?: SecondParameter<typeof orvalMutator<ApiResponseListVietQrBankInfo>>,) => {
+      return orvalMutator<ApiResponseListVietQrBankInfo>(
+      {url: `/api/vietqr/banks`, method: 'GET'
+    },
+      options);
+    }
+
+return {getApiAdminPayoutsReviewRequired,postApiAdminPayoutsIdRetry,postApiAdminPayoutsIdManualResolve,getApiAdminUsers,putApiAdminUsersMemberIdAccess,postApiAuthGoogle,postApiAuthDevLogin,postApiAuthRefresh,postApiAuthLogout,postApiBills,getApiBills,putApiBillsBillId,getApiBillsBillId,postApiBillsBillIdMembers,deleteApiBillsBillIdMembersMemberId,postApiBillsBillIdCalculate,putApiBillsBillIdVietqrPayment,postApiBillsBillIdPublish,postApiBillsBillIdCancel,postApiBillsBillIdReminders,postApiBillsBillIdMembersMemberIdManualPayments,postApiGroups,getApiGroups,getApiGroupsGroupId,postApiGroupsGroupIdMembers,deleteApiGroupsGroupIdMembersMemberId,postApiGroupsGroupIdClose,getApiPaymentAccounts,putApiPaymentAccountsPaymentAccountIdDefault,postApiBillSplitsBillSplitIdPaymentOrder,getApiPaymentOrdersId,postApiIntegrationsPayosWebhook,postApiPayoutAccounts,getApiPayoutAccounts,putApiPayoutAccountsIdDefault,getApiVietqrBanks}};
+export type GetApiAdminPayoutsReviewRequiredResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['getApiAdminPayoutsReviewRequired']>>>
+export type PostApiAdminPayoutsIdRetryResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['postApiAdminPayoutsIdRetry']>>>
+export type PostApiAdminPayoutsIdManualResolveResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['postApiAdminPayoutsIdManualResolve']>>>
 export type GetApiAdminUsersResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['getApiAdminUsers']>>>
 export type PutApiAdminUsersMemberIdAccessResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['putApiAdminUsersMemberIdAccess']>>>
 export type PostApiAuthGoogleResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['postApiAuthGoogle']>>>
@@ -414,6 +575,7 @@ export type GetApiBillsBillIdResult = NonNullable<Awaited<ReturnType<ReturnType<
 export type PostApiBillsBillIdMembersResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['postApiBillsBillIdMembers']>>>
 export type DeleteApiBillsBillIdMembersMemberIdResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['deleteApiBillsBillIdMembersMemberId']>>>
 export type PostApiBillsBillIdCalculateResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['postApiBillsBillIdCalculate']>>>
+export type PutApiBillsBillIdVietqrPaymentResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['putApiBillsBillIdVietqrPayment']>>>
 export type PostApiBillsBillIdPublishResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['postApiBillsBillIdPublish']>>>
 export type PostApiBillsBillIdCancelResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['postApiBillsBillIdCancel']>>>
 export type PostApiBillsBillIdRemindersResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['postApiBillsBillIdReminders']>>>
@@ -424,3 +586,12 @@ export type GetApiGroupsGroupIdResult = NonNullable<Awaited<ReturnType<ReturnTyp
 export type PostApiGroupsGroupIdMembersResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['postApiGroupsGroupIdMembers']>>>
 export type DeleteApiGroupsGroupIdMembersMemberIdResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['deleteApiGroupsGroupIdMembersMemberId']>>>
 export type PostApiGroupsGroupIdCloseResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['postApiGroupsGroupIdClose']>>>
+export type GetApiPaymentAccountsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['getApiPaymentAccounts']>>>
+export type PutApiPaymentAccountsPaymentAccountIdDefaultResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['putApiPaymentAccountsPaymentAccountIdDefault']>>>
+export type PostApiBillSplitsBillSplitIdPaymentOrderResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['postApiBillSplitsBillSplitIdPaymentOrder']>>>
+export type GetApiPaymentOrdersIdResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['getApiPaymentOrdersId']>>>
+export type PostApiIntegrationsPayosWebhookResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['postApiIntegrationsPayosWebhook']>>>
+export type PostApiPayoutAccountsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['postApiPayoutAccounts']>>>
+export type GetApiPayoutAccountsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['getApiPayoutAccounts']>>>
+export type PutApiPayoutAccountsIdDefaultResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['putApiPayoutAccountsIdDefault']>>>
+export type GetApiVietqrBanksResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['getApiVietqrBanks']>>>

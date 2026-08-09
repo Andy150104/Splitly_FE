@@ -22,5 +22,11 @@ export interface BillSplitServiceApplicationFeaturesBillsGetBillGetBillHandlerMe
   paidAtUtc?: string | null;
   reminderCount?: number;
   /** @nullable */
+  paymentQrImageUrl?: string | null;
+  /** @nullable */
+  paymentUrl?: string | null;
+  /** @nullable */
+  transferContent?: string | null;
+  /** @nullable */
   payments?: BillSplitServiceApplicationFeaturesBillsGetBillGetBillHandlerPaymentItem[] | null;
 }

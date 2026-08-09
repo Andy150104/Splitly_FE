@@ -1,0 +1,4033 @@
+{
+  "openapi": "3.0.4",
+  "info": {
+    "title": "Bill Split Service API",
+    "description": "API for bill splitting, Google login, payment tracking and administration.",
+    "version": "v1"
+  },
+  "paths": {
+    "/api/admin/payouts/review-required": {
+      "get": {
+        "tags": [
+          "AdminPayouts"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Collections.Generic.IReadOnlyCollection`1[[BillSplitService.Application.Features.Admin.ListReviewRequiredPayouts.ListReviewRequiredPayoutsHandler.Item, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Collections.Generic.IReadOnlyCollection`1[[BillSplitService.Application.Features.Admin.ListReviewRequiredPayouts.ListReviewRequiredPayoutsHandler.Item, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Collections.Generic.IReadOnlyCollection`1[[BillSplitService.Application.Features.Admin.ListReviewRequiredPayouts.ListReviewRequiredPayoutsHandler.Item, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/payouts/{id}/retry": {
+      "post": {
+        "tags": [
+          "AdminPayouts"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Application.Features.Admin.RetryPayout.RetryPayoutHandler.Request"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Application.Features.Admin.RetryPayout.RetryPayoutHandler.Request"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Application.Features.Admin.RetryPayout.RetryPayoutHandler.Request"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/payouts/{id}/manual-resolve": {
+      "post": {
+        "tags": [
+          "AdminPayouts"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Application.Features.Admin.ManualResolvePayout.ManualResolvePayoutHandler.Request"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Application.Features.Admin.ManualResolvePayout.ManualResolvePayoutHandler.Request"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Application.Features.Admin.ManualResolvePayout.ManualResolvePayoutHandler.Request"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/users": {
+      "get": {
+        "tags": [
+          "AdminUsers"
+        ],
+        "summary": "Lists users for administration.",
+        "description": "Administrator-only endpoint. Supports search by text, optional status filter and pagination.",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/BillSplitService.Domain.Enums.MemberStatus"
+            }
+          },
+          {
+            "name": "pageNumber",
+            "in": "query",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Models.PagedResult`1[[BillSplitService.Application.Features.Administration.ListUsers.ListUsersHandler.Item, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Models.PagedResult`1[[BillSplitService.Application.Features.Administration.ListUsers.ListUsersHandler.Item, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Models.PagedResult`1[[BillSplitService.Application.Features.Administration.ListUsers.ListUsersHandler.Item, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/users/{memberId}/access": {
+      "put": {
+        "tags": [
+          "AdminUsers"
+        ],
+        "summary": "Changes a user's role or blocked status.",
+        "description": "Administrator-only endpoint. The API prevents an administrator from blocking or demoting\r\nthemselves to avoid losing the last admin session accidentally.",
+        "parameters": [
+          {
+            "name": "memberId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.AdminUsersController.ChangeAccessRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.AdminUsersController.ChangeAccessRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.AdminUsersController.ChangeAccessRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Administration.ChangeUserAccess.ChangeUserAccessHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Administration.ChangeUserAccess.ChangeUserAccessHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Administration.ChangeUserAccess.ChangeUserAccessHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/google": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Logs in with a Google Identity Services ID token.",
+        "description": "Use this endpoint in production login flows. The frontend sends the Google ID token from\r\nGoogle Sign-In, and the API returns an encrypted JWE access token plus an opaque refresh token.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.AuthController.GoogleLoginRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.AuthController.GoogleLoginRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.AuthController.GoogleLoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Authentication.GoogleLogin.GoogleLoginHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Authentication.GoogleLogin.GoogleLoginHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Authentication.GoogleLogin.GoogleLoginHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/dev-login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Logs in as a seeded user for local development.",
+        "description": "Development-only endpoint for testing protected APIs before a Google frontend exists.\r\nUse seeded emails such as admin@example.com. This endpoint returns 404 outside Development.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.AuthController.DevLoginRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.AuthController.DevLoginRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.AuthController.DevLoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Authentication.DevLogin.DevLoginHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Authentication.DevLogin.DevLoginHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Authentication.DevLogin.DevLoginHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Refreshes an internal session.",
+        "description": "Exchanges a valid refresh token for a new access token and refresh token. The old refresh\r\ntoken is rotated and should be discarded by the client.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.AuthController.RefreshSessionRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.AuthController.RefreshSessionRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.AuthController.RefreshSessionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Authentication.RefreshSession.RefreshSessionHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Authentication.RefreshSession.RefreshSessionHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Authentication.RefreshSession.RefreshSessionHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Logs out the current session.",
+        "description": "Revokes the authenticated session represented by the Bearer access token.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bills": {
+      "post": {
+        "tags": [
+          "Bills"
+        ],
+        "summary": "Creates a draft bill.",
+        "description": "Creates the bill header only. Add members and calculate splits before publishing.\r\nThe authenticated user becomes the bill owner.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.BillsController.SaveBillRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.BillsController.SaveBillRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.BillsController.SaveBillRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Bills.CreateBill.CreateBillHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Bills.CreateBill.CreateBillHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Bills.CreateBill.CreateBillHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Bills"
+        ],
+        "summary": "Lists bills for the authenticated user.",
+        "description": "By default returns bills owned by the current user. Set owed=true to list bills where\r\nthe current user is one of the members who owes money.",
+        "parameters": [
+          {
+            "name": "owed",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "pageNumber",
+            "in": "query",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Models.PagedResult`1[[BillSplitService.Application.Features.Bills.ListBills.ListBillsHandler.Item, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Models.PagedResult`1[[BillSplitService.Application.Features.Bills.ListBills.ListBillsHandler.Item, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Models.PagedResult`1[[BillSplitService.Application.Features.Bills.ListBills.ListBillsHandler.Item, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bills/{billId}": {
+      "put": {
+        "tags": [
+          "Bills"
+        ],
+        "summary": "Updates a draft bill.",
+        "description": "Only the bill owner can update a bill, and only while it is still in Draft status.",
+        "parameters": [
+          {
+            "name": "billId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.BillsController.SaveBillRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.BillsController.SaveBillRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.BillsController.SaveBillRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Bills"
+        ],
+        "summary": "Gets a bill with split and payment status.",
+        "description": "The current user must be the bill owner or one of the bill members.",
+        "parameters": [
+          {
+            "name": "billId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Bills.GetBill.GetBillHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Bills.GetBill.GetBillHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Bills.GetBill.GetBillHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bills/{billId}/members": {
+      "post": {
+        "tags": [
+          "Bills"
+        ],
+        "summary": "Adds members to a draft bill.",
+        "description": "The bill owner can add members by email, by group member ID, or include themselves.\r\nSplits should be recalculated after changing members.",
+        "parameters": [
+          {
+            "name": "billId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.BillsController.AddBillMembersRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.BillsController.AddBillMembersRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.BillsController.AddBillMembersRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Bills.AddBillMembers.AddBillMembersHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Bills.AddBillMembers.AddBillMembersHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Bills.AddBillMembers.AddBillMembersHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bills/{billId}/members/{memberId}": {
+      "delete": {
+        "tags": [
+          "Bills"
+        ],
+        "summary": "Removes a member from a draft bill.",
+        "description": "Only the bill owner can remove members. Removing a member requires recalculating splits.",
+        "parameters": [
+          {
+            "name": "billId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "memberId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bills/{billId}/calculate": {
+      "post": {
+        "tags": [
+          "Bills"
+        ],
+        "summary": "Calculates split amounts for a draft bill.",
+        "description": "Use Equal to split the total evenly across bill members, or Custom to submit exact member amounts.\r\nThe sum of custom allocations must equal the bill total.",
+        "parameters": [
+          {
+            "name": "billId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.BillsController.CalculateBillRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.BillsController.CalculateBillRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.BillsController.CalculateBillRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Bills.CalculateBill.CalculateBillHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Bills.CalculateBill.CalculateBillHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Bills.CalculateBill.CalculateBillHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bills/{billId}/vietqr-payment": {
+      "put": {
+        "tags": [
+          "Bills"
+        ],
+        "summary": "Configures the bank account that will receive VietQR payments for this bill.",
+        "description": "Only the bill owner can configure it, and only while the bill is Draft.\r\nEach member will receive a VietQR containing their own remaining split amount.",
+        "parameters": [
+          {
+            "name": "billId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.BillsController.ConfigureVietQrPaymentRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.BillsController.ConfigureVietQrPaymentRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.BillsController.ConfigureVietQrPaymentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Bills.ConfigureVietQrPayment.ConfigureVietQrPaymentHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Bills.ConfigureVietQrPayment.ConfigureVietQrPaymentHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Bills.ConfigureVietQrPayment.ConfigureVietQrPaymentHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bills/{billId}/publish": {
+      "post": {
+        "tags": [
+          "Bills"
+        ],
+        "summary": "Publishes a bill and starts payment tracking.",
+        "description": "Only the bill owner can publish. The bill must have members and calculated split amounts\r\nwhose total equals the bill total.",
+        "parameters": [
+          {
+            "name": "billId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Application.Features.Bills.PublishBill.PublishBillHandler.Request"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Application.Features.Bills.PublishBill.PublishBillHandler.Request"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Application.Features.Bills.PublishBill.PublishBillHandler.Request"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Bills.PublishBill.PublishBillHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Bills.PublishBill.PublishBillHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Bills.PublishBill.PublishBillHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bills/{billId}/cancel": {
+      "post": {
+        "tags": [
+          "Bills"
+        ],
+        "summary": "Cancels an unpaid bill.",
+        "description": "Only the bill owner can cancel. Bills with recorded payments cannot be cancelled through\r\nthis endpoint because they need adjustment or refund handling.",
+        "parameters": [
+          {
+            "name": "billId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.BillsController.CancelBillRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.BillsController.CancelBillRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.BillsController.CancelBillRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bills/{billId}/reminders": {
+      "post": {
+        "tags": [
+          "Bills"
+        ],
+        "summary": "Queues payment reminder emails.",
+        "description": "Only the bill owner can request reminders. Submit memberIds to target specific members,\r\nor omit memberIds to remind all members with outstanding amounts.",
+        "parameters": [
+          {
+            "name": "billId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.BillsController.SendRemindersRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.BillsController.SendRemindersRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.BillsController.SendRemindersRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Bills.SendBillReminders.SendBillRemindersHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Bills.SendBillReminders.SendBillRemindersHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Bills.SendBillReminders.SendBillRemindersHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bills/{billId}/members/{memberId}/manual-payments": {
+      "post": {
+        "tags": [
+          "Bills"
+        ],
+        "summary": "Records a manual payment for a bill member.",
+        "description": "The bill owner confirms that a member paid outside the system, for example by cash or bank transfer.\r\nThe amount cannot exceed the member's outstanding split amount.",
+        "parameters": [
+          {
+            "name": "billId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "memberId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.BillsController.ManualPaymentRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.BillsController.ManualPaymentRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.BillsController.ManualPaymentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Payments.RecordManualPayment.RecordManualPaymentHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Payments.RecordManualPayment.RecordManualPaymentHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Payments.RecordManualPayment.RecordManualPaymentHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/groups": {
+      "post": {
+        "tags": [
+          "Groups"
+        ],
+        "summary": "Creates a group for splitting bills with recurring members.",
+        "description": "The authenticated user becomes the group owner. Use groups for shared contexts such as\r\nfamily subscriptions, trips or house expenses.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.GroupsController.CreateGroupRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.GroupsController.CreateGroupRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.GroupsController.CreateGroupRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Groups.CreateGroup.CreateGroupHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Groups.CreateGroup.CreateGroupHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Groups.CreateGroup.CreateGroupHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Groups"
+        ],
+        "summary": "Lists groups visible to the authenticated user.",
+        "description": "Returns groups where the current user is owner or active member. Results are paginated.",
+        "parameters": [
+          {
+            "name": "pageNumber",
+            "in": "query",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Models.PagedResult`1[[BillSplitService.Application.Features.Groups.ListGroups.ListGroupsHandler.Item, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Models.PagedResult`1[[BillSplitService.Application.Features.Groups.ListGroups.ListGroupsHandler.Item, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Models.PagedResult`1[[BillSplitService.Application.Features.Groups.ListGroups.ListGroupsHandler.Item, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/groups/{groupId}": {
+      "get": {
+        "tags": [
+          "Groups"
+        ],
+        "summary": "Gets group details, members and related bills.",
+        "description": "The current user must belong to the group. Owners also receive ownership flags used by the UI.",
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Groups.GetGroup.GetGroupHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Groups.GetGroup.GetGroupHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Groups.GetGroup.GetGroupHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/groups/{groupId}/members": {
+      "post": {
+        "tags": [
+          "Groups"
+        ],
+        "summary": "Adds members to a group by email.",
+        "description": "Only the group owner can add members. Existing users are linked immediately; unknown emails\r\nare created as pending members and can activate later through Google login.",
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.GroupsController.AddGroupMembersRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.GroupsController.AddGroupMembersRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.GroupsController.AddGroupMembersRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Groups.AddGroupMembers.AddGroupMembersHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Groups.AddGroupMembers.AddGroupMembersHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Groups.AddGroupMembers.AddGroupMembersHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/groups/{groupId}/members/{memberId}": {
+      "delete": {
+        "tags": [
+          "Groups"
+        ],
+        "summary": "Removes a member from a group.",
+        "description": "Only the group owner can remove active members. The relationship is marked removed instead\r\nof hard-deleted so history can remain auditable.",
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "memberId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/groups/{groupId}/close": {
+      "post": {
+        "tags": [
+          "Groups"
+        ],
+        "summary": "Closes a group.",
+        "description": "Only the owner can close a group. Closed groups cannot receive new members or be used for new bills.",
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/payment-accounts": {
+      "get": {
+        "tags": [
+          "PaymentAccounts"
+        ],
+        "summary": "Lists bank accounts connected by the authenticated member.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Collections.Generic.IReadOnlyCollection`1[[BillSplitService.Application.Features.PaymentAccounts.ListPaymentAccounts.ListPaymentAccountsHandler.Item, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Collections.Generic.IReadOnlyCollection`1[[BillSplitService.Application.Features.PaymentAccounts.ListPaymentAccounts.ListPaymentAccountsHandler.Item, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Collections.Generic.IReadOnlyCollection`1[[BillSplitService.Application.Features.PaymentAccounts.ListPaymentAccounts.ListPaymentAccountsHandler.Item, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/payment-accounts/{paymentAccountId}/default": {
+      "put": {
+        "tags": [
+          "PaymentAccounts"
+        ],
+        "summary": "Makes one connected bank account the default receiving account for future bills.",
+        "parameters": [
+          {
+            "name": "paymentAccountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bill-splits/{billSplitId}/payment-order": {
+      "post": {
+        "tags": [
+          "PaymentOrders"
+        ],
+        "parameters": [
+          {
+            "name": "billSplitId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.PaymentOrders.CreatePaymentOrder.CreatePaymentOrderHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.PaymentOrders.CreatePaymentOrder.CreatePaymentOrderHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.PaymentOrders.CreatePaymentOrder.CreatePaymentOrderHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/payment-orders/{id}": {
+      "get": {
+        "tags": [
+          "PaymentOrders"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.PaymentOrders.GetPaymentOrder.GetPaymentOrderHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.PaymentOrders.GetPaymentOrder.GetPaymentOrderHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.PaymentOrders.GetPaymentOrder.GetPaymentOrderHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/integrations/payos/webhook": {
+      "post": {
+        "tags": [
+          "PayOsWebhook"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/payout-accounts": {
+      "post": {
+        "tags": [
+          "PayoutAccounts"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Application.Features.PayoutAccounts.AddPayoutAccount.AddPayoutAccountHandler.Request"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Application.Features.PayoutAccounts.AddPayoutAccount.AddPayoutAccountHandler.Request"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Application.Features.PayoutAccounts.AddPayoutAccount.AddPayoutAccountHandler.Request"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.PayoutAccounts.AddPayoutAccount.AddPayoutAccountHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.PayoutAccounts.AddPayoutAccount.AddPayoutAccountHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.PayoutAccounts.AddPayoutAccount.AddPayoutAccountHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "PayoutAccounts"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Collections.Generic.IReadOnlyCollection`1[[BillSplitService.Application.Features.PayoutAccounts.ListPayoutAccounts.ListPayoutAccountsHandler.Item, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Collections.Generic.IReadOnlyCollection`1[[BillSplitService.Application.Features.PayoutAccounts.ListPayoutAccounts.ListPayoutAccountsHandler.Item, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Collections.Generic.IReadOnlyCollection`1[[BillSplitService.Application.Features.PayoutAccounts.ListPayoutAccounts.ListPayoutAccountsHandler.Item, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/payout-accounts/{id}/default": {
+      "put": {
+        "tags": [
+          "PayoutAccounts"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/vietqr/banks": {
+      "get": {
+        "tags": [
+          "VietQr"
+        ],
+        "summary": "Returns the bank directory currently supported by VietQR.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Collections.Generic.IReadOnlyCollection`1[[BillSplitService.Application.Models.VietQrBankInfo, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Collections.Generic.IReadOnlyCollection`1[[BillSplitService.Application.Models.VietQrBankInfo, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Collections.Generic.IReadOnlyCollection`1[[BillSplitService.Application.Models.VietQrBankInfo, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BillSplitService.Api.Controllers.AdminUsersController.ChangeAccessRequest": {
+        "type": "object",
+        "properties": {
+          "blocked": {
+            "type": "boolean",
+            "description": "True blocks the account; false keeps or restores active access."
+          },
+          "role": {
+            "$ref": "#/components/schemas/BillSplitService.Domain.Enums.MemberRole"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Request body for changing user access."
+      },
+      "BillSplitService.Api.Controllers.AuthController.DevLoginRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "Seeded member email to login as, for example admin@example.com.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Request body for development login."
+      },
+      "BillSplitService.Api.Controllers.AuthController.GoogleLoginRequest": {
+        "type": "object",
+        "properties": {
+          "idToken": {
+            "type": "string",
+            "description": "Google ID token from Google Identity Services response.credential.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Request body for Google login."
+      },
+      "BillSplitService.Api.Controllers.AuthController.RefreshSessionRequest": {
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string",
+            "description": "Opaque refresh token returned by login or a previous refresh call.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Request body for refreshing a session."
+      },
+      "BillSplitService.Api.Controllers.BillsController.AddBillMembersRequest": {
+        "type": "object",
+        "properties": {
+          "emails": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Emails to add directly to the bill.",
+            "nullable": true
+          },
+          "groupMemberIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Existing group member IDs to add when the bill belongs to a group.",
+            "nullable": true
+          },
+          "includeOwner": {
+            "type": "boolean",
+            "description": "True adds the bill owner as one of the members who shares the cost."
+          }
+        },
+        "additionalProperties": false,
+        "description": "Request body for adding bill members."
+      },
+      "BillSplitService.Api.Controllers.BillsController.CalculateBillRequest": {
+        "type": "object",
+        "properties": {
+          "method": {
+            "$ref": "#/components/schemas/BillSplitService.Domain.Enums.BillSplitMethod"
+          },
+          "allocations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Api.Controllers.BillsController.CustomAllocationRequest"
+            },
+            "description": "Required for Custom split. Each member must appear once and total must equal the bill total.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Request body for calculating bill splits."
+      },
+      "BillSplitService.Api.Controllers.BillsController.CancelBillRequest": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "description": "Reason recorded in the audit log and returned to users.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Request body for cancelling a bill."
+      },
+      "BillSplitService.Api.Controllers.BillsController.ConfigureVietQrPaymentRequest": {
+        "type": "object",
+        "properties": {
+          "bankBin": {
+            "type": "string",
+            "description": "Six-digit bank BIN returned by GET /api/vietqr/banks.",
+            "nullable": true
+          },
+          "bankName": {
+            "type": "string",
+            "description": "Bank display name/short name selected by the owner.",
+            "nullable": true
+          },
+          "accountNumber": {
+            "type": "string",
+            "description": "Destination bank account number or supported alias.",
+            "nullable": true
+          },
+          "accountName": {
+            "type": "string",
+            "description": "Beneficiary name displayed next to the VietQR image.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Request body for configuring the VietQR payment destination."
+      },
+      "BillSplitService.Api.Controllers.BillsController.CustomAllocationRequest": {
+        "type": "object",
+        "properties": {
+          "memberId": {
+            "type": "string",
+            "description": "Bill member ID receiving this split amount.",
+            "format": "uuid"
+          },
+          "amount": {
+            "type": "number",
+            "description": "Amount this member must pay.",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false,
+        "description": "One custom split amount for a bill member."
+      },
+      "BillSplitService.Api.Controllers.BillsController.ManualPaymentRequest": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "number",
+            "description": "Amount paid by the member.",
+            "format": "double"
+          },
+          "method": {
+            "type": "string",
+            "description": "Payment method label, for example Cash, BankTransfer or Momo.",
+            "nullable": true
+          },
+          "paidAtUtc": {
+            "type": "string",
+            "description": "When the payment happened. Leave empty to use current UTC time.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "note": {
+            "type": "string",
+            "description": "Optional note from the bill owner.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Request body for recording a manual payment."
+      },
+      "BillSplitService.Api.Controllers.BillsController.SaveBillRequest": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Bill title, for example YouTube Premium Family.",
+            "nullable": true
+          },
+          "totalAmount": {
+            "type": "number",
+            "description": "Total amount paid by the bill owner before splitting.",
+            "format": "double"
+          },
+          "currency": {
+            "type": "string",
+            "description": "ISO currency code. Use VND, USD, etc.",
+            "nullable": true
+          },
+          "groupId": {
+            "type": "string",
+            "description": "Optional group ID when this bill belongs to a group.",
+            "format": "uuid",
+            "nullable": true
+          },
+          "billDate": {
+            "type": "string",
+            "description": "Date shown on the original bill or invoice.",
+            "format": "date",
+            "nullable": true
+          },
+          "dueDate": {
+            "type": "string",
+            "description": "Date members should pay before.",
+            "format": "date",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "description": "Optional note or context for the bill.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Request body for creating or updating a bill."
+      },
+      "BillSplitService.Api.Controllers.BillsController.SendRemindersRequest": {
+        "type": "object",
+        "properties": {
+          "memberIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Optional member IDs to remind. Leave empty to remind all unpaid members.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Request body for sending reminders."
+      },
+      "BillSplitService.Api.Controllers.GroupsController.AddGroupMembersRequest": {
+        "type": "object",
+        "properties": {
+          "emails": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Email addresses to add to the group.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Request body for adding group members."
+      },
+      "BillSplitService.Api.Controllers.GroupsController.CreateGroupRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Human-readable group name, for example Family Subscriptions.",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "description": "Optional note describing what this group is used for.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Request body for creating a group."
+      },
+      "BillSplitService.Api.Responses.ApiError": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "nullable": true
+          },
+          "field": {
+            "type": "string",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Administration.ChangeUserAccess.ChangeUserAccessHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/BillSplitService.Application.Features.Administration.ChangeUserAccess.ChangeUserAccessHandler.Response"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiError"
+            },
+            "nullable": true
+          },
+          "traceId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Authentication.DevLogin.DevLoginHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/BillSplitService.Application.Features.Authentication.DevLogin.DevLoginHandler.Response"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiError"
+            },
+            "nullable": true
+          },
+          "traceId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Authentication.GoogleLogin.GoogleLoginHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/BillSplitService.Application.Features.Authentication.GoogleLogin.GoogleLoginHandler.Response"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiError"
+            },
+            "nullable": true
+          },
+          "traceId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Authentication.RefreshSession.RefreshSessionHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/BillSplitService.Application.Features.Authentication.RefreshSession.RefreshSessionHandler.Response"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiError"
+            },
+            "nullable": true
+          },
+          "traceId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Bills.AddBillMembers.AddBillMembersHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/BillSplitService.Application.Features.Bills.AddBillMembers.AddBillMembersHandler.Response"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiError"
+            },
+            "nullable": true
+          },
+          "traceId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Bills.CalculateBill.CalculateBillHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/BillSplitService.Application.Features.Bills.CalculateBill.CalculateBillHandler.Response"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiError"
+            },
+            "nullable": true
+          },
+          "traceId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Bills.ConfigureVietQrPayment.ConfigureVietQrPaymentHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/BillSplitService.Application.Features.Bills.ConfigureVietQrPayment.ConfigureVietQrPaymentHandler.Response"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiError"
+            },
+            "nullable": true
+          },
+          "traceId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Bills.CreateBill.CreateBillHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/BillSplitService.Application.Features.Bills.CreateBill.CreateBillHandler.Response"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiError"
+            },
+            "nullable": true
+          },
+          "traceId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Bills.GetBill.GetBillHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/BillSplitService.Application.Features.Bills.GetBill.GetBillHandler.Response"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiError"
+            },
+            "nullable": true
+          },
+          "traceId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Bills.PublishBill.PublishBillHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/BillSplitService.Application.Features.Bills.PublishBill.PublishBillHandler.Response"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiError"
+            },
+            "nullable": true
+          },
+          "traceId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Bills.SendBillReminders.SendBillRemindersHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/BillSplitService.Application.Features.Bills.SendBillReminders.SendBillRemindersHandler.Response"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiError"
+            },
+            "nullable": true
+          },
+          "traceId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Groups.AddGroupMembers.AddGroupMembersHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/BillSplitService.Application.Features.Groups.AddGroupMembers.AddGroupMembersHandler.Response"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiError"
+            },
+            "nullable": true
+          },
+          "traceId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Groups.CreateGroup.CreateGroupHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/BillSplitService.Application.Features.Groups.CreateGroup.CreateGroupHandler.Response"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiError"
+            },
+            "nullable": true
+          },
+          "traceId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Groups.GetGroup.GetGroupHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/BillSplitService.Application.Features.Groups.GetGroup.GetGroupHandler.Response"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiError"
+            },
+            "nullable": true
+          },
+          "traceId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.PaymentOrders.CreatePaymentOrder.CreatePaymentOrderHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/BillSplitService.Application.Features.PaymentOrders.CreatePaymentOrder.CreatePaymentOrderHandler.Response"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiError"
+            },
+            "nullable": true
+          },
+          "traceId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.PaymentOrders.GetPaymentOrder.GetPaymentOrderHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/BillSplitService.Application.Features.PaymentOrders.GetPaymentOrder.GetPaymentOrderHandler.Response"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiError"
+            },
+            "nullable": true
+          },
+          "traceId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Payments.RecordManualPayment.RecordManualPaymentHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/BillSplitService.Application.Features.Payments.RecordManualPayment.RecordManualPaymentHandler.Response"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiError"
+            },
+            "nullable": true
+          },
+          "traceId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.PayoutAccounts.AddPayoutAccount.AddPayoutAccountHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/BillSplitService.Application.Features.PayoutAccounts.AddPayoutAccount.AddPayoutAccountHandler.Response"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiError"
+            },
+            "nullable": true
+          },
+          "traceId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Models.PagedResult`1[[BillSplitService.Application.Features.Administration.ListUsers.ListUsersHandler.Item, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/BillSplitService.Application.Models.PagedResult`1[[BillSplitService.Application.Features.Administration.ListUsers.ListUsersHandler.Item, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiError"
+            },
+            "nullable": true
+          },
+          "traceId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Models.PagedResult`1[[BillSplitService.Application.Features.Bills.ListBills.ListBillsHandler.Item, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/BillSplitService.Application.Models.PagedResult`1[[BillSplitService.Application.Features.Bills.ListBills.ListBillsHandler.Item, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiError"
+            },
+            "nullable": true
+          },
+          "traceId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Models.PagedResult`1[[BillSplitService.Application.Features.Groups.ListGroups.ListGroupsHandler.Item, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/BillSplitService.Application.Models.PagedResult`1[[BillSplitService.Application.Features.Groups.ListGroups.ListGroupsHandler.Item, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiError"
+            },
+            "nullable": true
+          },
+          "traceId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "type": "boolean"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiError"
+            },
+            "nullable": true
+          },
+          "traceId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Api.Responses.ApiResponse`1[[System.Collections.Generic.IReadOnlyCollection`1[[BillSplitService.Application.Features.Admin.ListReviewRequiredPayouts.ListReviewRequiredPayoutsHandler.Item, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Application.Features.Admin.ListReviewRequiredPayouts.ListReviewRequiredPayoutsHandler.Item"
+            },
+            "nullable": true
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiError"
+            },
+            "nullable": true
+          },
+          "traceId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Api.Responses.ApiResponse`1[[System.Collections.Generic.IReadOnlyCollection`1[[BillSplitService.Application.Features.PaymentAccounts.ListPaymentAccounts.ListPaymentAccountsHandler.Item, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Application.Features.PaymentAccounts.ListPaymentAccounts.ListPaymentAccountsHandler.Item"
+            },
+            "nullable": true
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiError"
+            },
+            "nullable": true
+          },
+          "traceId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Api.Responses.ApiResponse`1[[System.Collections.Generic.IReadOnlyCollection`1[[BillSplitService.Application.Features.PayoutAccounts.ListPayoutAccounts.ListPayoutAccountsHandler.Item, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Application.Features.PayoutAccounts.ListPayoutAccounts.ListPayoutAccountsHandler.Item"
+            },
+            "nullable": true
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiError"
+            },
+            "nullable": true
+          },
+          "traceId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Api.Responses.ApiResponse`1[[System.Collections.Generic.IReadOnlyCollection`1[[BillSplitService.Application.Models.VietQrBankInfo, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Application.Models.VietQrBankInfo"
+            },
+            "nullable": true
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiError"
+            },
+            "nullable": true
+          },
+          "traceId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Features.Admin.ListReviewRequiredPayouts.ListReviewRequiredPayoutsHandler.Item": {
+        "type": "object",
+        "properties": {
+          "payoutId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "paymentOrderId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "beneficiaryMemberId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "provider": {
+            "type": "string",
+            "nullable": true
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "nullable": true
+          },
+          "grossAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "netAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "bankBin": {
+            "type": "string",
+            "nullable": true
+          },
+          "bankCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "accountNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "accountHolderName": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "attemptCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "failureCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "failureMessage": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "submittedAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Features.Admin.ManualResolvePayout.ManualResolvePayoutHandler.Request": {
+        "type": "object",
+        "properties": {
+          "resolutionNote": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Features.Admin.RetryPayout.RetryPayoutHandler.Request": {
+        "type": "object",
+        "properties": {
+          "bankBin": {
+            "type": "string",
+            "nullable": true
+          },
+          "bankCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "accountNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "accountHolderName": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Features.Administration.ChangeUserAccess.ChangeUserAccessHandler.Response": {
+        "type": "object",
+        "properties": {
+          "memberId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "role": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Features.Administration.ListUsers.ListUsersHandler.Item": {
+        "type": "object",
+        "properties": {
+          "memberId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "role": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastLoginAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Features.Authentication.DevLogin.DevLoginHandler.Response": {
+        "type": "object",
+        "properties": {
+          "displayName": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "avatarUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "sessionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "accessToken": {
+            "type": "string",
+            "nullable": true
+          },
+          "refreshToken": {
+            "type": "string",
+            "nullable": true
+          },
+          "accessTokenExpiresAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "refreshTokenExpiresAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Features.Authentication.GoogleLogin.GoogleLoginHandler.Response": {
+        "type": "object",
+        "properties": {
+          "displayName": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "avatarUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "sessionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "accessToken": {
+            "type": "string",
+            "nullable": true
+          },
+          "refreshToken": {
+            "type": "string",
+            "nullable": true
+          },
+          "accessTokenExpiresAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "refreshTokenExpiresAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Features.Authentication.RefreshSession.RefreshSessionHandler.Response": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "accessToken": {
+            "type": "string",
+            "nullable": true
+          },
+          "refreshToken": {
+            "type": "string",
+            "nullable": true
+          },
+          "accessTokenExpiresAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "refreshTokenExpiresAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Features.Bills.AddBillMembers.AddBillMembersHandler.Response": {
+        "type": "object",
+        "properties": {
+          "addedCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Features.Bills.CalculateBill.CalculateBillHandler.Allocation": {
+        "type": "object",
+        "properties": {
+          "memberId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "amount": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Features.Bills.CalculateBill.CalculateBillHandler.Response": {
+        "type": "object",
+        "properties": {
+          "method": {
+            "type": "string",
+            "nullable": true
+          },
+          "allocations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Application.Features.Bills.CalculateBill.CalculateBillHandler.Allocation"
+            },
+            "nullable": true
+          },
+          "allocatedTotal": {
+            "type": "number",
+            "format": "double"
+          },
+          "difference": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Features.Bills.ConfigureVietQrPayment.ConfigureVietQrPaymentHandler.Response": {
+        "type": "object",
+        "properties": {
+          "billId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "bankBin": {
+            "type": "string",
+            "nullable": true
+          },
+          "bankName": {
+            "type": "string",
+            "nullable": true
+          },
+          "accountNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "accountName": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Features.Bills.CreateBill.CreateBillHandler.Response": {
+        "type": "object",
+        "properties": {
+          "billId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Features.Bills.GetBill.GetBillHandler.MemberItem": {
+        "type": "object",
+        "properties": {
+          "memberId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "assignedAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "paidAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "remainingAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "paidAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "reminderCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "paymentQrImageUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "paymentUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "transferContent": {
+            "type": "string",
+            "nullable": true
+          },
+          "payments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Application.Features.Bills.GetBill.GetBillHandler.PaymentItem"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Features.Bills.GetBill.GetBillHandler.PaymentDestinationItem": {
+        "type": "object",
+        "properties": {
+          "bankBin": {
+            "type": "string",
+            "nullable": true
+          },
+          "bankName": {
+            "type": "string",
+            "nullable": true
+          },
+          "accountNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "accountName": {
+            "type": "string",
+            "nullable": true
+          },
+          "paymentAccountId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Features.Bills.GetBill.GetBillHandler.PaymentItem": {
+        "type": "object",
+        "properties": {
+          "paymentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "amount": {
+            "type": "number",
+            "format": "double"
+          },
+          "method": {
+            "type": "string",
+            "nullable": true
+          },
+          "paidAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Features.Bills.GetBill.GetBillHandler.Response": {
+        "type": "object",
+        "properties": {
+          "billId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "currency": {
+            "type": "string",
+            "nullable": true
+          },
+          "billDate": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "dueDate": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "isOwner": {
+            "type": "boolean"
+          },
+          "collectedAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "remainingAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "paidMemberCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "unpaidMemberCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "overdueMemberCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "completionPercentage": {
+            "type": "number",
+            "format": "double"
+          },
+          "paymentDestination": {
+            "$ref": "#/components/schemas/BillSplitService.Application.Features.Bills.GetBill.GetBillHandler.PaymentDestinationItem"
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Application.Features.Bills.GetBill.GetBillHandler.MemberItem"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Features.Bills.ListBills.ListBillsHandler.Item": {
+        "type": "object",
+        "properties": {
+          "billId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "currency": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "dueDate": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "assignedOrCollectedAmount": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "remainingAmount": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Features.Bills.PublishBill.PublishBillHandler.Request": {
+        "type": "object",
+        "properties": {
+          "payoutAccountId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Features.Bills.PublishBill.PublishBillHandler.Response": {
+        "type": "object",
+        "properties": {
+          "billId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "publishedAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "emailJobCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Features.Bills.SendBillReminders.SendBillRemindersHandler.Response": {
+        "type": "object",
+        "properties": {
+          "queuedCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Features.Groups.AddGroupMembers.AddGroupMembersHandler.Response": {
+        "type": "object",
+        "properties": {
+          "addedCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pendingAccountCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Features.Groups.CreateGroup.CreateGroupHandler.Response": {
+        "type": "object",
+        "properties": {
+          "groupId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Features.Groups.GetGroup.GetGroupHandler.BillItem": {
+        "type": "object",
+        "properties": {
+          "billId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "currency": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Features.Groups.GetGroup.GetGroupHandler.MemberItem": {
+        "type": "object",
+        "properties": {
+          "memberId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "role": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Features.Groups.GetGroup.GetGroupHandler.Response": {
+        "type": "object",
+        "properties": {
+          "groupId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "isOwner": {
+            "type": "boolean"
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Application.Features.Groups.GetGroup.GetGroupHandler.MemberItem"
+            },
+            "nullable": true
+          },
+          "bills": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Application.Features.Groups.GetGroup.GetGroupHandler.BillItem"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Features.Groups.ListGroups.ListGroupsHandler.Item": {
+        "type": "object",
+        "properties": {
+          "groupId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "role": {
+            "type": "string",
+            "nullable": true
+          },
+          "memberCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "billCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "updatedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Features.PaymentAccounts.ListPaymentAccounts.ListPaymentAccountsHandler.Item": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "bankBin": {
+            "type": "string",
+            "nullable": true
+          },
+          "bankCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "bankName": {
+            "type": "string",
+            "nullable": true
+          },
+          "accountNumberMasked": {
+            "type": "string",
+            "nullable": true
+          },
+          "accountName": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "isDefault": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Features.PaymentOrders.CreatePaymentOrder.CreatePaymentOrderHandler.Response": {
+        "type": "object",
+        "properties": {
+          "paymentOrderId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "providerOrderId": {
+            "type": "string",
+            "nullable": true
+          },
+          "amount": {
+            "type": "number",
+            "format": "double"
+          },
+          "paymentUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "qrCodeUrl": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Features.PaymentOrders.GetPaymentOrder.GetPaymentOrderHandler.Response": {
+        "type": "object",
+        "properties": {
+          "paymentOrderId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "billId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "billSplitId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "providerOrderId": {
+            "type": "string",
+            "nullable": true
+          },
+          "amount": {
+            "type": "number",
+            "format": "double"
+          },
+          "currency": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "paymentUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "qrImageUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "collectedAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Features.Payments.RecordManualPayment.RecordManualPaymentHandler.Response": {
+        "type": "object",
+        "properties": {
+          "paymentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "paidAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "remainingAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "memberStatus": {
+            "type": "string",
+            "nullable": true
+          },
+          "billStatus": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Features.PayoutAccounts.AddPayoutAccount.AddPayoutAccountHandler.Request": {
+        "type": "object",
+        "properties": {
+          "bankBin": {
+            "type": "string",
+            "nullable": true
+          },
+          "bankCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "bankName": {
+            "type": "string",
+            "nullable": true
+          },
+          "accountNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "accountHolderName": {
+            "type": "string",
+            "nullable": true
+          },
+          "isDefault": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Features.PayoutAccounts.AddPayoutAccount.AddPayoutAccountHandler.Response": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "bankBin": {
+            "type": "string",
+            "nullable": true
+          },
+          "bankCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "bankName": {
+            "type": "string",
+            "nullable": true
+          },
+          "accountNumberMasked": {
+            "type": "string",
+            "nullable": true
+          },
+          "accountHolderName": {
+            "type": "string",
+            "nullable": true
+          },
+          "isDefault": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Features.PayoutAccounts.ListPayoutAccounts.ListPayoutAccountsHandler.Item": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "bankBin": {
+            "type": "string",
+            "nullable": true
+          },
+          "bankCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "bankName": {
+            "type": "string",
+            "nullable": true
+          },
+          "accountNumberMasked": {
+            "type": "string",
+            "nullable": true
+          },
+          "accountHolderName": {
+            "type": "string",
+            "nullable": true
+          },
+          "isDefault": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Models.PagedResult`1[[BillSplitService.Application.Features.Administration.ListUsers.ListUsersHandler.Item, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Application.Features.Administration.ListUsers.ListUsersHandler.Item"
+            },
+            "nullable": true
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageNumber": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32",
+            "readOnly": true
+          },
+          "hasPreviousPage": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "hasNextPage": {
+            "type": "boolean",
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Models.PagedResult`1[[BillSplitService.Application.Features.Bills.ListBills.ListBillsHandler.Item, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Application.Features.Bills.ListBills.ListBillsHandler.Item"
+            },
+            "nullable": true
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageNumber": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32",
+            "readOnly": true
+          },
+          "hasPreviousPage": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "hasNextPage": {
+            "type": "boolean",
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Models.PagedResult`1[[BillSplitService.Application.Features.Groups.ListGroups.ListGroupsHandler.Item, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Application.Features.Groups.ListGroups.ListGroupsHandler.Item"
+            },
+            "nullable": true
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageNumber": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32",
+            "readOnly": true
+          },
+          "hasPreviousPage": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "hasNextPage": {
+            "type": "boolean",
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Models.VietQrBankInfo": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "code": {
+            "type": "string",
+            "nullable": true
+          },
+          "bin": {
+            "type": "string",
+            "nullable": true
+          },
+          "shortName": {
+            "type": "string",
+            "nullable": true
+          },
+          "logo": {
+            "type": "string",
+            "nullable": true
+          },
+          "transferSupported": {
+            "type": "boolean"
+          },
+          "lookupSupported": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Domain.Enums.BillSplitMethod": {
+        "enum": [
+          "Equal",
+          "CustomAmount"
+        ],
+        "type": "string"
+      },
+      "BillSplitService.Domain.Enums.MemberRole": {
+        "enum": [
+          "User",
+          "Administrator"
+        ],
+        "type": "string"
+      },
+      "BillSplitService.Domain.Enums.MemberStatus": {
+        "enum": [
+          "Pending",
+          "Active",
+          "Blocked",
+          "Deleted"
+        ],
+        "type": "string"
+      }
+    },
+    "securitySchemes": {
+      "Bearer": {
+        "type": "apiKey",
+        "description": "Paste the encrypted JWE access token with the Bearer prefix. Example: Bearer <access-token>",
+        "name": "Authorization",
+        "in": "header"
+      }
+    }
+  },
+  "security": [
+    {
+      "Bearer": [ ]
+    }
+  ],
+  "tags": [
+    {
+      "name": "AdminPayouts"
+    },
+    {
+      "name": "AdminUsers"
+    },
+    {
+      "name": "Auth"
+    },
+    {
+      "name": "Bills"
+    },
+    {
+      "name": "Groups"
+    },
+    {
+      "name": "PaymentAccounts"
+    },
+    {
+      "name": "PaymentOrders"
+    },
+    {
+      "name": "PayOsWebhook"
+    },
+    {
+      "name": "PayoutAccounts"
+    },
+    {
+      "name": "VietQr"
+    }
+  ]
+}

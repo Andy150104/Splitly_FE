@@ -1,0 +1,375 @@
+diff --git a/src/app/(protected)/bills/new/page.tsx b/src/app/(protected)/bills/new/page.tsx
+index 6e06945..e64fc8a 100644
+--- a/src/app/(protected)/bills/new/page.tsx
++++ b/src/app/(protected)/bills/new/page.tsx
+@@ -1,11 +1,25 @@
+ import { PageHeader } from "@/components/common/page-header";
+ import { CreateBillFlow } from "@/features/bills/components/create-bill/create-bill-flow";
+-import { api } from "@/lib/api/server/api";
+-import { getCurrentUser } from "@/lib/auth/session";
+-
+-export const metadata = { title: "Tạo hóa đơn" };
++import { api } from "@/lib/api/server-api";
++import { getSession } from "@/lib/auth/session";
+ 
+ export default async function NewBillPage() {
+-  const [groups, user] = await Promise.all([api.groups.getAll({ pageNumber: 1, pageSize: 100 }), getCurrentUser()]);
+-  return <div className="space-y-7"><PageHeader title="Tạo hóa đơn" description="Một luồng rõ ràng từ thông tin khoản chi đến chia tiền và công bố." /><CreateBillFlow groups={groups.items ?? []} ownerEmail={user?.email ?? ""} /></div>;
++  const [groups, user] = await Promise.all([
++    api.groups.list(),
++    getSession(),
++  ]);
++
++  return (
++    <div className="flex flex-col gap-4">
++      <PageHeader
++        compact
++        title="Tạo hóa đơn"
++        description="Thiết lập khoản chi, chọn người tham gia và chia tiền trong vài bước."
++      />
++      <CreateBillFlow
++        groups={groups.items ?? []}
++        ownerEmail={user?.email ?? ""}
++      />
++    </div>
++  );
+ }
+diff --git a/src/components/common/page-header.tsx b/src/components/common/page-header.tsx
+index 7fcae99..98aaef3 100644
+--- a/src/components/common/page-header.tsx
++++ b/src/components/common/page-header.tsx
+@@ -4,19 +4,33 @@ export function PageHeader({
+   title,
+   description,
+   actions,
++  compact = false,
+ }: {
+   title: string;
+   description?: string;
+   actions?: ReactNode;
++  compact?: boolean;
+ }) {
+   return (
+-    <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+-      <div>
+-        <h1 className="text-[1.75rem] font-bold tracking-[-0.025em] sm:text-3xl">
++    <div className={compact ? "flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between" : "flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"}>
++      <div className="min-w-0">
++        <h1
++          className={
++            compact
++              ? "text-2xl font-bold tracking-[-0.03em] sm:text-[1.7rem]"
++              : "text-[1.75rem] font-bold tracking-[-0.025em] sm:text-3xl"
++          }
++        >
+           {title}
+         </h1>
+         {description ? (
+-          <p className="text-muted-foreground mt-1.5 max-w-3xl text-sm leading-6">
++          <p
++            className={
++              compact
++                ? "text-muted-foreground mt-1 max-w-3xl text-sm leading-5"
++                : "text-muted-foreground mt-1.5 max-w-3xl text-sm leading-6"
++            }
++          >
+             {description}
+           </p>
+         ) : null}
+diff --git a/src/components/layout/app-shell.tsx b/src/components/layout/app-shell.tsx
+index d678a15..2b0adc4 100644
+--- a/src/components/layout/app-shell.tsx
++++ b/src/components/layout/app-shell.tsx
+@@ -63,24 +63,24 @@ export function AppShell({
+     });
+   }
+ 
+-  const pageContext = pathname.startsWith("/bills/new")
+-    ? "Tạo hóa đơn"
++  const breadcrumb = pathname.startsWith("/bills/new")
++    ? { parent: "Hóa đơn", href: "/bills", current: "Tạo hóa đơn" }
+     : pathname.startsWith("/bills/")
+-      ? "Chi tiết hóa đơn"
++      ? { parent: "Hóa đơn", href: "/bills", current: "Chi tiết hóa đơn" }
+       : pathname.startsWith("/bills")
+-        ? "Hóa đơn"
++        ? { parent: "Splitly", href: "/dashboard", current: "Hóa đơn" }
+         : pathname.startsWith("/groups/")
+-          ? "Chi tiết nhóm"
++          ? { parent: "Nhóm", href: "/groups", current: "Chi tiết nhóm" }
+           : pathname.startsWith("/groups")
+-            ? "Nhóm"
+-            : "Tổng quan";
++            ? { parent: "Splitly", href: "/dashboard", current: "Nhóm" }
++            : { parent: "Splitly", href: "/dashboard", current: "Tổng quan" };
+ 
+   function sidebar(compact: boolean, mobile = false) {
+     return (
+       <>
+         <div
+           className={cn(
+-            "border-border/70 flex h-16 shrink-0 items-center border-b",
++            "border-border/70 flex h-14 shrink-0 items-center border-b bg-card/70",
+             compact ? "justify-center px-3" : "gap-2 px-4",
+           )}
+         >
+@@ -90,11 +90,11 @@ export function AppShell({
+             className="focus-visible:ring-ring flex min-w-0 items-center gap-2 rounded-xl focus-visible:ring-2 focus-visible:outline-none"
+             aria-label={compact ? "Splitly — Tổng quan" : undefined}
+           >
+-            <div className="bg-primary text-primary-foreground grid size-9 shrink-0 place-items-center rounded-xl shadow-sm">
+-              <WalletCards className="size-5" />
++            <div className="bg-primary text-primary-foreground grid size-8 shrink-0 place-items-center rounded-[10px] shadow-[0_4px_12px_color-mix(in_oklab,var(--primary)_22%,transparent)]">
++              <WalletCards className="size-[18px]" />
+             </div>
+             {!compact ? (
+-              <span className="text-lg font-bold tracking-tight">Splitly</span>
++              <span className="text-[17px] font-bold tracking-[-0.02em]">Splitly</span>
+             ) : null}
+           </Link>
+           {!mobile ? (
+@@ -102,7 +102,7 @@ export function AppShell({
+               className={cn(
+                 "ml-auto",
+                 compact &&
+-                  "bg-card absolute top-3 left-[52px] z-10 size-7 rounded-full border px-0 shadow-sm",
++                  "bg-card absolute top-2.5 left-[52px] z-10 size-7 rounded-full border px-0 shadow-sm",
+               )}
+               variant="ghost"
+               size="icon"
+@@ -206,21 +206,31 @@ export function AppShell({
+           collapsed ? "lg:pl-[72px]" : "lg:pl-[252px]",
+         )}
+       >
+-        <header className="border-border/80 bg-background/85 sticky top-0 z-20 flex h-16 items-center border-b px-4 backdrop-blur-xl sm:px-6 lg:px-8">
++        <header className="border-border/80 bg-card/95 sticky top-0 z-20 flex h-14 items-center border-b px-4 shadow-[0_1px_0_rgb(15_23_42/0.025),0_6px_18px_rgb(15_23_42/0.025)] backdrop-blur-xl sm:px-5 lg:px-7 dark:bg-card/90 dark:shadow-[0_1px_0_rgb(255_255_255/0.02),0_8px_22px_rgb(0_0_0/0.12)]">
+           <Button
+             variant="ghost"
+             size="icon"
+-            className="lg:hidden"
++            className="mr-1 lg:hidden"
+             onClick={() => setOpen(true)}
+             aria-label="Mở menu"
+           >
+             <Menu className="size-5" />
+           </Button>
+-          <div className="hidden min-w-0 items-center gap-2 text-sm lg:flex">
+-            <span className="text-muted-foreground">Splitly</span>
+-            <ChevronRight className="text-muted-foreground/60 size-3.5" />
+-            <span className="truncate font-medium">{pageContext}</span>
+-          </div>
++          <nav
++            aria-label="Breadcrumb"
++            className="hidden min-w-0 items-center gap-1.5 text-sm lg:flex"
++          >
++            <Link
++              href={breadcrumb.href}
++              className="text-muted-foreground hover:bg-muted/70 hover:text-foreground focus-visible:ring-primary/20 rounded-lg px-2 py-1.5 font-medium transition-colors outline-none focus-visible:ring-4"
++            >
++              {breadcrumb.parent}
++            </Link>
++            <ChevronRight className="text-muted-foreground/45 size-3.5 shrink-0" />
++            <span className="bg-muted/55 text-foreground max-w-64 truncate rounded-lg px-2.5 py-1.5 font-semibold">
++              {breadcrumb.current}
++            </span>
++          </nav>
+           <div className="ml-auto flex items-center gap-2">
+             {!pathname.startsWith("/bills/new") ? (
+               <Button asChild size="sm" className="hidden sm:inline-flex">
+@@ -231,7 +241,7 @@ export function AppShell({
+               </Button>
+             ) : null}
+             <ThemeToggle />
+-            <div className="hidden text-right sm:block">
++            <div className="border-border/70 hidden border-l pl-3 text-right sm:block">
+               <p className="text-sm leading-tight font-medium">
+                 {user.displayName}
+               </p>
+@@ -247,7 +257,7 @@ export function AppShell({
+             </Avatar>
+           </div>
+         </header>
+-        <main className="mx-auto w-full max-w-[1440px] p-4 sm:p-6 lg:p-8">
++        <main className="mx-auto w-full max-w-[1440px] p-4 sm:p-5 lg:px-7 lg:py-5">
+           <div key={pathname} className="animate-page-enter">
+             {children}
+           </div>
+diff --git a/src/features/bills/components/create-bill/create-bill-flow.tsx b/src/features/bills/components/create-bill/create-bill-flow.tsx
+index 52e1f09..715eb04 100644
+--- a/src/features/bills/components/create-bill/create-bill-flow.tsx
++++ b/src/features/bills/components/create-bill/create-bill-flow.tsx
+@@ -172,42 +172,59 @@ export function CreateBillFlow({
+           );
+         },
+       )}
+-      className="mx-auto max-w-3xl"
++      className="mx-auto w-full max-w-4xl"
+     >
+       <ol
+-        className="mb-8 grid grid-cols-4 gap-2"
++        className="mb-4 grid grid-cols-4 gap-2"
+         aria-label="Tiến độ tạo hóa đơn"
+       >
+-        {steps.map((label, index) => (
+-          <li key={label} className="min-w-0">
+-            <div
+-              className={cn(
+-                "bg-muted mb-2 h-1.5 origin-left rounded-full transition-[background-color,transform] duration-300",
+-                index <= step && "bg-primary scale-x-100",
+-                index > step && "scale-x-[0.96]",
+-              )}
+-            />
+-            <p
+-              className={cn(
+-                "text-muted-foreground truncate text-xs transition-colors duration-200",
+-                index === step && "text-foreground font-semibold",
+-              )}
+-            >
+-              {index + 1}. {label}
+-            </p>
+-          </li>
+-        ))}
++        {steps.map((label, index) => {
++          const completed = index < step;
++          const active = index === step;
++
++          return (
++            <li key={label} className="min-w-0">
++              <div
++                className={cn(
++                  "border-border/60 bg-card/55 text-muted-foreground flex h-10 min-w-0 items-center gap-2 rounded-xl border px-2.5 transition-[border-color,background-color,box-shadow,color] duration-200",
++                  completed &&
++                    "border-primary/20 bg-primary/[0.055] text-foreground",
++                  active &&
++                    "border-primary/40 bg-card text-foreground shadow-[0_4px_14px_rgb(15_23_42/0.055),0_0_0_3px_color-mix(in_oklab,var(--primary)_7%,transparent)] dark:bg-card dark:shadow-[0_6px_18px_rgb(0_0_0/0.18),0_0_0_3px_color-mix(in_oklab,var(--primary)_10%,transparent)]",
++                )}
++              >
++                <span
++                  className={cn(
++                    "bg-muted text-muted-foreground grid size-5 shrink-0 place-items-center rounded-full text-[10px] font-bold transition-colors",
++                    completed && "bg-primary/15 text-primary",
++                    active && "bg-primary text-primary-foreground",
++                  )}
++                >
++                  {completed ? <Check className="size-3" /> : index + 1}
++                </span>
++                <span
++                  className={cn(
++                    "min-w-0 truncate text-[11px] font-medium sm:text-xs",
++                    active && "font-semibold",
++                  )}
++                >
++                  {label}
++                </span>
++              </div>
++            </li>
++          );
++        })}
+       </ol>
+-      <Card className="shadow-[0_12px_40px_rgb(15_23_42/0.045)]">
+-        <CardContent className="p-5 sm:p-7">
++      <Card className="border-border/80 shadow-[0_12px_36px_rgb(15_23_42/0.04)] dark:shadow-[0_16px_44px_rgb(0_0_0/0.16)]">
++        <CardContent className="p-4 sm:p-5">
+           <div key={step} className="animate-step-in">
+             {step === 0 ? (
+-              <div className="space-y-5">
+-                <div className="border-border/70 bg-muted/35 rounded-xl border px-4 py-3.5">
++              <div className="space-y-4">
++                <div className="border-primary/10 bg-primary/[0.025] rounded-xl border px-3.5 py-2.5 dark:bg-primary/[0.045]">
+                   <h2 className="text-base font-semibold tracking-tight">
+                     Thông tin hóa đơn
+                   </h2>
+-                  <p className="text-muted-foreground mt-1 text-sm leading-5">
++                  <p className="text-muted-foreground mt-0.5 text-sm leading-5">
+                     Cho mọi người biết khoản chi này là gì và khi nào cần thanh
+                     toán.
+                   </p>
+@@ -308,6 +325,7 @@ export function CreateBillFlow({
+                   <Textarea
+                     id="bill-description"
+                     aria-invalid={Boolean(form.formState.errors.description)}
++                    className="min-h-20"
+                     placeholder="Mô tả ngắn về khoản chi…"
+                     {...form.register("description")}
+                   />
+@@ -316,7 +334,7 @@ export function CreateBillFlow({
+             ) : null}
+ 
+             {step === 1 ? (
+-              <div className="space-y-5">
++              <div className="space-y-4">
+                 <div>
+                   <h2 className="text-lg font-semibold">Chọn người tham gia</h2>
+                   <p className="text-muted-foreground mt-1 text-sm">
+@@ -326,7 +344,7 @@ export function CreateBillFlow({
+                 </div>
+                 <label
+                   className={cn(
+-                    "border-border hover:border-primary/30 hover:bg-primary/[0.025] focus-within:border-primary/40 focus-within:ring-primary/10 flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-[border-color,background-color,box-shadow,transform] duration-150 focus-within:ring-4 active:scale-[0.995]",
++                    "border-border hover:border-primary/30 hover:bg-primary/[0.025] focus-within:border-primary/40 focus-within:ring-primary/10 flex cursor-pointer items-start gap-3 rounded-xl border p-3.5 transition-[border-color,background-color,box-shadow,transform] duration-150 focus-within:ring-4 active:scale-[0.995]",
+                     values.includeOwner &&
+                       "border-primary/35 bg-primary/[0.035]",
+                   )}
+@@ -347,7 +365,7 @@ export function CreateBillFlow({
+                 </label>
+                 <Field label="Thêm bằng email">
+                   <Textarea
+-                    className="min-h-32"
++                    className="min-h-24"
+                     autoComplete="off"
+                     spellCheck={false}
+                     placeholder={"anna@example.com\nminh@example.com"}
+@@ -435,7 +453,7 @@ export function CreateBillFlow({
+                     </div>
+                   </div>
+                 ) : null}
+-                <div className="border-primary/10 bg-primary/[0.035] rounded-xl border p-4 text-sm transition-colors">
++                <div className="border-primary/10 bg-primary/[0.035] rounded-xl border p-3 text-sm transition-colors">
+                   <span className="text-primary font-semibold">
+                     {participants.length}
+                   </span>{" "}
+@@ -445,7 +463,7 @@ export function CreateBillFlow({
+             ) : null}
+ 
+             {step === 2 ? (
+-              <div className="space-y-5">
++              <div className="space-y-4">
+                 <div>
+                   <h2 className="text-lg font-semibold">Chọn cách chia</h2>
+                   <p className="text-muted-foreground mt-1 text-sm">
+@@ -468,7 +486,7 @@ export function CreateBillFlow({
+                     <label
+                       key={method.value}
+                       className={cn(
+-                        "hover:border-primary/35 cursor-pointer rounded-xl border p-4 transition-[border-color,background-color,box-shadow,transform] duration-150 hover:-translate-y-0.5 active:scale-[0.99]",
++                        "hover:border-primary/35 cursor-pointer rounded-xl border p-3.5 transition-[border-color,background-color,box-shadow,transform] duration-150 hover:-translate-y-0.5 active:scale-[0.99]",
+                         values.splitMethod === method.value
+                           ? "border-primary bg-primary/5 shadow-[0_0_0_3px_color-mix(in_oklab,var(--primary)_8%,transparent)]"
+                           : "border-border",
+@@ -530,7 +548,7 @@ export function CreateBillFlow({
+             ) : null}
+ 
+             {step === 3 ? (
+-              <div className="space-y-5">
++              <div className="space-y-4">
+                 <div>
+                   <h2 className="text-lg font-semibold">
+                     Kiểm tra trước khi tạo
+@@ -585,7 +603,7 @@ export function CreateBillFlow({
+           </div>
+         </CardContent>
+       </Card>
+-      <div className="border-border/70 bg-background/90 sticky bottom-3 z-10 mt-5 flex justify-between rounded-2xl border p-2 shadow-lg backdrop-blur-xl sm:static sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none">
++      <div className="border-border/70 bg-background/95 sticky bottom-3 z-10 mt-3 flex justify-between rounded-2xl border p-1.5 shadow-[0_10px_30px_rgb(15_23_42/0.10)] backdrop-blur-xl sm:static sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none dark:shadow-[0_12px_34px_rgb(0_0_0/0.28)]">
+         <Button
+           type="button"
+           variant="ghost"
+@@ -626,7 +644,7 @@ function Field({
+   children: React.ReactNode;
+ }) {
+   return (
+-    <div className="group/field space-y-2">
++    <div className="group/field space-y-1.5">
+       <Label
+         htmlFor={htmlFor}
+         className={cn(

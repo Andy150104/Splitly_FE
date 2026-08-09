@@ -1,0 +1,320 @@
+diff --git a/src/components/ui/date-picker.tsx b/src/components/ui/date-picker.tsx
+index 1892d07..0ef692b 100644
+--- a/src/components/ui/date-picker.tsx
++++ b/src/components/ui/date-picker.tsx
+@@ -116,11 +116,11 @@ export function DatePicker({
+             disabled={disabled}
+             aria-invalid={invalid || undefined}
+             className={cn(
+-              "border-input bg-background text-foreground hover:border-primary/25 hover:bg-card/70 focus-visible:border-primary/55 focus-visible:ring-primary/15 flex h-11 w-full items-center gap-3 rounded-xl border px-3.5 text-left text-sm shadow-[0_1px_2px_rgb(15_23_42/0.04)] outline-none transition-[border-color,box-shadow,background-color] duration-150 ease-out focus-visible:ring-4 disabled:cursor-not-allowed disabled:bg-muted/50 disabled:text-muted-foreground disabled:opacity-70",
++              "border-input/90 bg-card/70 text-foreground flex h-11 w-full items-center gap-3 rounded-[11px] border px-3.5 text-left text-sm shadow-[0_1px_2px_rgb(15_23_42/0.035),inset_0_1px_0_rgb(255_255_255/0.30)] outline-none transition-[border-color,box-shadow,background-color] duration-150 ease-out hover:border-foreground/15 hover:bg-card focus-visible:border-primary/70 focus-visible:bg-card focus-visible:ring-4 focus-visible:ring-primary/15 disabled:cursor-not-allowed disabled:bg-muted/45 disabled:text-muted-foreground disabled:opacity-70 dark:bg-background/45 dark:shadow-[0_1px_2px_rgb(0_0_0/0.18),inset_0_1px_0_rgb(255_255_255/0.025)] dark:hover:border-foreground/20 dark:hover:bg-background/60 dark:focus-visible:bg-background/65",
+               value && clearable && !disabled && "pr-11",
+-              open && !invalid && "border-primary/45 ring-primary/10 bg-background ring-4",
++              open && !invalid && "border-primary/70 bg-card ring-4 ring-primary/15 dark:bg-background/65",
+               invalid &&
+-                "border-destructive/70 bg-destructive/[0.025] ring-destructive/10 ring-4 hover:border-destructive/80 focus-visible:border-destructive/75 focus-visible:ring-destructive/15",
++                "border-destructive bg-destructive/[0.045] ring-2 ring-destructive/20 shadow-[0_0_0_1px_color-mix(in_oklab,var(--destructive)_18%,transparent)] hover:border-destructive focus-visible:border-destructive focus-visible:ring-4 focus-visible:ring-destructive/25 dark:bg-destructive/[0.075] dark:ring-destructive/25",
+             )}
+           >
+             <CalendarDays className="text-muted-foreground size-4 shrink-0" />
+@@ -138,7 +138,7 @@ export function DatePicker({
+           <button
+             type="button"
+             aria-label="Xóa ngày đã chọn"
+-            className="text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-primary/20 absolute top-1/2 right-2 grid size-7 -translate-y-1/2 place-items-center rounded-lg outline-none transition-colors focus-visible:ring-4"
++            className="text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-primary/20 absolute top-1/2 right-2 grid size-7 -translate-y-1/2 place-items-center rounded-lg outline-none transition-[color,background-color,transform] duration-150 hover:scale-105 focus-visible:ring-4 active:scale-95"
+             onClick={() => onChange?.("")}
+           >
+             <X className="size-3.5" />
+@@ -151,14 +151,14 @@ export function DatePicker({
+           align="start"
+           sideOffset={8}
+           collisionPadding={16}
+-          className="border-border/80 bg-card text-card-foreground z-50 w-[min(21rem,calc(100vw-2rem))] rounded-2xl border p-3 shadow-[0_22px_60px_rgb(15_23_42/0.16),0_4px_14px_rgb(15_23_42/0.08)] outline-none data-[state=open]:animate-in data-[state=closed]:animate-out"
++          className="border-border/80 bg-card/98 text-card-foreground z-50 w-[min(21rem,calc(100vw-2rem))] rounded-2xl border p-3 shadow-[0_22px_60px_rgb(15_23_42/0.16),0_4px_14px_rgb(15_23_42/0.08)] outline-none backdrop-blur-xl data-[state=open]:animate-in data-[state=closed]:animate-out dark:border-border dark:bg-card dark:shadow-[0_24px_70px_rgb(0_0_0/0.52),0_6px_18px_rgb(0_0_0/0.24)]"
+         >
+           <div className="flex items-center justify-between px-1 pb-3">
+             <button
+               type="button"
+               aria-label="Tháng trước"
+               onClick={() => changeMonth(-1)}
+-              className="text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-primary/20 grid size-9 place-items-center rounded-xl outline-none transition-colors focus-visible:ring-4"
++              className="border-border/60 bg-background/55 text-muted-foreground hover:border-primary/20 hover:bg-primary/[0.06] hover:text-primary focus-visible:ring-primary/20 grid size-9 place-items-center rounded-xl border outline-none transition-[color,background-color,border-color,transform] duration-150 hover:-translate-y-px focus-visible:ring-4 active:translate-y-0"
+             >
+               <ChevronLeft className="size-4" />
+             </button>
+@@ -177,7 +177,7 @@ export function DatePicker({
+               type="button"
+               aria-label="Tháng sau"
+               onClick={() => changeMonth(1)}
+-              className="text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-primary/20 grid size-9 place-items-center rounded-xl outline-none transition-colors focus-visible:ring-4"
++              className="border-border/60 bg-background/55 text-muted-foreground hover:border-primary/20 hover:bg-primary/[0.06] hover:text-primary focus-visible:ring-primary/20 grid size-9 place-items-center rounded-xl border outline-none transition-[color,background-color,border-color,transform] duration-150 hover:-translate-y-px focus-visible:ring-4 active:translate-y-0"
+             >
+               <ChevronRight className="size-4" />
+             </button>
+@@ -214,13 +214,13 @@ export function DatePicker({
+                   }).format(date)}
+                   onClick={() => selectDate(date)}
+                   className={cn(
+-                    "focus-visible:ring-primary/25 relative grid size-9 place-items-center rounded-xl text-sm tabular-nums outline-none transition-[color,background-color,box-shadow,transform] duration-150 hover:bg-primary/8 hover:text-primary focus-visible:ring-4 active:scale-95",
++                    "focus-visible:ring-primary/25 relative grid size-9 place-items-center rounded-[10px] text-sm tabular-nums outline-none transition-[color,background-color,box-shadow,transform] duration-150 hover:bg-primary/[0.08] hover:text-primary focus-visible:ring-4 active:scale-95 dark:hover:bg-primary/[0.14]",
+                     !inCurrentMonth && "text-muted-foreground/45",
+                     isToday && !selected && "text-primary font-semibold",
+                     isToday && !selected &&
+                       "after:border-primary/55 after:absolute after:bottom-1 after:size-1 after:rounded-full after:border",
+                     selected &&
+-                      "bg-primary text-primary-foreground font-semibold shadow-[0_5px_14px_color-mix(in_oklab,var(--primary)_28%,transparent)] hover:bg-primary hover:text-primary-foreground",
++                      "bg-primary text-primary-foreground font-semibold shadow-[0_5px_16px_color-mix(in_oklab,var(--primary)_30%,transparent)] hover:bg-primary hover:text-primary-foreground dark:shadow-[0_6px_18px_color-mix(in_oklab,var(--primary)_20%,transparent)]",
+                   )}
+                 >
+                   {date.getDate()}
+diff --git a/src/components/ui/input.tsx b/src/components/ui/input.tsx
+index 7526b19..f80458a 100644
+--- a/src/components/ui/input.tsx
++++ b/src/components/ui/input.tsx
+@@ -10,7 +10,7 @@ export const Input = React.forwardRef<
+     ref={ref}
+     type={type}
+     className={cn(
+-      "border-input bg-background text-foreground placeholder:text-muted-foreground/70 hover:border-primary/25 hover:bg-card/70 focus-visible:border-primary/55 focus-visible:bg-background focus-visible:ring-primary/15 aria-invalid:border-destructive/70 aria-invalid:bg-destructive/[0.025] aria-invalid:ring-destructive/10 aria-invalid:ring-4 aria-invalid:hover:border-destructive/80 aria-invalid:focus-visible:border-destructive/75 aria-invalid:focus-visible:ring-destructive/15 flex h-11 w-full rounded-xl border px-3.5 py-2 text-sm shadow-[0_1px_2px_rgb(15_23_42/0.04)] transition-[border-color,box-shadow,background-color] duration-150 ease-out outline-none focus-visible:ring-4 disabled:cursor-not-allowed disabled:bg-muted/50 disabled:text-muted-foreground disabled:opacity-70",
++      "border-input/90 bg-card/70 text-foreground placeholder:text-muted-foreground/60 caret-primary flex h-11 w-full rounded-[11px] border px-3.5 py-2 text-sm shadow-[0_1px_2px_rgb(15_23_42/0.035),inset_0_1px_0_rgb(255_255_255/0.30)] outline-none transition-[border-color,box-shadow,background-color] duration-150 ease-out hover:border-foreground/15 hover:bg-card focus-visible:border-primary/70 focus-visible:bg-card focus-visible:ring-4 focus-visible:ring-primary/15 disabled:cursor-not-allowed disabled:bg-muted/45 disabled:text-muted-foreground disabled:opacity-70 dark:bg-background/45 dark:shadow-[0_1px_2px_rgb(0_0_0/0.18),inset_0_1px_0_rgb(255_255_255/0.025)] dark:hover:border-foreground/20 dark:hover:bg-background/60 dark:focus-visible:bg-background/65 aria-invalid:border-destructive aria-invalid:bg-destructive/[0.045] aria-invalid:ring-2 aria-invalid:ring-destructive/20 aria-invalid:shadow-[0_0_0_1px_color-mix(in_oklab,var(--destructive)_18%,transparent)] aria-invalid:hover:border-destructive aria-invalid:focus-visible:border-destructive aria-invalid:focus-visible:ring-4 aria-invalid:focus-visible:ring-destructive/25 dark:aria-invalid:bg-destructive/[0.075] dark:aria-invalid:ring-destructive/25",
+       className,
+     )}
+     {...props}
+diff --git a/src/components/ui/select.tsx b/src/components/ui/select.tsx
+index 02092e0..18a6922 100644
+--- a/src/components/ui/select.tsx
++++ b/src/components/ui/select.tsx
+@@ -1,7 +1,8 @@
+ "use client";
+ 
++import { Check, ChevronDown } from "lucide-react";
+ import * as React from "react";
+-import { ChevronDown, Check } from "lucide-react";
++
+ import { cn } from "@/lib/utils";
+ 
+ export interface SelectOption {
+@@ -16,6 +17,7 @@ export interface SelectProps {
+   placeholder?: string;
+   className?: string;
+   invalid?: boolean;
++  disabled?: boolean;
+ }
+ 
+ export function Select({
+@@ -25,13 +27,13 @@ export function Select({
+   placeholder = "Chọn...",
+   className,
+   invalid = false,
++  disabled = false,
+ }: SelectProps) {
+   const [isOpen, setIsOpen] = React.useState(false);
+   const containerRef = React.useRef<HTMLDivElement>(null);
+ 
+-  // Close dropdown when clicking outside
+   React.useEffect(() => {
+-    function handleClickOutside(event: MouseEvent) {
++    function handlePointerDown(event: MouseEvent) {
+       if (
+         containerRef.current &&
+         !containerRef.current.contains(event.target as Node)
+@@ -39,38 +41,74 @@ export function Select({
+         setIsOpen(false);
+       }
+     }
+-    document.addEventListener("mousedown", handleClickOutside);
+-    return () => document.removeEventListener("mousedown", handleClickOutside);
++
++    function handleEscape(event: KeyboardEvent) {
++      if (event.key === "Escape") setIsOpen(false);
++    }
++
++    document.addEventListener("mousedown", handlePointerDown);
++    document.addEventListener("keydown", handleEscape);
++    return () => {
++      document.removeEventListener("mousedown", handlePointerDown);
++      document.removeEventListener("keydown", handleEscape);
++    };
+   }, []);
+ 
+-  const selectedOption = options.find((opt) => opt.value === value);
++  const selectedOption = options.find((option) => option.value === value);
+ 
+   return (
+     <div ref={containerRef} className={cn("relative w-full", className)}>
+       <button
+         type="button"
+-        onClick={() => setIsOpen(!isOpen)}
++        disabled={disabled}
++        aria-haspopup="listbox"
++        aria-expanded={isOpen}
+         aria-invalid={invalid || undefined}
++        onClick={() => setIsOpen((current) => !current)}
++        onKeyDown={(event) => {
++          if (["ArrowDown", "Enter", " "].includes(event.key)) {
++            event.preventDefault();
++            setIsOpen(true);
++          }
++        }}
+         className={cn(
+-          "border-input bg-background hover:border-primary/20 hover:bg-muted/50 focus-visible:border-primary/50 focus-visible:ring-ring/35 flex h-11 w-full select-none items-center justify-between rounded-xl border px-4 py-2.5 text-sm shadow-[0_1px_2px_rgb(0_0_0/0.04)] transition-[border-color,box-shadow,background-color,transform] duration-150 ease-out outline-none focus-visible:ring-2 active:translate-y-px active:scale-[0.99] disabled:pointer-events-none disabled:opacity-55",
+-          isOpen && !invalid && "border-primary/50 ring-ring/35 bg-primary/[0.025] ring-2",
++          "border-input/90 bg-card/70 text-foreground flex h-11 w-full select-none items-center justify-between gap-3 rounded-[11px] border px-3.5 py-2 text-sm shadow-[0_1px_2px_rgb(15_23_42/0.035),inset_0_1px_0_rgb(255_255_255/0.30)] outline-none transition-[border-color,box-shadow,background-color,transform] duration-150 ease-out hover:border-foreground/15 hover:bg-card focus-visible:border-primary/70 focus-visible:bg-card focus-visible:ring-4 focus-visible:ring-primary/15 active:translate-y-px disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-muted/45 disabled:text-muted-foreground disabled:opacity-70 dark:bg-background/45 dark:shadow-[0_1px_2px_rgb(0_0_0/0.18),inset_0_1px_0_rgb(255_255_255/0.025)] dark:hover:border-foreground/20 dark:hover:bg-background/60 dark:focus-visible:bg-background/65",
++          isOpen &&
++            !invalid &&
++            "border-primary/70 bg-card ring-4 ring-primary/15 dark:bg-background/65",
+           invalid &&
+-            "border-destructive/70 bg-destructive/[0.025] ring-destructive/10 ring-4 hover:border-destructive/80 focus-visible:border-destructive/75 focus-visible:ring-destructive/15"
++            "border-destructive bg-destructive/[0.045] ring-2 ring-destructive/20 shadow-[0_0_0_1px_color-mix(in_oklab,var(--destructive)_18%,transparent)] hover:border-destructive focus-visible:border-destructive focus-visible:ring-4 focus-visible:ring-destructive/25 dark:bg-destructive/[0.075] dark:ring-destructive/25",
+         )}
+       >
+-        <span className={cn("truncate", !selectedOption && "text-muted-foreground")}>
++        <span
++          className={cn(
++            "min-w-0 flex-1 truncate text-left",
++            !selectedOption && "text-muted-foreground/65",
++          )}
++        >
+           {selectedOption ? selectedOption.label : placeholder}
+         </span>
+-        <ChevronDown
++        <span
+           className={cn(
+-            "text-muted-foreground size-4 shrink-0 transition-transform duration-200",
+-            isOpen && "rotate-180"
++            "bg-muted/70 text-muted-foreground grid size-7 shrink-0 place-items-center rounded-lg transition-[background-color,color,transform] duration-150",
++            isOpen && "bg-primary/10 text-primary",
++            invalid && "bg-destructive/10 text-destructive",
+           )}
+-        />
++        >
++          <ChevronDown
++            className={cn(
++              "size-3.5 transition-transform duration-200",
++              isOpen && "rotate-180",
++            )}
++          />
++        </span>
+       </button>
+ 
+-      {isOpen && (
+-        <div className="bg-card text-foreground border-border shadow-2xl animate-expand absolute z-50 mt-1.5 max-h-60 w-full overflow-y-auto rounded-xl border p-1.5 backdrop-blur-md">
++      {isOpen ? (
++        <div
++          role="listbox"
++          className="border-border/80 bg-card text-card-foreground animate-expand absolute z-50 mt-2 max-h-64 w-full overflow-y-auto rounded-xl border p-1.5 shadow-[0_18px_50px_rgb(15_23_42/0.14),0_4px_12px_rgb(15_23_42/0.06)] outline-none dark:shadow-[0_20px_55px_rgb(0_0_0/0.45)]"
++        >
+           <div className="flex flex-col gap-0.5">
+             {options.map((option) => {
+               const isSelected = option.value === value;
+@@ -78,23 +116,30 @@ export function Select({
+                 <button
+                   key={option.value}
+                   type="button"
++                  role="option"
++                  aria-selected={isSelected}
+                   onClick={() => {
+                     onChange?.(option.value);
+                     setIsOpen(false);
+                   }}
+                   className={cn(
+-                    "hover:bg-primary/10 hover:text-primary focus-visible:ring-ring/50 flex min-h-10 w-full select-none items-center justify-between rounded-lg px-3 py-2 text-left text-sm outline-none transition-[color,background-color,transform,box-shadow] duration-150 ease-out focus-visible:ring-2 active:translate-y-px active:scale-[0.99]",
+-                    isSelected && "bg-primary/10 text-primary font-semibold"
++                    "text-foreground hover:bg-primary/[0.07] hover:text-primary focus-visible:bg-primary/[0.07] focus-visible:text-primary focus-visible:ring-primary/20 flex min-h-10 w-full select-none items-center justify-between rounded-lg px-3 py-2 text-left text-sm outline-none transition-[color,background-color,transform,box-shadow] duration-150 ease-out focus-visible:ring-2 active:scale-[0.99]",
++                    isSelected &&
++                      "bg-primary/10 text-primary font-semibold dark:bg-primary/15",
+                   )}
+                 >
+-                  <span className="truncate mr-2">{option.label}</span>
+-                  {isSelected && <Check className="text-primary size-4 shrink-0" />}
++                  <span className="mr-2 truncate">{option.label}</span>
++                  {isSelected ? (
++                    <span className="bg-primary text-primary-foreground grid size-5 shrink-0 place-items-center rounded-md shadow-sm">
++                      <Check className="size-3" />
++                    </span>
++                  ) : null}
+                 </button>
+               );
+             })}
+           </div>
+         </div>
+-      )}
++      ) : null}
+     </div>
+   );
+ }
+diff --git a/src/components/ui/textarea.tsx b/src/components/ui/textarea.tsx
+index d42e391..b47bc59 100644
+--- a/src/components/ui/textarea.tsx
++++ b/src/components/ui/textarea.tsx
+@@ -9,7 +9,7 @@ export const Textarea = React.forwardRef<
+   <textarea
+     ref={ref}
+     className={cn(
+-      "border-input bg-background text-foreground placeholder:text-muted-foreground/70 hover:border-primary/25 hover:bg-card/70 focus-visible:border-primary/55 focus-visible:bg-background focus-visible:ring-primary/15 aria-invalid:border-destructive/70 aria-invalid:bg-destructive/[0.025] aria-invalid:ring-destructive/10 aria-invalid:ring-4 aria-invalid:hover:border-destructive/80 aria-invalid:focus-visible:border-destructive/75 aria-invalid:focus-visible:ring-destructive/15 flex min-h-28 w-full resize-y rounded-xl border px-3.5 py-3 text-sm leading-6 shadow-[0_1px_2px_rgb(15_23_42/0.04)] transition-[border-color,box-shadow,background-color] duration-150 ease-out outline-none focus-visible:ring-4 disabled:cursor-not-allowed disabled:resize-none disabled:bg-muted/50 disabled:text-muted-foreground disabled:opacity-70",
++      "border-input/90 bg-card/70 text-foreground placeholder:text-muted-foreground/60 caret-primary flex min-h-28 w-full resize-y rounded-[11px] border px-3.5 py-3 text-sm leading-6 shadow-[0_1px_2px_rgb(15_23_42/0.035),inset_0_1px_0_rgb(255_255_255/0.30)] outline-none transition-[border-color,box-shadow,background-color] duration-150 ease-out hover:border-foreground/15 hover:bg-card focus-visible:border-primary/70 focus-visible:bg-card focus-visible:ring-4 focus-visible:ring-primary/15 disabled:cursor-not-allowed disabled:resize-none disabled:bg-muted/45 disabled:text-muted-foreground disabled:opacity-70 dark:bg-background/45 dark:shadow-[0_1px_2px_rgb(0_0_0/0.18),inset_0_1px_0_rgb(255_255_255/0.025)] dark:hover:border-foreground/20 dark:hover:bg-background/60 dark:focus-visible:bg-background/65 aria-invalid:border-destructive aria-invalid:bg-destructive/[0.045] aria-invalid:ring-2 aria-invalid:ring-destructive/20 aria-invalid:shadow-[0_0_0_1px_color-mix(in_oklab,var(--destructive)_18%,transparent)] aria-invalid:hover:border-destructive aria-invalid:focus-visible:border-destructive aria-invalid:focus-visible:ring-4 aria-invalid:focus-visible:ring-destructive/25 dark:aria-invalid:bg-destructive/[0.075] dark:aria-invalid:ring-destructive/25",
+       className,
+     )}
+     {...props}
+diff --git a/src/features/bills/components/create-bill/create-bill-flow.tsx b/src/features/bills/components/create-bill/create-bill-flow.tsx
+index d94f79d..52e1f09 100644
+--- a/src/features/bills/components/create-bill/create-bill-flow.tsx
++++ b/src/features/bills/components/create-bill/create-bill-flow.tsx
+@@ -2,7 +2,13 @@
+ 
+ import { zodResolver } from "@hookform/resolvers/zod";
+ import { useQuery } from "@tanstack/react-query";
+-import { ArrowLeft, ArrowRight, Check, LoaderCircle } from "lucide-react";
++import {
++  ArrowLeft,
++  ArrowRight,
++  Check,
++  CircleAlert,
++  LoaderCircle,
++} from "lucide-react";
+ import { useRouter } from "next/navigation";
+ import { useMemo, useState } from "react";
+ import { useForm, useWatch } from "react-hook-form";
+@@ -49,6 +55,9 @@ export function CreateBillFlow({
+   const [step, setStep] = useState(0);
+   const form = useForm<CreateBillValues>({
+     resolver: zodResolver(createBillSchema),
++    mode: "onChange",
++    reValidateMode: "onChange",
++    criteriaMode: "firstError",
+     defaultValues: {
+       title: "",
+       totalAmount: "" as unknown as number,
+@@ -617,15 +626,26 @@ function Field({
+   children: React.ReactNode;
+ }) {
+   return (
+-    <div className="space-y-2">
+-      <Label htmlFor={htmlFor} className="text-[13px] font-semibold">
++    <div className="group/field space-y-2">
++      <Label
++        htmlFor={htmlFor}
++        className={cn(
++          "text-foreground/90 text-[13px] font-semibold transition-colors duration-150",
++          error && "text-destructive",
++        )}
++      >
+         {label}
+       </Label>
+       {children}
+       {error ? (
+-        <p role="alert" className="text-destructive text-xs font-medium">
+-          {error}
+-        </p>
++        <div
++          role="alert"
++          aria-live="polite"
++          className="text-destructive flex min-h-5 items-start gap-1.5 text-xs font-semibold"
++        >
++          <CircleAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
++          <span className="leading-4">{error}</span>
++        </div>
+       ) : null}
+     </div>
+   );

@@ -6,13 +6,13 @@
  * OpenAPI spec version: v1
  */
 import type { BillSplitServiceApiResponsesApiError } from './billSplitServiceApiResponsesApiError';
-import type { PagedResultListBills } from './pagedResultListBills';
+import type { PagedResultListGroups } from './pagedResultListGroups';
 
-export interface ApiResponsePagedListBills {
+export interface ApiResponseListListGroups {
   success?: boolean;
   /** @nullable */
   message?: string | null;
-  data?: PagedResultListBills;
+  data?: PagedResultListGroups;
   /** @nullable */
   errors?: BillSplitServiceApiResponsesApiError[] | null;
   /** @nullable */

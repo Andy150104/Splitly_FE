@@ -1,5 +1,7 @@
 import { defineConfig } from "orval";
 
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
 const swaggerUrl =
   process.env.OPENAPI_URL ??
   "https://localhost:7288/swagger/v1/swagger.json";

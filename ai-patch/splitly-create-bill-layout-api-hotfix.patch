@@ -1,0 +1,23 @@
+diff --git a/src/app/(protected)/bills/new/page.tsx b/src/app/(protected)/bills/new/page.tsx
+index e64fc8a..991df73 100644
+--- a/src/app/(protected)/bills/new/page.tsx
++++ b/src/app/(protected)/bills/new/page.tsx
+@@ -1,12 +1,14 @@
+ import { PageHeader } from "@/components/common/page-header";
+ import { CreateBillFlow } from "@/features/bills/components/create-bill/create-bill-flow";
+-import { api } from "@/lib/api/server-api";
+-import { getSession } from "@/lib/auth/session";
++import { api } from "@/lib/api/server/api";
++import { getCurrentUser } from "@/lib/auth/session";
++
++export const metadata = { title: "Tạo hóa đơn" };
+ 
+ export default async function NewBillPage() {
+   const [groups, user] = await Promise.all([
+-    api.groups.list(),
+-    getSession(),
++    api.groups.getAll({ pageNumber: 1, pageSize: 100 }),
++    getCurrentUser(),
+   ]);
+ 
+   return (

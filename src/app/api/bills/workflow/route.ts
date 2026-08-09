@@ -18,6 +18,7 @@ const schema = z.object({
   splitMethod: z.enum(["Equal", "CustomAmount"]),
   allocations: z.record(z.string(), z.number().nonnegative()).default({}),
   publish: z.boolean().default(true),
+  payoutAccountId: z.string().uuid().nullable().optional(),
 });
 
 export async function POST(request: Request) {
@@ -57,7 +58,11 @@ export async function POST(request: Request) {
       });
     }
 
-    const published = input.publish ? await api.bills.publish(draft.billId) : null;
+    const published = input.publish
+      ? await api.bills.publish(draft.billId, {
+          payoutAccountId: input.payoutAccountId || null,
+        })
+      : null;
     return ok({ billId: draft.billId, published }, 201);
   } catch (error) {
     return failure(error);

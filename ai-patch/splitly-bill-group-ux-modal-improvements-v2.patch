@@ -1,0 +1,1206 @@
+diff --git a/src/app/(protected)/bills/[billId]/page.tsx b/src/app/(protected)/bills/[billId]/page.tsx
+index d2f838b..60cd815 100644
+--- a/src/app/(protected)/bills/[billId]/page.tsx
++++ b/src/app/(protected)/bills/[billId]/page.tsx
+@@ -1,8 +1,22 @@
+-import { Banknote, CheckCircle2, Clock3, UsersRound } from "lucide-react";
++import {
++  Banknote,
++  CalendarClock,
++  CheckCircle2,
++  Clock3,
++  Sparkles,
++  UsersRound,
++} from "lucide-react";
+ import { notFound } from "next/navigation";
+ 
+ import { PageHeader } from "@/components/common/page-header";
+-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
++import { Badge } from "@/components/ui/badge";
++import {
++  Card,
++  CardContent,
++  CardDescription,
++  CardHeader,
++  CardTitle,
++} from "@/components/ui/card";
+ import { Progress } from "@/components/ui/progress";
+ import { BillActions } from "@/features/bills/components/bill-actions";
+ import { BillMemberList } from "@/features/bills/components/bill-member-list";
+@@ -19,38 +33,48 @@ export default async function BillDetailPage({
+   const { billId } = await params;
+   const bill = await api.bills.getById(billId);
+   if (!bill.billId) notFound();
++
+   const currency = bill.currency ?? "VND";
+   const members = bill.members ?? [];
+   const unpaidIds = members
+     .filter((member) => (member.remainingAmount ?? 0) > 0 && member.memberId)
+     .map((member) => member.memberId!);
++
+   const metrics = [
+     {
+       label: "Tổng hóa đơn",
+       value: formatCurrency(bill.totalAmount, currency),
++      helper: "Giá trị hóa đơn hiện tại",
+       icon: Banknote,
+     },
+     {
+       label: "Đã thu",
+       value: formatCurrency(bill.collectedAmount, currency),
++      helper: "Đã ghi nhận thanh toán",
+       icon: CheckCircle2,
+     },
+     {
+       label: "Còn phải thu",
+       value: formatCurrency(bill.remainingAmount, currency),
++      helper: "Cần tiếp tục thu thêm",
+       icon: Clock3,
+     },
+     {
+       label: "Đã thanh toán",
+       value: `${bill.paidMemberCount ?? 0}/${members.length} người`,
++      helper: "Tiến độ theo thành viên",
+       icon: UsersRound,
+     },
+   ];
++
+   return (
+-    <div className="space-y-7">
++    <div className="animate-page-enter space-y-6 lg:space-y-7">
+       <PageHeader
+         title={bill.title || "Chi tiết hóa đơn"}
+-        description={`${bill.description || "Theo dõi tiến độ thanh toán của từng thành viên."} · Hạn ${formatDate(bill.dueDate)}`}
++        description={
++          bill.description ||
++          "Theo dõi tiến độ thanh toán, số tiền còn lại và lịch sử thanh toán của từng thành viên."
++        }
+         actions={
+           bill.isOwner ? (
+             <BillActions
+@@ -61,65 +85,179 @@ export default async function BillDetailPage({
+           ) : undefined
+         }
+       />
+-      <div className="flex flex-wrap items-center gap-3">
+-        <BillStatusBadge status={bill.status} />
+-        <span className="money text-3xl font-bold tracking-[-0.03em] sm:ml-auto">
+-          {formatCurrency(bill.totalAmount, currency)}
+-        </span>
+-        {(bill.overdueMemberCount ?? 0) > 0 ? (
+-          <span className="text-destructive text-sm">
+-            {bill.overdueMemberCount} người quá hạn
+-          </span>
+-        ) : null}
+-      </div>
+-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
++
++      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_340px]">
++        <Card className="overflow-hidden">
++          <CardContent className="from-primary/[0.06] via-card to-card relative p-6 sm:p-7">
++            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary/90 via-primary/50 to-transparent" />
++            <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
++              <div className="space-y-4">
++                <div className="flex flex-wrap items-center gap-2">
++                  <BillStatusBadge status={bill.status} />
++                  {bill.isOwner ? <Badge variant="default">Bạn là chủ hóa đơn</Badge> : null}
++                  {(bill.overdueMemberCount ?? 0) > 0 ? (
++                    <Badge variant="destructive">
++                      {bill.overdueMemberCount} người quá hạn
++                    </Badge>
++                  ) : null}
++                </div>
++                <div className="space-y-1.5">
++                  <h2 className="text-2xl font-semibold tracking-tight sm:text-[1.95rem]">
++                    {bill.title || "Hóa đơn chưa đặt tên"}
++                  </h2>
++                  <p className="text-muted-foreground max-w-2xl text-sm leading-6 sm:text-base">
++                    {bill.description ||
++                      "Theo dõi tiến độ thanh toán của từng thành viên trong hóa đơn này."}
++                  </p>
++                </div>
++              </div>
++              <div className="min-w-[220px] rounded-3xl border border-border/75 bg-background/78 p-5 backdrop-blur">
++                <p className="text-muted-foreground text-sm">Tổng giá trị hóa đơn</p>
++                <p className="money mt-2 text-3xl font-bold tracking-[-0.04em]">
++                  {formatCurrency(bill.totalAmount, currency)}
++                </p>
++                <div className="text-muted-foreground mt-4 flex items-center gap-2 text-sm">
++                  <CalendarClock className="size-4" />
++                  Hạn thanh toán: {formatDate(bill.dueDate)}
++                </div>
++              </div>
++            </div>
++          </CardContent>
++        </Card>
++
++        <Card>
++          <CardHeader>
++            <CardTitle className="flex items-center gap-2 text-base">
++              <Sparkles className="text-primary size-4" />
++              Tóm tắt nhanh
++            </CardTitle>
++            <CardDescription>
++              Bức tranh tổng quan về hóa đơn để theo dõi nhanh.
++            </CardDescription>
++          </CardHeader>
++          <CardContent className="space-y-4">
++            <SummaryRow label="Tiền tệ" value={currency} />
++            <SummaryRow label="Số thành viên" value={`${members.length} người`} />
++            <SummaryRow label="Đã thu" value={formatCurrency(bill.collectedAmount, currency)} />
++            <SummaryRow label="Còn lại" value={formatCurrency(bill.remainingAmount, currency)} />
++            <SummaryRow label="Hạn thanh toán" value={formatDate(bill.dueDate)} />
++          </CardContent>
++        </Card>
++      </section>
++
++      <section className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
+         {metrics.map((metric) => (
+           <Card
+             key={metric.label}
+-            className="group hover:border-primary/25 hover:-translate-y-0.5 hover:shadow-[0_10px_28px_rgb(15_23_42/0.06)]"
++            className="group hover:border-primary/25 hover:-translate-y-0.5"
+           >
+             <CardContent className="p-5">
+-              <div className="mb-3 flex items-center justify-between">
++              <div className="mb-3 flex items-center justify-between gap-3">
+                 <p className="text-muted-foreground text-sm">{metric.label}</p>
+-                <metric.icon className="text-primary size-4 transition-transform duration-200 group-hover:scale-110" />
++                <div className="bg-primary/10 text-primary grid size-9 place-items-center rounded-2xl">
++                  <metric.icon className="size-4 transition-transform duration-200 group-hover:scale-110" />
++                </div>
+               </div>
+-              <p className="money text-xl font-bold tracking-tight">
++              <p className="money text-xl font-bold tracking-tight sm:text-2xl">
+                 {metric.value}
+               </p>
++              <p className="text-muted-foreground mt-2 text-xs leading-5">
++                {metric.helper}
++              </p>
+             </CardContent>
+           </Card>
+         ))}
+       </section>
+-      <Card>
+-        <CardContent className="p-5 sm:p-6">
+-          <div className="mb-3 flex justify-between">
+-            <div>
+-              <span className="text-sm font-semibold">Tiến độ thu tiền</span>
+-              <p className="money text-muted-foreground mt-1 text-xs">
+-                {formatCurrency(bill.collectedAmount, currency)} /{" "}
+-                {formatCurrency(bill.totalAmount, currency)}
+-              </p>
+-            </div>
+-            <strong className="money text-sm">
+-              {Math.round(bill.completionPercentage ?? 0)}%
+-            </strong>
+-          </div>
+-          <Progress value={bill.completionPercentage ?? 0} className="h-2.5" />
+-        </CardContent>
+-      </Card>
+-      <Card>
+-        <CardHeader>
+-          <CardTitle>Thành viên và thanh toán</CardTitle>
+-        </CardHeader>
+-        <CardContent>
+-          <BillMemberList
+-            billId={billId}
+-            currency={currency}
+-            members={members}
+-            canManage={Boolean(bill.isOwner)}
+-          />
+-        </CardContent>
+-      </Card>
++
++      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.12fr)_320px]">
++        <Card>
++          <CardHeader>
++            <CardTitle>Thành viên và thanh toán</CardTitle>
++            <CardDescription>
++              Theo dõi tình trạng thanh toán của từng thành viên và ghi nhận thanh toán thủ công khi cần.
++            </CardDescription>
++          </CardHeader>
++          <CardContent>
++            <BillMemberList
++              billId={billId}
++              currency={currency}
++              members={members}
++              canManage={Boolean(bill.isOwner)}
++            />
++          </CardContent>
++        </Card>
++
++        <div className="space-y-6">
++          <Card>
++            <CardContent className="p-5 sm:p-6">
++              <div className="mb-3 flex items-center justify-between gap-3">
++                <div>
++                  <span className="text-sm font-semibold">Tiến độ thu tiền</span>
++                  <p className="money text-muted-foreground mt-1 text-xs">
++                    {formatCurrency(bill.collectedAmount, currency)} /{" "}
++                    {formatCurrency(bill.totalAmount, currency)}
++                  </p>
++                </div>
++                <strong className="money text-sm">
++                  {Math.round(bill.completionPercentage ?? 0)}%
++                </strong>
++              </div>
++              <Progress value={bill.completionPercentage ?? 0} className="h-2.5" />
++            </CardContent>
++          </Card>
++
++          <Card>
++            <CardHeader>
++              <CardTitle className="text-base">Nhận định thanh toán</CardTitle>
++              <CardDescription>
++                Trạng thái hiện tại của hóa đơn này.
++              </CardDescription>
++            </CardHeader>
++            <CardContent className="space-y-4 text-sm leading-6">
++              <div className="bg-muted/60 rounded-2xl border border-border/70 p-4">
++                {(bill.remainingAmount ?? 0) > 0 ? (
++                  <p>
++                    Còn <strong>{formatCurrency(bill.remainingAmount, currency)}</strong> cần thu từ{" "}
++                    <strong>{members.filter((member) => (member.remainingAmount ?? 0) > 0).length} thành viên</strong>.
++                  </p>
++                ) : (
++                  <p>
++                    Tất cả các thành viên đã hoàn tất thanh toán. Hóa đơn đang ở trạng thái hoàn tất.
++                  </p>
++                )}
++              </div>
++              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
++                <MiniInsight
++                  label="Tỷ lệ hoàn thành"
++                  value={`${Math.round(bill.completionPercentage ?? 0)}%`}
++                />
++                <MiniInsight
++                  label="Người đã thanh toán"
++                  value={`${bill.paidMemberCount ?? 0}/${members.length}`}
++                />
++              </div>
++            </CardContent>
++          </Card>
++        </div>
++      </div>
++    </div>
++  );
++}
++
++function SummaryRow({ label, value }: { label: string; value: string }) {
++  return (
++    <div className="flex items-center justify-between gap-4 border-b border-border/70 pb-3 last:border-none last:pb-0">
++      <span className="text-muted-foreground text-sm">{label}</span>
++      <span className="text-right text-sm font-medium">{value}</span>
++    </div>
++  );
++}
++
++function MiniInsight({ label, value }: { label: string; value: string }) {
++  return (
++    <div className="rounded-2xl border border-border/75 bg-muted/40 px-4 py-3">
++      <p className="text-muted-foreground text-xs uppercase tracking-wide">{label}</p>
++      <p className="money mt-1.5 text-lg font-semibold">{value}</p>
+     </div>
+   );
+ }
+diff --git a/src/app/(protected)/groups/[groupId]/page.tsx b/src/app/(protected)/groups/[groupId]/page.tsx
+index b998ec4..336db20 100644
+--- a/src/app/(protected)/groups/[groupId]/page.tsx
++++ b/src/app/(protected)/groups/[groupId]/page.tsx
+@@ -1,15 +1,308 @@
+-import { FileText, UsersRound } from "lucide-react";
++import {
++  ArrowRight,
++  FileText,
++  FolderLock,
++  ReceiptText,
++  UsersRound,
++  WalletCards,
++} from "lucide-react";
++import Link from "next/link";
+ import { notFound } from "next/navigation";
+ 
+ import { PageHeader } from "@/components/common/page-header";
+ import { Badge } from "@/components/ui/badge";
+-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
++import {
++  Card,
++  CardContent,
++  CardDescription,
++  CardHeader,
++  CardTitle,
++} from "@/components/ui/card";
+ import { BillStatusBadge } from "@/features/bills/components/bill-status-badge";
+-import { AddGroupMembers, CloseGroupButton, RemoveGroupMember } from "@/features/groups/components/group-actions";
++import {
++  AddGroupMembers,
++  CloseGroupButton,
++  RemoveGroupMember,
++} from "@/features/groups/components/group-actions";
+ import { api } from "@/lib/api/server/api";
+ import { formatCurrency } from "@/lib/formatters/currency";
+ 
+-export default async function GroupDetailPage({ params }: { params: Promise<{ groupId: string }> }) {
+-  const { groupId } = await params; const group = await api.groups.getById(groupId); if (!group.groupId) notFound();
+-  return <div className="space-y-7"><PageHeader title={group.name || "Chi tiết nhóm"} description={group.description || "Quản lý thành viên và các hóa đơn của nhóm."} actions={group.isOwner && group.status === "Active" ? <CloseGroupButton groupId={groupId} /> : undefined} /><div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]"><Card><CardHeader><CardTitle className="flex items-center gap-2"><UsersRound className="size-5 text-primary" />Thành viên <Badge variant="secondary">{group.members?.length ?? 0}</Badge></CardTitle></CardHeader><CardContent><div className="divide-y divide-border">{(group.members ?? []).map((member) => <div key={member.memberId} className="flex items-center gap-3 py-3"><div className="grid size-9 place-items-center rounded-full bg-muted text-xs font-bold">{(member.name || member.email || "U").slice(0, 2).toUpperCase()}</div><div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{member.name || member.email}</p><p className="truncate text-xs text-muted-foreground">{member.email}</p></div><Badge variant={member.status === "Active" ? "success" : "warning"}>{member.role === "Owner" ? "Chủ nhóm" : member.status}</Badge>{group.isOwner && member.role !== "Owner" && member.memberId ? <RemoveGroupMember groupId={groupId} memberId={member.memberId} /> : null}</div>)}</div>{group.isOwner && group.status === "Active" ? <div className="mt-6 border-t border-border pt-5"><AddGroupMembers groupId={groupId} /></div> : null}</CardContent></Card><Card><CardHeader><CardTitle className="flex items-center gap-2"><FileText className="size-5 text-primary" />Hóa đơn của nhóm</CardTitle></CardHeader><CardContent><div className="space-y-3">{(group.bills ?? []).length ? group.bills!.map((bill) => <a key={bill.billId} href={`/bills/${bill.billId}`} className="flex items-center justify-between rounded-xl border border-border p-4 hover:border-primary/30"><div><p className="text-sm font-semibold">{bill.title}</p><div className="mt-1"><BillStatusBadge status={bill.status} /></div></div><p className="font-semibold">{formatCurrency(bill.totalAmount, bill.currency ?? "VND")}</p></a>) : <p className="py-10 text-center text-sm text-muted-foreground">Nhóm chưa có hóa đơn.</p>}</div></CardContent></Card></div></div>;
++export default async function GroupDetailPage({
++  params,
++}: {
++  params: Promise<{ groupId: string }>;
++}) {
++  const { groupId } = await params;
++  const group = await api.groups.getById(groupId);
++  if (!group.groupId) notFound();
++
++  const members = group.members ?? [];
++  const bills = group.bills ?? [];
++  const totalValue = bills.reduce((sum, bill) => sum + (bill.totalAmount ?? 0), 0);
++  const publishedBills = bills.filter((bill) => bill.status !== "Draft").length;
++  const statusVariant =
++    group.status === "Active"
++      ? "success"
++      : group.status === "Closed"
++        ? "secondary"
++        : "warning";
++
++  const stats = [
++    {
++      label: "Thành viên",
++      value: `${members.length}`,
++      helper: `${members.filter((member) => member.status === "Active").length} đang hoạt động`,
++      icon: UsersRound,
++    },
++    {
++      label: "Hóa đơn",
++      value: `${bills.length}`,
++      helper: `${publishedBills} đã công bố`,
++      icon: ReceiptText,
++    },
++    {
++      label: "Tổng giá trị",
++      value: formatCurrency(totalValue, bills[0]?.currency ?? "VND"),
++      helper: "Tổng tiền của các hóa đơn trong nhóm",
++      icon: WalletCards,
++    },
++  ];
++
++  return (
++    <div className="animate-page-enter space-y-6 lg:space-y-7">
++      <PageHeader
++        title={group.name || "Chi tiết nhóm"}
++        description={
++          group.description ||
++          "Quản lý thành viên, lời mời và các hóa đơn thuộc nhóm này."
++        }
++        actions={
++          group.isOwner && group.status === "Active" ? (
++            <CloseGroupButton groupId={groupId} />
++          ) : undefined
++        }
++      />
++
++      <section className="grid gap-4 md:grid-cols-3">
++        <Card className="md:col-span-2 overflow-hidden">
++          <CardContent className="from-primary/[0.06] via-card to-card relative p-6 sm:p-7">
++            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary/90 via-primary/45 to-transparent" />
++            <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
++              <div className="space-y-4">
++                <div className="flex flex-wrap items-center gap-2">
++                  <Badge variant={statusVariant}>{group.status}</Badge>
++                  {group.isOwner ? <Badge variant="default">Bạn là chủ nhóm</Badge> : null}
++                </div>
++                <div className="space-y-2">
++                  <h2 className="text-2xl font-semibold tracking-tight">
++                    Không gian chung cho thành viên và hóa đơn
++                  </h2>
++                  <p className="text-muted-foreground max-w-2xl text-sm leading-6 sm:text-base">
++                    Theo dõi danh sách thành viên, hóa đơn đã tạo và trạng thái của cả nhóm trong một màn hình duy nhất.
++                  </p>
++                </div>
++              </div>
++              <div className="grid grid-cols-3 gap-3 self-stretch lg:min-w-[360px]">
++                {stats.map((stat) => (
++                  <div
++                    key={stat.label}
++                    className="bg-background/72 border-border/70 rounded-2xl border px-4 py-4 backdrop-blur"
++                  >
++                    <div className="mb-3 flex items-center justify-between gap-2">
++                      <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
++                        {stat.label}
++                      </p>
++                      <stat.icon className="text-primary size-4" />
++                    </div>
++                    <p className="money text-lg font-semibold tracking-tight sm:text-xl">
++                      {stat.value}
++                    </p>
++                    <p className="text-muted-foreground mt-1 text-xs leading-5">
++                      {stat.helper}
++                    </p>
++                  </div>
++                ))}
++              </div>
++            </div>
++          </CardContent>
++        </Card>
++
++        <Card>
++          <CardHeader>
++            <CardTitle className="flex items-center gap-2 text-base">
++              <FolderLock className="text-primary size-4" />
++              Tóm tắt nhanh
++            </CardTitle>
++            <CardDescription>
++              Các thông tin cốt lõi để quản lý nhóm dễ hơn trên cả desktop và điện thoại.
++            </CardDescription>
++          </CardHeader>
++          <CardContent className="space-y-4">
++            <SummaryRow label="Trạng thái" value={group.status ?? "-"} />
++            <SummaryRow label="Số thành viên" value={`${members.length} người`} />
++            <SummaryRow label="Số hóa đơn" value={`${bills.length} hóa đơn`} />
++            <SummaryRow
++              label="Quyền của bạn"
++              value={group.isOwner ? "Chủ nhóm" : "Thành viên"}
++            />
++          </CardContent>
++        </Card>
++      </section>
++
++      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)]">
++        <Card className="overflow-hidden">
++          <CardHeader className="border-b border-border/80 pb-4">
++            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
++              <div>
++                <CardTitle className="flex items-center gap-2 text-lg">
++                  <UsersRound className="text-primary size-5" />
++                  Thành viên nhóm
++                </CardTitle>
++                <CardDescription className="mt-2">
++                  Hiển thị vai trò, trạng thái và cho phép thêm hoặc xóa thành viên nhanh chóng.
++                </CardDescription>
++              </div>
++              <Badge variant="secondary">{members.length} thành viên</Badge>
++            </div>
++          </CardHeader>
++          <CardContent className="space-y-5 p-4 sm:p-5">
++            <div className="space-y-3">
++              {members.length ? (
++                members.map((member) => (
++                  <div
++                    key={member.memberId}
++                    className="hover:border-primary/25 hover:bg-muted/35 flex flex-col gap-4 rounded-2xl border border-border/75 px-4 py-4 transition-colors sm:flex-row sm:items-center"
++                  >
++                    <div className="bg-primary/10 text-primary grid size-11 shrink-0 place-items-center rounded-full text-sm font-bold">
++                      {(member.name || member.email || "U")
++                        .slice(0, 2)
++                        .toUpperCase()}
++                    </div>
++                    <div className="min-w-0 flex-1">
++                      <p className="truncate text-sm font-semibold sm:text-base">
++                        {member.name || member.email}
++                      </p>
++                      <p className="text-muted-foreground truncate text-sm">
++                        {member.email}
++                      </p>
++                    </div>
++                    <div className="flex flex-wrap items-center gap-2 sm:justify-end">
++                      <Badge
++                        variant={
++                          member.role === "Owner"
++                            ? "default"
++                            : member.status === "Active"
++                              ? "success"
++                              : "warning"
++                        }
++                      >
++                        {member.role === "Owner" ? "Chủ nhóm" : member.status}
++                      </Badge>
++                      {group.isOwner && member.role !== "Owner" && member.memberId ? (
++                        <RemoveGroupMember
++                          groupId={groupId}
++                          memberId={member.memberId}
++                          memberName={member.name || member.email || undefined}
++                        />
++                      ) : null}
++                    </div>
++                  </div>
++                ))
++              ) : (
++                <p className="text-muted-foreground py-8 text-center text-sm">
++                  Nhóm chưa có thành viên nào.
++                </p>
++              )}
++            </div>
++
++            {group.isOwner && group.status === "Active" ? (
++              <div className="bg-muted/40 rounded-2xl border border-border/70 p-4 sm:p-5">
++                <div className="mb-4 flex items-start gap-3">
++                  <div className="bg-primary/10 text-primary grid size-10 shrink-0 place-items-center rounded-2xl">
++                    <UsersRound className="size-4" />
++                  </div>
++                  <div>
++                    <p className="font-semibold">Mời thêm thành viên</p>
++                    <p className="text-muted-foreground mt-1 text-sm leading-6">
++                      Gửi lời mời nhanh cho nhiều người chỉ trong một thao tác.
++                    </p>
++                  </div>
++                </div>
++                <AddGroupMembers groupId={groupId} />
++              </div>
++            ) : null}
++          </CardContent>
++        </Card>
++
++        <Card className="overflow-hidden">
++          <CardHeader className="border-b border-border/80 pb-4">
++            <div className="flex items-center justify-between gap-3">
++              <div>
++                <CardTitle className="flex items-center gap-2 text-lg">
++                  <FileText className="text-primary size-5" />
++                  Hóa đơn của nhóm
++                </CardTitle>
++                <CardDescription className="mt-2">
++                  Các hóa đơn mới nhất được tạo trong nhóm này.
++                </CardDescription>
++              </div>
++              <Badge variant="secondary">{bills.length}</Badge>
++            </div>
++          </CardHeader>
++          <CardContent className="space-y-3 p-4 sm:p-5">
++            {bills.length ? (
++              bills.map((bill) => (
++                <Link
++                  key={bill.billId}
++                  href={`/bills/${bill.billId}`}
++                  className="group hover:border-primary/30 hover:bg-muted/35 flex items-center justify-between gap-4 rounded-2xl border border-border/75 px-4 py-4 transition-colors"
++                >
++                  <div className="min-w-0 flex-1">
++                    <p className="truncate text-sm font-semibold sm:text-base">
++                      {bill.title}
++                    </p>
++                    <div className="mt-2 flex flex-wrap items-center gap-2">
++                      <BillStatusBadge status={bill.status} />
++                    </div>
++                  </div>
++                  <div className="flex items-center gap-3 pl-2">
++                    <div className="text-right">
++                      <p className="money text-sm font-semibold sm:text-base">
++                        {formatCurrency(bill.totalAmount, bill.currency ?? "VND")}
++                      </p>
++                      <p className="text-muted-foreground text-xs">
++                        Chi tiết hóa đơn
++                      </p>
++                    </div>
++                    <ArrowRight className="text-muted-foreground group-hover:text-primary size-4 transition-colors" />
++                  </div>
++                </Link>
++              ))
++            ) : (
++              <div className="flex min-h-[220px] flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border/80 px-6 text-center">
++                <div className="bg-muted text-muted-foreground grid size-12 place-items-center rounded-2xl">
++                  <ReceiptText className="size-5" />
++                </div>
++                <div>
++                  <p className="font-medium">Nhóm chưa có hóa đơn</p>
++                  <p className="text-muted-foreground mt-1 text-sm leading-6">
++                    Khi tạo hóa đơn mới, chúng sẽ xuất hiện ở đây để mọi người cùng theo dõi.
++                  </p>
++                </div>
++              </div>
++            )}
++          </CardContent>
++        </Card>
++      </section>
++    </div>
++  );
++}
++
++function SummaryRow({ label, value }: { label: string; value: string }) {
++  return (
++    <div className="flex items-center justify-between gap-4 border-b border-border/70 pb-3 last:border-none last:pb-0">
++      <span className="text-muted-foreground text-sm">{label}</span>
++      <span className="text-right text-sm font-medium">{value}</span>
++    </div>
++  );
+ }
+diff --git a/src/app/globals.css b/src/app/globals.css
+index 22ec8de..4464905 100644
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -122,6 +122,15 @@ select {
+   animation: backdrop-in var(--motion-base) ease-out both;
+ }
+ 
++.animate-dialog-overlay {
++  animation: dialog-overlay-in var(--motion-base) var(--ease-out) both;
++}
++
++.animate-dialog-content {
++  transform-origin: 50% 30%;
++  animation: dialog-content-in var(--motion-slow) var(--ease-out) both;
++}
++
+ @keyframes page-enter {
+   from {
+     opacity: 0;
+@@ -164,6 +173,26 @@ select {
+   }
+ }
+ 
++@keyframes dialog-overlay-in {
++  from {
++    opacity: 0;
++  }
++  to {
++    opacity: 1;
++  }
++}
++
++@keyframes dialog-content-in {
++  from {
++    opacity: 0;
++    transform: translate(-50%, calc(-50% + 18px)) scale(0.96);
++  }
++  to {
++    opacity: 1;
++    transform: translate(-50%, -50%) scale(1);
++  }
++}
++
+ @media (prefers-reduced-motion: reduce) {
+   html {
+     scroll-behavior: auto;
+diff --git a/src/features/bills/components/bill-member-list.tsx b/src/features/bills/components/bill-member-list.tsx
+index 4aeb85e..2c1e4c8 100644
+--- a/src/features/bills/components/bill-member-list.tsx
++++ b/src/features/bills/components/bill-member-list.tsx
+@@ -1,11 +1,6 @@
+ "use client";
+ 
+-import {
+-  CheckCircle2,
+-  ChevronDown,
+-  ChevronUp,
+-  ReceiptText,
+-} from "lucide-react";
++import { CheckCircle2, ChevronDown, ChevronUp, ReceiptText } from "lucide-react";
+ import { useRouter } from "next/navigation";
+ import { useState } from "react";
+ import { toast } from "sonner";
+@@ -31,85 +26,99 @@ export function BillMemberList({
+   canManage: boolean;
+ }) {
+   const [expanded, setExpanded] = useState<string | null>(null);
+-  if (!members.length)
++
++  if (!members.length) {
+     return (
+       <p className="text-muted-foreground py-10 text-center text-sm">
+         Hóa đơn chưa có thành viên.
+       </p>
+     );
++  }
++
+   return (
+-    <div className="divide-border divide-y">
++    <div className="space-y-3">
+       {members.map((member) => {
+         const id = member.memberId ?? "";
+         const isOpen = expanded === id;
++        const payments = member.payments ?? [];
++        const canExpand =
++          payments.length > 0 || (canManage && (member.remainingAmount ?? 0) > 0);
++
+         return (
+           <div
+             key={id}
+-            className="hover:bg-muted/35 rounded-xl px-2 py-4 transition-colors duration-150"
++            className="hover:border-primary/20 rounded-2xl border border-border/75 bg-background/60 transition-colors"
+           >
+-            <div className="flex items-center gap-3">
+-              <div className="bg-primary/10 text-primary grid size-10 place-items-center rounded-full text-xs font-bold">
++            <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:p-5">
++              <div className="bg-primary/10 text-primary grid size-11 shrink-0 place-items-center rounded-full text-sm font-bold">
+                 {(member.name || member.email || "U").slice(0, 2).toUpperCase()}
+               </div>
++
+               <div className="min-w-0 flex-1">
+-                <p className="truncate text-sm font-medium">
++                <p className="truncate text-sm font-semibold sm:text-base">
+                   {member.name || member.email}
+                 </p>
+-                <p className="text-muted-foreground truncate text-xs">
++                <p className="text-muted-foreground truncate text-sm">
+                   {member.email}
+                 </p>
+               </div>
+-              <div className="hidden text-right sm:block">
+-                <p className="money text-sm font-semibold">
+-                  {formatCurrency(member.remainingAmount, currency)}
+-                </p>
+-                <p className="text-muted-foreground text-xs">còn phải thu</p>
++
++              <div className="grid gap-2 sm:min-w-[180px] sm:justify-items-end">
++                <div className="text-left sm:text-right">
++                  <p className="money text-base font-semibold">
++                    {formatCurrency(member.remainingAmount, currency)}
++                  </p>
++                  <p className="text-muted-foreground text-xs">còn phải thu</p>
++                </div>
++                <div className="flex flex-wrap items-center gap-2 sm:justify-end">
++                  <BillStatusBadge status={member.status} />
++                  {canExpand ? (
++                    <Button
++                      variant="ghost"
++                      size="icon"
++                      onClick={() => setExpanded(isOpen ? null : id)}
++                      aria-label={
++                        isOpen
++                          ? "Đóng chi tiết thành viên"
++                          : "Mở chi tiết thành viên"
++                      }
++                      aria-expanded={isOpen}
++                    >
++                      {isOpen ? (
++                        <ChevronUp className="size-4" />
++                      ) : (
++                        <ChevronDown className="size-4" />
++                      )}
++                    </Button>
++                  ) : null}
++                </div>
+               </div>
+-              <BillStatusBadge status={member.status} />
+-              {member.payments?.length ||
+-              (canManage && (member.remainingAmount ?? 0) > 0) ? (
+-                <Button
+-                  variant="ghost"
+-                  size="icon"
+-                  onClick={() => setExpanded(isOpen ? null : id)}
+-                  aria-label={
+-                    isOpen
+-                      ? "Đóng chi tiết thành viên"
+-                      : "Mở chi tiết thành viên"
+-                  }
+-                  aria-expanded={isOpen}
+-                >
+-                  {isOpen ? (
+-                    <ChevronUp className="size-4" />
+-                  ) : (
+-                    <ChevronDown className="size-4" />
+-                  )}
+-                </Button>
+-              ) : null}
+             </div>
++
+             {isOpen ? (
+-              <div className="animate-expand bg-muted/60 mt-4 ml-0 rounded-xl p-4 sm:ml-13">
+-                {member.payments?.length ? (
+-                  <div className="mb-4 space-y-2">
++              <div className="animate-expand border-t border-border/80 bg-muted/40 px-4 py-4 sm:px-5 sm:py-5">
++                {payments.length ? (
++                  <div className="mb-4 space-y-2.5">
+                     <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+                       Lịch sử thanh toán
+                     </p>
+-                    {member.payments.map((payment) => (
++                    {payments.map((payment) => (
+                       <div
+                         key={payment.paymentId}
+-                        className="flex items-center justify-between gap-3 text-sm"
++                        className="flex flex-col gap-2 rounded-2xl border border-border/70 bg-background/80 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+                       >
+-                        <span className="flex items-center gap-2">
++                        <span className="flex items-center gap-2 text-sm">
+                           <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
+                           {formatDateTime(payment.paidAtUtc)} · {payment.method}
+                         </span>
+-                        <strong className="money">
++                        <strong className="money text-sm">
+                           {formatCurrency(payment.amount, currency)}
+                         </strong>
+                       </div>
+                     ))}
+                   </div>
+                 ) : null}
++
+                 {canManage && id && (member.remainingAmount ?? 0) > 0 ? (
+                   <ManualPaymentForm
+                     billId={billId}
+@@ -140,11 +149,14 @@ function ManualPaymentForm({
+ }) {
+   const router = useRouter();
+   const [pending, setPending] = useState(false);
+-  const [amount, setAmount] = useState(String(max));
++  const [amount, setAmount] = useState<number | "">(max);
+   const [method, setMethod] = useState("Bank transfer");
++
++  const numericAmount = typeof amount === "number" ? amount : 0;
++
+   return (
+     <form
+-      className="border-border grid gap-3 border-t pt-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end"
++      className="space-y-4 rounded-2xl border border-border/75 bg-background/75 p-4"
+       onSubmit={async (event) => {
+         event.preventDefault();
+         setPending(true);
+@@ -154,7 +166,7 @@ function ManualPaymentForm({
+             body: JSON.stringify({
+               action: "manual-payment",
+               memberId,
+-              amount: Number(amount),
++              amount: numericAmount,
+               method,
+             }),
+           });
+@@ -171,33 +183,45 @@ function ManualPaymentForm({
+         }
+       }}
+     >
+-      <div className="space-y-2">
+-        <Label>Số tiền ({currency})</Label>
+-        <Input
+-          type="number"
+-          min="0.01"
+-          max={max}
+-          step="any"
+-          value={amount}
+-          onChange={(event) => setAmount(event.target.value)}
+-        />
++      <div>
++        <p className="text-sm font-semibold">Ghi nhận thanh toán thủ công</p>
++        <p className="text-muted-foreground mt-1 text-xs leading-5">
++          Tối đa có thể ghi nhận: {formatCurrency(max, currency)}
++        </p>
+       </div>
+-      <div className="space-y-2">
+-        <Label>Phương thức</Label>
+-        <Input
+-          value={method}
+-          onChange={(event) => setMethod(event.target.value)}
+-        />
++
++      <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
++        <div className="space-y-2">
++          <Label>Số tiền</Label>
++          <Input
++            value={amount}
++            money={{
++              currency,
++              suggestions: false,
++              onValueChange: setAmount,
++            }}
++          />
++        </div>
++
++        <div className="space-y-2">
++          <Label>Phương thức</Label>
++          <Input
++            value={method}
++            onChange={(event) => setMethod(event.target.value)}
++          />
++        </div>
++
++        <Button
++          size="sm"
++          className="w-full sm:w-auto"
++          disabled={numericAmount <= 0 || numericAmount > max}
++          isLoading={pending}
++          loadingText="Đang ghi nhận…"
++        >
++          <ReceiptText className="size-4" />
++          Xác nhận
++        </Button>
+       </div>
+-      <Button
+-        size="sm"
+-        disabled={Number(amount) <= 0 || Number(amount) > max}
+-        isLoading={pending}
+-        loadingText="Đang ghi nhận…"
+-      >
+-        <ReceiptText className="size-4" />
+-        Xác nhận
+-      </Button>
+     </form>
+   );
+ }
+diff --git a/src/features/groups/components/group-actions.tsx b/src/features/groups/components/group-actions.tsx
+index 8fc3766..73a0f42 100644
+--- a/src/features/groups/components/group-actions.tsx
++++ b/src/features/groups/components/group-actions.tsx
+@@ -1,26 +1,266 @@
+ "use client";
+ 
+-import { Trash2 } from "lucide-react";
++import { AlertTriangle, Trash2, UserPlus2 } from "lucide-react";
+ import { useRouter } from "next/navigation";
+-import { useState } from "react";
++import { useMemo, useState } from "react";
+ import { toast } from "sonner";
+ 
+ import { Button } from "@/components/ui/button";
++import {
++  Dialog,
++  DialogContent,
++  DialogDescription,
++  DialogFooter,
++  DialogHeader,
++  DialogTitle,
++} from "@/components/ui/dialog";
+ import { Input } from "@/components/ui/input";
+ import { Label } from "@/components/ui/label";
+ import { bffFetch } from "@/lib/http/browser-http-client";
+ 
+ export function AddGroupMembers({ groupId }: { groupId: string }) {
+-  const [value, setValue] = useState(""); const [pending, setPending] = useState(false); const router = useRouter();
+-  return <form className="flex flex-col gap-2 sm:flex-row sm:items-end" onSubmit={async (event) => { event.preventDefault(); const emails = value.split(/[\n,;]+/).map((item) => item.trim()).filter(Boolean); if (!emails.length) return; setPending(true); try { const result = await bffFetch<{ addedCount?: number; pendingAccountCount?: number }>(`/api/groups/${groupId}/members`, { method: "POST", body: JSON.stringify({ emails }) }); toast.success(`Đã thêm ${result.addedCount ?? emails.length} thành viên`); setValue(""); router.refresh(); } catch (error) { toast.error(error instanceof Error ? error.message : "Không thể thêm thành viên."); } finally { setPending(false); } }}><div className="flex-1 space-y-2"><Label htmlFor="member-emails">Email thành viên</Label><Input id="member-emails" value={value} onChange={(event) => setValue(event.target.value)} placeholder="anna@example.com, minh@example.com" /></div><Button isLoading={pending} loadingText="Đang thêm…">Thêm thành viên</Button></form>;
++  const [value, setValue] = useState("");
++  const [pending, setPending] = useState(false);
++  const router = useRouter();
++
++  const emailCount = useMemo(
++    () =>
++      value
++        .split(/[\n,;]+/)
++        .map((item) => item.trim())
++        .filter(Boolean).length,
++    [value],
++  );
++
++  return (
++    <form
++      className="space-y-3"
++      onSubmit={async (event) => {
++        event.preventDefault();
++        const emails = value
++          .split(/[\n,;]+/)
++          .map((item) => item.trim())
++          .filter(Boolean);
++        if (!emails.length) return;
++
++        setPending(true);
++        try {
++          const result = await bffFetch<{
++            addedCount?: number;
++            pendingAccountCount?: number;
++          }>(`/api/groups/${groupId}/members`, {
++            method: "POST",
++            body: JSON.stringify({ emails }),
++          });
++          toast.success(`Đã thêm ${result.addedCount ?? emails.length} thành viên`);
++          setValue("");
++          router.refresh();
++        } catch (error) {
++          toast.error(
++            error instanceof Error
++              ? error.message
++              : "Không thể thêm thành viên.",
++          );
++        } finally {
++          setPending(false);
++        }
++      }}
++    >
++      <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-end">
++        <div className="space-y-2">
++          <Label htmlFor="member-emails">Email thành viên</Label>
++          <Input
++            id="member-emails"
++            value={value}
++            onChange={(event) => setValue(event.target.value)}
++            placeholder="anna@example.com, minh@example.com"
++          />
++          <p className="text-muted-foreground text-xs leading-5">
++            Nhập nhiều email, ngăn cách bằng dấu phẩy hoặc xuống dòng.
++          </p>
++        </div>
++        <Button
++          isLoading={pending}
++          loadingText="Đang thêm…"
++          disabled={!emailCount}
++          className="w-full lg:w-auto"
++        >
++          <UserPlus2 className="size-4" />
++          Thêm thành viên
++        </Button>
++      </div>
++
++      {emailCount ? (
++        <div className="bg-muted/70 text-muted-foreground flex flex-col gap-1 rounded-2xl border border-border/70 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
++          <span>Sẵn sàng mời {emailCount} email.</span>
++          <span className="font-medium">
++            Tài khoản chưa tồn tại sẽ được tạo ở trạng thái Pending.
++          </span>
++        </div>
++      ) : null}
++    </form>
++  );
+ }
+ 
+-export function RemoveGroupMember({ groupId, memberId }: { groupId: string; memberId: string }) {
+-  const [pending, setPending] = useState(false); const router = useRouter();
+-  return <Button variant="ghost" size="icon" aria-label="Xóa thành viên" isLoading={pending} onClick={async () => { if (!window.confirm("Xóa thành viên này khỏi nhóm? Lịch sử vẫn được backend giữ lại.")) return; setPending(true); try { await bffFetch(`/api/groups/${groupId}/members/${memberId}`, { method: "DELETE" }); toast.success("Đã xóa thành viên khỏi nhóm"); router.refresh(); } catch (error) { toast.error(error instanceof Error ? error.message : "Không thể xóa thành viên."); } finally { setPending(false); } }}><Trash2 className="size-4 text-destructive" /></Button>;
++export function RemoveGroupMember({
++  groupId,
++  memberId,
++  memberName,
++}: {
++  groupId: string;
++  memberId: string;
++  memberName?: string;
++}) {
++  const [pending, setPending] = useState(false);
++  const [open, setOpen] = useState(false);
++  const router = useRouter();
++
++  return (
++    <>
++      <Button
++        variant="ghost"
++        size="icon"
++        aria-label="Xóa thành viên"
++        isLoading={pending}
++        onClick={() => setOpen(true)}
++        className="hover:bg-destructive/8 hover:text-destructive"
++      >
++        <Trash2 className="size-4" />
++      </Button>
++
++      <Dialog open={open} onOpenChange={setOpen}>
++        <DialogContent>
++          <DialogHeader>
++            <DialogTitle>Xóa thành viên khỏi nhóm?</DialogTitle>
++            <DialogDescription>
++              {memberName ? (
++                <>
++                  Bạn sắp xóa{" "}
++                  <strong className="text-foreground">{memberName}</strong> khỏi
++                  nhóm này.
++                </>
++              ) : (
++                "Bạn sắp xóa một thành viên khỏi nhóm này."
++              )}{" "}
++              Lịch sử hóa đơn vẫn được backend giữ lại.
++            </DialogDescription>
++          </DialogHeader>
++
++          <div className="bg-destructive/[0.055] border-destructive/15 flex items-start gap-3 rounded-2xl border px-4 py-3 text-sm">
++            <AlertTriangle className="text-destructive mt-0.5 size-4 shrink-0" />
++            <p className="text-muted-foreground leading-6">
++              Thành viên sẽ không còn xuất hiện trong danh sách nhóm hiện tại sau
++              khi thao tác hoàn tất.
++            </p>
++          </div>
++
++          <DialogFooter>
++            <Button variant="outline" onClick={() => setOpen(false)}>
++              Hủy
++            </Button>
++            <Button
++              variant="destructive"
++              isLoading={pending}
++              loadingText="Đang xóa…"
++              onClick={async () => {
++                setPending(true);
++                try {
++                  await bffFetch(`/api/groups/${groupId}/members/${memberId}`, {
++                    method: "DELETE",
++                  });
++                  toast.success("Đã xóa thành viên khỏi nhóm");
++                  setOpen(false);
++                  router.refresh();
++                } catch (error) {
++                  toast.error(
++                    error instanceof Error
++                      ? error.message
++                      : "Không thể xóa thành viên.",
++                  );
++                } finally {
++                  setPending(false);
++                }
++              }}
++            >
++              Xóa thành viên
++            </Button>
++          </DialogFooter>
++        </DialogContent>
++      </Dialog>
++    </>
++  );
+ }
+ 
+ export function CloseGroupButton({ groupId }: { groupId: string }) {
+-  const [pending, setPending] = useState(false); const router = useRouter();
+-  return <Button variant="outline" isLoading={pending} loadingText="Đang đóng…" onClick={async () => { if (!window.confirm("Đóng nhóm? Nhóm sẽ không thể nhận thành viên hoặc hóa đơn mới.")) return; setPending(true); try { await bffFetch(`/api/groups/${groupId}/close`, { method: "POST" }); toast.success("Đã đóng nhóm"); router.refresh(); } catch (error) { toast.error(error instanceof Error ? error.message : "Không thể đóng nhóm."); } finally { setPending(false); } }}>Đóng nhóm</Button>;
++  const [pending, setPending] = useState(false);
++  const [open, setOpen] = useState(false);
++  const router = useRouter();
++
++  return (
++    <>
++      <Button
++        variant="outline"
++        isLoading={pending}
++        loadingText="Đang đóng…"
++        onClick={() => setOpen(true)}
++      >
++        Đóng nhóm
++      </Button>
++
++      <Dialog open={open} onOpenChange={setOpen}>
++        <DialogContent>
++          <DialogHeader>
++            <DialogTitle>Đóng nhóm này?</DialogTitle>
++            <DialogDescription>
++              Khi đóng nhóm, bạn sẽ không thể thêm thành viên mới hoặc tạo hóa đơn
++              mới cho nhóm này.
++            </DialogDescription>
++          </DialogHeader>
++
++          <div className="bg-muted/75 rounded-2xl border border-border/80 p-4">
++            <p className="text-sm font-semibold">
++              Điều gì sẽ xảy ra sau khi đóng nhóm?
++            </p>
++            <ul className="text-muted-foreground mt-3 space-y-2 text-sm leading-6">
++              <li>• Nhóm chuyển sang trạng thái đóng.</li>
++              <li>• Không thể nhận thêm thành viên hoặc hóa đơn mới.</li>
++              <li>• Lịch sử thành viên và hóa đơn hiện tại vẫn được giữ nguyên.</li>
++            </ul>
++          </div>
++
++          <DialogFooter>
++            <Button variant="outline" onClick={() => setOpen(false)}>
++              Hủy
++            </Button>
++            <Button
++              variant="destructive"
++              isLoading={pending}
++              loadingText="Đang đóng nhóm…"
++              onClick={async () => {
++                setPending(true);
++                try {
++                  await bffFetch(`/api/groups/${groupId}/close`, {
++                    method: "POST",
++                  });
++                  toast.success("Đã đóng nhóm");
++                  setOpen(false);
++                  router.refresh();
++                } catch (error) {
++                  toast.error(
++                    error instanceof Error
++                      ? error.message
++                      : "Không thể đóng nhóm.",
++                  );
++                } finally {
++                  setPending(false);
++                }
++              }}
++            >
++              Xác nhận đóng nhóm
++            </Button>
++          </DialogFooter>
++        </DialogContent>
++      </Dialog>
++    </>
++  );
+ }
