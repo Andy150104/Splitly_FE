@@ -1,0 +1,635 @@
+diff --git a/src/app/api/bills/[billId]/calculate/route.ts b/src/app/api/bills/[billId]/calculate/route.ts
+new file mode 100644
+index 0000000..e4d7aba
+--- /dev/null
++++ b/src/app/api/bills/[billId]/calculate/route.ts
+@@ -0,0 +1,67 @@
++import { z } from "zod";
++
++import { failure, ok } from "@/app/api/_shared/response";
++import { BillSplitServiceDomainEnumsBillSplitMethod } from "@/generated/api/models";
++import { api } from "@/lib/api/server/api";
++
++type CalculateInput =
++  | { method: "Equal" }
++  | { method: "CustomAmount"; allocations: Record<string, number> };
++
++const schema = z.discriminatedUnion("method", [
++  z.object({
++    method: z.literal("Equal"),
++  }),
++  z.object({
++    method: z.literal("CustomAmount"),
++    allocations: z.record(
++      z.string().trim().toLowerCase().email(),
++      z.number().nonnegative(),
++    ),
++  }),
++]);
++
++export async function POST(
++  request: Request,
++  context: { params: Promise<{ billId: string }> },
++) {
++  try {
++    const { billId } = await context.params;
++    const input: CalculateInput = schema.parse(await request.json());
++
++    if (input.method === "Equal") {
++      return ok(
++        await api.bills.calculate(billId, {
++          method: BillSplitServiceDomainEnumsBillSplitMethod.Equal,
++          allocations: [],
++        }),
++      );
++    }
++
++    const detail = await api.bills.getById(billId);
++    const allocations = (detail.members ?? []).map((member) => {
++      const email = member.email?.trim().toLowerCase();
++      const memberId = member.memberId;
++
++      if (!email || !memberId || input.allocations[email] === undefined) {
++        throw new Error(
++          "Không thể ánh xạ đầy đủ thành viên với số tiền tùy chỉnh.",
++        );
++      }
++
++      return {
++        memberId,
++        amount: input.allocations[email],
++      };
++    });
++
++    return ok(
++      await api.bills.calculate(billId, {
++        method: BillSplitServiceDomainEnumsBillSplitMethod.CustomAmount,
++        allocations,
++      }),
++    );
++  } catch (error) {
++    return failure(error);
++  }
++}
+diff --git a/src/app/api/bills/[billId]/members/route.ts b/src/app/api/bills/[billId]/members/route.ts
+new file mode 100644
+index 0000000..de646dc
+--- /dev/null
++++ b/src/app/api/bills/[billId]/members/route.ts
+@@ -0,0 +1,119 @@
++import { z } from "zod";
++
++import { failure, ok } from "@/app/api/_shared/response";
++import { getCurrentUser } from "@/lib/auth/session";
++import { api } from "@/lib/api/server/api";
++
++type SyncMembersInput = {
++  emails: string[];
++  groupMembers: Array<{ memberId: string; email: string }>;
++  includeOwner: boolean;
++  groupId?: string | null;
++  participantEmails: string[];
++};
++
++const schema = z.object({
++  emails: z.array(z.string().trim().toLowerCase().email()).max(50),
++  groupMembers: z
++    .array(
++      z.object({
++        memberId: z.string().uuid(),
++        email: z.string().trim().toLowerCase().email(),
++      }),
++    )
++    .max(50)
++    .default([]),
++  includeOwner: z.boolean(),
++  groupId: z.string().uuid().nullable().optional(),
++  participantEmails: z
++    .array(z.string().trim().toLowerCase().email())
++    .min(1)
++    .max(51),
++});
++
++/**
++ * Synchronizes the draft bill membership with the wizard selection.
++ *
++ * The backend exposes add/remove operations rather than a replace endpoint.
++ * Keeping the synchronization in the BFF makes revisiting Step 2 idempotent:
++ * going Back → changing participants → Continue will not duplicate members.
++ */
++export async function POST(
++  request: Request,
++  context: { params: Promise<{ billId: string }> },
++) {
++  try {
++    const { billId } = await context.params;
++    const input: SyncMembersInput = schema.parse(await request.json());
++    const currentUser = await getCurrentUser();
++    const detail = await api.bills.getById(billId);
++
++    await api.bills.update(billId, {
++      title: detail.title ?? "",
++      totalAmount: detail.totalAmount ?? 0,
++      currency: detail.currency ?? "VND",
++      groupId: input.groupId ?? null,
++      billDate: detail.billDate ?? null,
++      dueDate: detail.dueDate ?? null,
++      description: detail.description ?? null,
++    });
++
++    const desiredEmails = new Set(
++      input.participantEmails.map((email) => email.toLowerCase()),
++    );
++    const currentMembers = detail.members ?? [];
++
++    for (const member of currentMembers) {
++      const email = member.email?.trim().toLowerCase();
++      if (member.memberId && email && !desiredEmails.has(email)) {
++        await api.bills.removeMember(billId, member.memberId);
++      }
++    }
++
++    const remainingEmails = new Set(
++      currentMembers
++        .map((member) => member.email?.trim().toLowerCase())
++        .filter((email): email is string =>
++          Boolean(email && desiredEmails.has(email)),
++        ),
++    );
++    const ownerEmail = currentUser?.email.trim().toLowerCase();
++    const selectedGroupEmails = new Set(
++      input.groupMembers.map((member) => member.email),
++    );
++    const missingDirectEmails = input.emails.filter(
++      (email) =>
++        !remainingEmails.has(email) &&
++        !selectedGroupEmails.has(email) &&
++        !(input.includeOwner && email === ownerEmail),
++    );
++    const missingGroupMemberIds = input.groupMembers
++      .filter(
++        (member) =>
++          !remainingEmails.has(member.email) &&
++          !(input.includeOwner && member.email === ownerEmail),
++      )
++      .map((member) => member.memberId);
++    const shouldAddOwner = input.includeOwner
++      ? ownerEmail
++        ? !remainingEmails.has(ownerEmail)
++        : true
++      : false;
++
++    if (
++      missingDirectEmails.length > 0 ||
++      missingGroupMemberIds.length > 0 ||
++      shouldAddOwner
++    ) {
++      await api.bills.addMembers(billId, {
++        emails: missingDirectEmails,
++        groupMemberIds: missingGroupMemberIds,
++        includeOwner: shouldAddOwner,
++      });
++    }
++
++    return ok({ synchronized: true });
++  } catch (error) {
++    return failure(error);
++  }
++}
+diff --git a/src/app/api/bills/[billId]/publish/route.ts b/src/app/api/bills/[billId]/publish/route.ts
+new file mode 100644
+index 0000000..0ee2cee
+--- /dev/null
++++ b/src/app/api/bills/[billId]/publish/route.ts
+@@ -0,0 +1,26 @@
++import { z } from "zod";
++
++import { failure, ok } from "@/app/api/_shared/response";
++import { api } from "@/lib/api/server/api";
++
++const schema = z.object({
++  payoutAccountId: z.string().uuid().nullable().optional(),
++});
++
++export async function POST(
++  request: Request,
++  context: { params: Promise<{ billId: string }> },
++) {
++  try {
++    const { billId } = await context.params;
++    const input = schema.parse(await request.json());
++
++    return ok(
++      await api.bills.publish(billId, {
++        payoutAccountId: input.payoutAccountId ?? null,
++      }),
++    );
++  } catch (error) {
++    return failure(error);
++  }
++}
+diff --git a/src/app/api/bills/[billId]/route.ts b/src/app/api/bills/[billId]/route.ts
+index ed37047..9b2ad0c 100644
+--- a/src/app/api/bills/[billId]/route.ts
++++ b/src/app/api/bills/[billId]/route.ts
+@@ -1,6 +1,18 @@
++import { z } from "zod";
++
+ import { failure, ok } from "@/app/api/_shared/response";
+ import { api } from "@/lib/api/server/api";
+ 
++const updateSchema = z.object({
++  title: z.string().trim().min(1).max(200),
++  totalAmount: z.number().positive(),
++  currency: z.string().trim().length(3),
++  groupId: z.string().uuid().nullable().optional(),
++  billDate: z.string().nullable().optional(),
++  dueDate: z.string().nullable().optional(),
++  description: z.string().trim().max(1000).nullable().optional(),
++});
++
+ export async function GET(
+   _request: Request,
+   context: { params: Promise<{ billId: string }> },
+@@ -12,3 +24,17 @@ export async function GET(
+     return failure(error);
+   }
+ }
++
++export async function PUT(
++  request: Request,
++  context: { params: Promise<{ billId: string }> },
++) {
++  try {
++    const { billId } = await context.params;
++    return ok(
++      await api.bills.update(billId, updateSchema.parse(await request.json())),
++    );
++  } catch (error) {
++    return failure(error);
++  }
++}
+diff --git a/src/app/api/bills/workflow/route.ts b/src/app/api/bills/workflow/route.ts
+deleted file mode 100644
+index 1da6370..0000000
+--- a/src/app/api/bills/workflow/route.ts
++++ /dev/null
+@@ -1,70 +0,0 @@
+-import { z } from "zod";
+-
+-import { failure, ok } from "@/app/api/_shared/response";
+-import { BillSplitServiceDomainEnumsBillSplitMethod } from "@/generated/api/models";
+-import { api } from "@/lib/api/server/api";
+-
+-const schema = z.object({
+-  title: z.string().trim().min(1).max(200),
+-  totalAmount: z.number().positive(),
+-  currency: z.string().trim().length(3),
+-  groupId: z.string().uuid().nullable().optional(),
+-  billDate: z.string().nullable().optional(),
+-  dueDate: z.string().nullable().optional(),
+-  description: z.string().trim().max(1000).nullable().optional(),
+-  emails: z.array(z.string().trim().toLowerCase().email()).max(50),
+-  groupMemberIds: z.array(z.string().uuid()).max(50).default([]),
+-  includeOwner: z.boolean(),
+-  splitMethod: z.enum(["Equal", "CustomAmount"]),
+-  allocations: z.record(z.string(), z.number().nonnegative()).default({}),
+-  publish: z.boolean().default(true),
+-  payoutAccountId: z.string().uuid().nullable().optional(),
+-});
+-
+-export async function POST(request: Request) {
+-  try {
+-    const input = schema.parse(await request.json());
+-    const draft = await api.bills.create({
+-      title: input.title,
+-      totalAmount: input.totalAmount,
+-      currency: input.currency.toUpperCase(),
+-      groupId: input.groupId,
+-      billDate: input.billDate,
+-      dueDate: input.dueDate,
+-      description: input.description,
+-    });
+-    if (!draft.billId) throw new Error("Backend did not return a bill ID");
+-
+-    await api.bills.addMembers(draft.billId, {
+-      emails: input.emails,
+-      groupMemberIds: input.groupMemberIds,
+-      includeOwner: input.includeOwner,
+-    });
+-
+-    if (input.splitMethod === "Equal") {
+-      await api.bills.calculate(draft.billId, {
+-        method: BillSplitServiceDomainEnumsBillSplitMethod.Equal,
+-        allocations: [],
+-      });
+-    } else {
+-      const detail = await api.bills.getById(draft.billId);
+-      const allocations = (detail.members ?? []).map((member) => ({
+-        memberId: member.memberId ?? "",
+-        amount: input.allocations[(member.email ?? "").toLowerCase()] ?? 0,
+-      }));
+-      await api.bills.calculate(draft.billId, {
+-        method: BillSplitServiceDomainEnumsBillSplitMethod.CustomAmount,
+-        allocations,
+-      });
+-    }
+-
+-    const published = input.publish
+-      ? await api.bills.publish(draft.billId, {
+-          payoutAccountId: input.payoutAccountId || null,
+-        })
+-      : null;
+-    return ok({ billId: draft.billId, published }, 201);
+-  } catch (error) {
+-    return failure(error);
+-  }
+-}
+diff --git a/src/features/bills/components/create-bill/create-bill-flow.tsx b/src/features/bills/components/create-bill/create-bill-flow.tsx
+index 48b2ab8..0d0fe1d 100644
+--- a/src/features/bills/components/create-bill/create-bill-flow.tsx
++++ b/src/features/bills/components/create-bill/create-bill-flow.tsx
+@@ -15,7 +15,7 @@ import {
+   type LucideIcon,
+ } from "lucide-react";
+ import { useRouter } from "next/navigation";
+-import { useEffect, useMemo, useState } from "react";
++import { useEffect, useMemo, useRef, useState } from "react";
+ import { Controller, useForm, useWatch } from "react-hook-form";
+ import { toast } from "sonner";
+ 
+@@ -82,7 +82,13 @@ export function CreateBillFlow({
+ }) {
+   const router = useRouter();
+   const [step, setStep] = useState(0);
++  const [billId, setBillId] = useState<string | null>(null);
++  const [pendingAction, setPendingAction] = useState<
++    "details" | "members" | "calculate" | "publish" | null
++  >(null);
++  const requestLockRef = useRef(false);
+   const currentStepInfo = steps[step] ?? steps[0];
++  const isBusy = pendingAction !== null;
+   const form = useForm<CreateBillValues>({
+     resolver: zodResolver(createBillSchema),
+     mode: "onChange",
+@@ -132,13 +138,15 @@ export function CreateBillFlow({
+       member.memberId && values.groupMemberIds?.includes(member.memberId),
+   );
+   const participants = Array.from(
+-    new Set([
+-      ...(values.includeOwner ? [ownerEmail] : []),
+-      ...directEmails,
+-      ...selectedGroupMembers
+-        .map((member) => member.email ?? "")
+-        .filter(Boolean),
+-    ]),
++    new Set(
++      [
++        ...(values.includeOwner ? [ownerEmail] : []),
++        ...directEmails,
++        ...selectedGroupMembers
++          .map((member) => member.email ?? "")
++          .filter(Boolean),
++      ].map((email) => email.trim().toLowerCase()),
++    ),
+   );
+   const allocationTotal = participants.reduce(
+     (sum, email) => sum + Number(values.allocations?.[email] ?? 0),
+@@ -172,7 +180,43 @@ export function CreateBillFlow({
+     });
+   }
+ 
++  async function runExclusive(
++    action: Exclude<typeof pendingAction, null>,
++    operation: () => Promise<void>,
++  ) {
++    if (requestLockRef.current) return;
++
++    requestLockRef.current = true;
++    setPendingAction(action);
++    try {
++      await operation();
++    } catch (error) {
++      toast.error(
++        error instanceof Error ? error.message : "Không thể hoàn tất yêu cầu.",
++      );
++    } finally {
++      requestLockRef.current = false;
++      setPendingAction(null);
++    }
++  }
++
++  function getBillDetailsPayload(
++    parsed: ReturnType<typeof createBillSchema.parse>,
++  ) {
++    return {
++      title: parsed.title,
++      totalAmount: parsed.totalAmount,
++      currency: parsed.currency.toUpperCase(),
++      groupId: parsed.groupId || null,
++      billDate: parsed.billDate || null,
++      dueDate: parsed.dueDate || null,
++      description: parsed.description || null,
++    };
++  }
++
+   async function next() {
++    if (requestLockRef.current) return;
++
+     if (
+       step === 0 &&
+       !(await form.trigger(["title", "totalAmount", "currency"]))
+@@ -190,7 +234,94 @@ export function CreateBillFlow({
+       toast.error("Tổng số tiền tùy chỉnh phải bằng tổng hóa đơn.");
+       return;
+     }
+-    setStep((current) => Math.min(3, current + 1));
++
++    const parsedResult = createBillSchema.safeParse(form.getValues());
++    if (!parsedResult.success) {
++      toast.error(
++        parsedResult.error.issues[0]?.message ??
++          "Vui lòng kiểm tra lại thông tin hóa đơn.",
++      );
++      return;
++    }
++    const parsed = parsedResult.data;
++
++    if (step === 0) {
++      await runExclusive("details", async () => {
++        const payload = getBillDetailsPayload(parsed);
++
++        if (billId) {
++          await bffFetch(`/api/bills/${billId}`, {
++            method: "PUT",
++            body: JSON.stringify(payload),
++          });
++        } else {
++          const draft = await bffFetch<{ billId?: string }>("/api/bills", {
++            method: "POST",
++            body: JSON.stringify(payload),
++          });
++          if (!draft.billId) {
++            throw new Error(
++              "Backend không trả về billId sau khi tạo hóa đơn nháp.",
++            );
++          }
++          setBillId(draft.billId);
++        }
++
++        setStep(1);
++      });
++      return;
++    }
++
++    if (!billId) {
++      toast.error("Không tìm thấy hóa đơn nháp. Vui lòng quay lại Bước 1.");
++      return;
++    }
++
++    if (step === 1) {
++      await runExclusive("members", async () => {
++        await bffFetch(`/api/bills/${billId}/members`, {
++          method: "POST",
++          body: JSON.stringify({
++            emails: directEmails,
++            groupMembers: selectedGroupMembers.flatMap((member) =>
++              member.memberId && member.email
++                ? [{ memberId: member.memberId, email: member.email }]
++                : [],
++            ),
++            includeOwner: parsed.includeOwner,
++            groupId: parsed.groupId || null,
++            participantEmails: participants,
++          }),
++        });
++        setStep(2);
++      });
++      return;
++    }
++
++    if (step === 2) {
++      await runExclusive("calculate", async () => {
++        const body =
++          parsed.splitMethod === "Equal"
++            ? { method: "Equal" as const }
++            : {
++                method: "CustomAmount" as const,
++                allocations: Object.fromEntries(
++                  participants.map((email) => [
++                    email,
++                    Number(parsed.allocations[email] ?? 0),
++                  ]),
++                ),
++              };
++
++        // Step 3 must finish calculating before the wizard enters Step 4.
++        // Publish is intentionally NOT called here.
++        await bffFetch(`/api/bills/${billId}/calculate`, {
++          method: "POST",
++          body: JSON.stringify(body),
++        });
++        setStep(3);
++      });
++    }
+   }
+ 
+   return (
+@@ -221,36 +352,34 @@ export function CreateBillFlow({
+         }
+         void form.handleSubmit(
+           async (input) => {
+-            try {
+-              const parsed = createBillSchema.parse(input);
+-              const result = await bffFetch<{ billId: string }>(
+-                "/api/bills/workflow",
+-                {
++            if (!billId) {
++              toast.error(
++                "Không tìm thấy hóa đơn nháp. Vui lòng quay lại Bước 1.",
++              );
++              return;
++            }
++
++            const parsed = createBillSchema.parse(input);
++            await runExclusive("publish", async () => {
++              if (parsed.publish) {
++                // Step 4 performs exactly one mutation: publish.
++                // Step 3 has already completed /calculate before this screen is shown.
++                await bffFetch(`/api/bills/${billId}/publish`, {
+                   method: "POST",
+                   body: JSON.stringify({
+-                    ...parsed,
+-                    groupId: parsed.groupId || null,
+-                    billDate: parsed.billDate || null,
+-                    dueDate: parsed.dueDate || null,
+-                    description: parsed.description || null,
+-                    emails: directEmails,
+-                    allocations: parsed.allocations,
+                     payoutAccountId: parsed.payoutAccountId || null,
+                   }),
+-                },
+-              );
++                });
++              }
++
+               toast.success(
+                 parsed.publish
+-                  ? "Đã tạo và công bố hóa đơn"
++                  ? "Đã công bố hóa đơn"
+                   : "Đã lưu hóa đơn nháp",
+               );
+-              router.push(`/bills/${result.billId}`);
++              router.push(`/bills/${billId}`);
+               router.refresh();
+-            } catch (error) {
+-              toast.error(
+-                error instanceof Error ? error.message : "Không thể tạo hóa đơn.",
+-              );
+-            }
++            });
+           },
+           (errors) => {
+             const firstError = Object.values(errors).find(
+@@ -828,7 +957,7 @@ export function CreateBillFlow({
+               <Button
+                 type="button"
+                 variant="ghost"
+-                disabled={step === 0 || form.formState.isSubmitting}
++                disabled={step === 0 || isBusy || form.formState.isSubmitting}
+                 onClick={() => setStep((current) => current - 1)}
+               >
+                 <ArrowLeft className="size-4" />
+@@ -838,17 +967,28 @@ export function CreateBillFlow({
+                 {currentStepInfo.label}
+               </div>
+               {step < 3 ? (
+-                <Button type="button" onClick={next}>
++                <Button
++                  type="button"
++                  onClick={() => void next()}
++                  disabled={isBusy}
++                  isLoading={isBusy}
++                  loadingText={
++                    pendingAction === "calculate"
++                      ? "Đang chia tiền…"
++                      : "Đang lưu…"
++                  }
++                >
+                   Tiếp tục <ArrowRight className="size-4" />
+                 </Button>
+               ) : (
+                 <Button
+                   type="submit"
+-                  isLoading={form.formState.isSubmitting}
+-                  loadingText="Đang tạo…"
++                  disabled={isBusy}
++                  isLoading={form.formState.isSubmitting || isBusy}
++                  loadingText={values.publish ? "Đang công bố…" : "Đang lưu…"}
+                 >
+                   <Check className="size-4" />
+-                  {values.publish ? "Tạo & công bố" : "Lưu bản nháp"}
++                  {values.publish ? "Công bố hóa đơn" : "Lưu bản nháp"}
+                 </Button>
+               )}
+             </div>

@@ -15,7 +15,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -82,7 +82,13 @@ export function CreateBillFlow({
 }) {
   const router = useRouter();
   const [step, setStep] = useState(0);
+  const [billId, setBillId] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<
+    "details" | "members" | "calculate" | "publish" | null
+  >(null);
+  const requestLockRef = useRef(false);
   const currentStepInfo = steps[step] ?? steps[0];
+  const isBusy = pendingAction !== null;
   const form = useForm<CreateBillValues>({
     resolver: zodResolver(createBillSchema),
     mode: "onChange",
@@ -132,13 +138,15 @@ export function CreateBillFlow({
       member.memberId && values.groupMemberIds?.includes(member.memberId),
   );
   const participants = Array.from(
-    new Set([
-      ...(values.includeOwner ? [ownerEmail] : []),
-      ...directEmails,
-      ...selectedGroupMembers
-        .map((member) => member.email ?? "")
-        .filter(Boolean),
-    ]),
+    new Set(
+      [
+        ...(values.includeOwner ? [ownerEmail] : []),
+        ...directEmails,
+        ...selectedGroupMembers
+          .map((member) => member.email ?? "")
+          .filter(Boolean),
+      ].map((email) => email.trim().toLowerCase()),
+    ),
   );
   const allocationTotal = participants.reduce(
     (sum, email) => sum + Number(values.allocations?.[email] ?? 0),
@@ -172,7 +180,43 @@ export function CreateBillFlow({
     });
   }
 
+  async function runExclusive(
+    action: Exclude<typeof pendingAction, null>,
+    operation: () => Promise<void>,
+  ) {
+    if (requestLockRef.current) return;
+
+    requestLockRef.current = true;
+    setPendingAction(action);
+    try {
+      await operation();
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Không thể hoàn tất yêu cầu.",
+      );
+    } finally {
+      requestLockRef.current = false;
+      setPendingAction(null);
+    }
+  }
+
+  function getBillDetailsPayload(
+    parsed: ReturnType<typeof createBillSchema.parse>,
+  ) {
+    return {
+      title: parsed.title,
+      totalAmount: parsed.totalAmount,
+      currency: parsed.currency.toUpperCase(),
+      groupId: parsed.groupId || null,
+      billDate: parsed.billDate || null,
+      dueDate: parsed.dueDate || null,
+      description: parsed.description || null,
+    };
+  }
+
   async function next() {
+    if (requestLockRef.current) return;
+
     if (
       step === 0 &&
       !(await form.trigger(["title", "totalAmount", "currency"]))
@@ -190,7 +234,94 @@ export function CreateBillFlow({
       toast.error("Tổng số tiền tùy chỉnh phải bằng tổng hóa đơn.");
       return;
     }
-    setStep((current) => Math.min(3, current + 1));
+
+    const parsedResult = createBillSchema.safeParse(form.getValues());
+    if (!parsedResult.success) {
+      toast.error(
+        parsedResult.error.issues[0]?.message ??
+          "Vui lòng kiểm tra lại thông tin hóa đơn.",
+      );
+      return;
+    }
+    const parsed = parsedResult.data;
+
+    if (step === 0) {
+      await runExclusive("details", async () => {
+        const payload = getBillDetailsPayload(parsed);
+
+        if (billId) {
+          await bffFetch(`/api/bills/${billId}`, {
+            method: "PUT",
+            body: JSON.stringify(payload),
+          });
+        } else {
+          const draft = await bffFetch<{ billId?: string }>("/api/bills", {
+            method: "POST",
+            body: JSON.stringify(payload),
+          });
+          if (!draft.billId) {
+            throw new Error(
+              "Backend không trả về billId sau khi tạo hóa đơn nháp.",
+            );
+          }
+          setBillId(draft.billId);
+        }
+
+        setStep(1);
+      });
+      return;
+    }
+
+    if (!billId) {
+      toast.error("Không tìm thấy hóa đơn nháp. Vui lòng quay lại Bước 1.");
+      return;
+    }
+
+    if (step === 1) {
+      await runExclusive("members", async () => {
+        await bffFetch(`/api/bills/${billId}/members`, {
+          method: "POST",
+          body: JSON.stringify({
+            emails: directEmails,
+            groupMembers: selectedGroupMembers.flatMap((member) =>
+              member.memberId && member.email
+                ? [{ memberId: member.memberId, email: member.email }]
+                : [],
+            ),
+            includeOwner: parsed.includeOwner,
+            groupId: parsed.groupId || null,
+            participantEmails: participants,
+          }),
+        });
+        setStep(2);
+      });
+      return;
+    }
+
+    if (step === 2) {
+      await runExclusive("calculate", async () => {
+        const body =
+          parsed.splitMethod === "Equal"
+            ? { method: "Equal" as const }
+            : {
+                method: "CustomAmount" as const,
+                allocations: Object.fromEntries(
+                  participants.map((email) => [
+                    email,
+                    Number(parsed.allocations[email] ?? 0),
+                  ]),
+                ),
+              };
+
+        // Step 3 must finish calculating before the wizard enters Step 4.
+        // Publish is intentionally NOT called here.
+        await bffFetch(`/api/bills/${billId}/calculate`, {
+          method: "POST",
+          body: JSON.stringify(body),
+        });
+        setStep(3);
+      });
+    }
   }
 
   return (
@@ -221,36 +352,34 @@ export function CreateBillFlow({
         }
         void form.handleSubmit(
           async (input) => {
-            try {
-              const parsed = createBillSchema.parse(input);
-              const result = await bffFetch<{ billId: string }>(
-                "/api/bills/workflow",
-                {
+            if (!billId) {
+              toast.error(
+                "Không tìm thấy hóa đơn nháp. Vui lòng quay lại Bước 1.",
+              );
+              return;
+            }
+
+            const parsed = createBillSchema.parse(input);
+            await runExclusive("publish", async () => {
+              if (parsed.publish) {
+                // Step 4 performs exactly one mutation: publish.
+                // Step 3 has already completed /calculate before this screen is shown.
+                await bffFetch(`/api/bills/${billId}/publish`, {
                   method: "POST",
                   body: JSON.stringify({
-                    ...parsed,
-                    groupId: parsed.groupId || null,
-                    billDate: parsed.billDate || null,
-                    dueDate: parsed.dueDate || null,
-                    description: parsed.description || null,
-                    emails: directEmails,
-                    allocations: parsed.allocations,
                     payoutAccountId: parsed.payoutAccountId || null,
                   }),
-                },
-              );
+                });
+              }
+
               toast.success(
                 parsed.publish
-                  ? "Đã tạo và công bố hóa đơn"
+                  ? "Đã công bố hóa đơn"
                   : "Đã lưu hóa đơn nháp",
               );
-              router.push(`/bills/${result.billId}`);
+              router.push(`/bills/${billId}`);
               router.refresh();
-            } catch (error) {
-              toast.error(
-                error instanceof Error ? error.message : "Không thể tạo hóa đơn.",
-              );
-            }
+            });
           },
           (errors) => {
             const firstError = Object.values(errors).find(
@@ -828,7 +957,7 @@ export function CreateBillFlow({
               <Button
                 type="button"
                 variant="ghost"
-                disabled={step === 0 || form.formState.isSubmitting}
+                disabled={step === 0 || isBusy || form.formState.isSubmitting}
                 onClick={() => setStep((current) => current - 1)}
               >
                 <ArrowLeft className="size-4" />
@@ -838,17 +967,28 @@ export function CreateBillFlow({
                 {currentStepInfo.label}
               </div>
               {step < 3 ? (
-                <Button type="button" onClick={next}>
+                <Button
+                  type="button"
+                  onClick={() => void next()}
+                  disabled={isBusy}
+                  isLoading={isBusy}
+                  loadingText={
+                    pendingAction === "calculate"
+                      ? "Đang chia tiền…"
+                      : "Đang lưu…"
+                  }
+                >
                   Tiếp tục <ArrowRight className="size-4" />
                 </Button>
               ) : (
                 <Button
                   type="submit"
-                  isLoading={form.formState.isSubmitting}
-                  loadingText="Đang tạo…"
+                  disabled={isBusy}
+                  isLoading={form.formState.isSubmitting || isBusy}
+                  loadingText={values.publish ? "Đang công bố…" : "Đang lưu…"}
                 >
                   <Check className="size-4" />
-                  {values.publish ? "Tạo & công bố" : "Lưu bản nháp"}
+                  {values.publish ? "Công bố hóa đơn" : "Lưu bản nháp"}
                 </Button>
               )}
             </div>
