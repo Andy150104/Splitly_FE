@@ -153,13 +153,136 @@
         }
       }
     },
+    "/api/admin/support-requests": {
+      "get": {
+        "tags": [
+          "AdminSupportRequests"
+        ],
+        "summary": "Lists all support requests and payment issue reports for Admin.",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Models.PagedResult`1[[BillSplitService.Application.Features.Admin.GetSupportRequests.SupportRequestDto, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Models.PagedResult`1[[BillSplitService.Application.Features.Admin.GetSupportRequests.SupportRequestDto, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Models.PagedResult`1[[BillSplitService.Application.Features.Admin.GetSupportRequests.SupportRequestDto, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/support-requests/{requestId}/status": {
+      "patch": {
+        "tags": [
+          "AdminSupportRequests"
+        ],
+        "summary": "Updates support request status (InReview, Resolved, Dismissed) and resolution notes.",
+        "parameters": [
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.AdminSupportRequestsController.UpdateSupportRequestStatusInput"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.AdminSupportRequestsController.UpdateSupportRequestStatusInput"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.AdminSupportRequestsController.UpdateSupportRequestStatusInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/admin/users": {
       "get": {
         "tags": [
           "AdminUsers"
         ],
         "summary": "Lists users for administration.",
-        "description": "Administrator-only endpoint. Supports search by text, optional status filter and pagination.",
         "parameters": [
           {
             "name": "search",
@@ -222,13 +345,141 @@
         }
       }
     },
+    "/api/admin/users/permissions": {
+      "get": {
+        "tags": [
+          "AdminUsers"
+        ],
+        "summary": "Lists all system permissions available for custom assignment.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Collections.Generic.IReadOnlyList`1[[BillSplitService.Domain.Constants.SystemPermissions.PermissionDescriptor, BillSplitService.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Collections.Generic.IReadOnlyList`1[[BillSplitService.Domain.Constants.SystemPermissions.PermissionDescriptor, BillSplitService.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Collections.Generic.IReadOnlyList`1[[BillSplitService.Domain.Constants.SystemPermissions.PermissionDescriptor, BillSplitService.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/users/{memberId}/permissions": {
+      "get": {
+        "tags": [
+          "AdminUsers"
+        ],
+        "summary": "Gets the custom and effective permissions of a specific user.",
+        "parameters": [
+          {
+            "name": "memberId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Admin.GetMemberPermissions.MemberPermissionsDto, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Admin.GetMemberPermissions.MemberPermissionsDto, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Admin.GetMemberPermissions.MemberPermissionsDto, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "AdminUsers"
+        ],
+        "summary": "Customizes fine-grained privileges/permissions for a specific user.",
+        "parameters": [
+          {
+            "name": "memberId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.AdminUsersController.UpdatePermissionsRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.AdminUsersController.UpdatePermissionsRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.AdminUsersController.UpdatePermissionsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Collections.Generic.List`1[[System.String, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]], System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Collections.Generic.List`1[[System.String, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]], System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Collections.Generic.List`1[[System.String, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]], System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/admin/users/{memberId}/access": {
       "put": {
         "tags": [
           "AdminUsers"
         ],
         "summary": "Changes a user's role or blocked status.",
-        "description": "Administrator-only endpoint. The API prevents an administrator from blocking or demoting\r\nthemselves to avoid losing the last admin session accidentally.",
         "parameters": [
           {
             "name": "memberId",
@@ -283,13 +534,72 @@
         }
       }
     },
+    "/api/admin/users/{memberId}/role": {
+      "patch": {
+        "tags": [
+          "AdminUsers"
+        ],
+        "summary": "Sets a member's role in the system (Administrator or User).",
+        "parameters": [
+          {
+            "name": "memberId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.AdminUsersController.UpdateRoleRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.AdminUsersController.UpdateRoleRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.AdminUsersController.UpdateRoleRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/auth/google": {
       "post": {
         "tags": [
           "Auth"
         ],
         "summary": "Logs in with a Google Identity Services ID token.",
-        "description": "Use this endpoint in production login flows. The frontend sends the Google ID token from\r\nGoogle Sign-In, and the API returns an encrypted JWE access token plus an opaque refresh token.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -333,13 +643,140 @@
         }
       }
     },
+    "/api/auth/send-login-code": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Sends a 10-character login code (OTP passcode) to user's email.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.AuthController.SendLoginCodeRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.AuthController.SendLoginCodeRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.AuthController.SendLoginCodeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Boolean, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/verify-login-code": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Verifies email login code and authenticates user.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.AuthController.VerifyLoginCodeRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.AuthController.VerifyLoginCodeRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.AuthController.VerifyLoginCodeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Authentication.GoogleLogin.GoogleLoginHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Authentication.GoogleLogin.GoogleLoginHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Authentication.GoogleLogin.GoogleLoginHandler.Response, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/me/permissions": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Gets the current logged-in user's role and effective permissions.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Admin.GetMemberPermissions.MemberPermissionsDto, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Admin.GetMemberPermissions.MemberPermissionsDto, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Admin.GetMemberPermissions.MemberPermissionsDto, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/auth/dev-login": {
       "post": {
         "tags": [
           "Auth"
         ],
         "summary": "Logs in as a seeded user for local development.",
-        "description": "Development-only endpoint for testing protected APIs before a Google frontend exists.\r\nUse seeded emails such as admin@example.com. This endpoint returns 404 outside Development.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -389,7 +826,6 @@
           "Auth"
         ],
         "summary": "Refreshes an internal session.",
-        "description": "Exchanges a valid refresh token for a new access token and refresh token. The old refresh\r\ntoken is rotated and should be discarded by the client.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -439,7 +875,6 @@
           "Auth"
         ],
         "summary": "Logs out the current session.",
-        "description": "Revokes the authenticated session represented by the Bearer access token.",
         "responses": {
           "200": {
             "description": "OK",
@@ -1740,6 +2175,55 @@
         }
       }
     },
+    "/api/support-requests": {
+      "post": {
+        "tags": [
+          "SupportRequests"
+        ],
+        "summary": "Submits a support request or payment issue report.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.SupportRequestsController.CreateSupportRequestInput"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.SupportRequestsController.CreateSupportRequestInput"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillSplitService.Api.Controllers.SupportRequestsController.CreateSupportRequestInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Guid, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Guid, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiResponse`1[[System.Guid, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/vietqr/banks": {
       "get": {
         "tags": [
@@ -1773,6 +2257,20 @@
   },
   "components": {
     "schemas": {
+      "BillSplitService.Api.Controllers.AdminSupportRequestsController.UpdateSupportRequestStatusInput": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "resolutionNote": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "BillSplitService.Api.Controllers.AdminUsersController.ChangeAccessRequest": {
         "type": "object",
         "properties": {
@@ -1784,8 +2282,32 @@
             "$ref": "#/components/schemas/BillSplitService.Domain.Enums.MemberRole"
           }
         },
-        "additionalProperties": false,
-        "description": "Request body for changing user access."
+        "additionalProperties": false
+      },
+      "BillSplitService.Api.Controllers.AdminUsersController.UpdatePermissionsRequest": {
+        "type": "object",
+        "properties": {
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of custom permission codes assigned to this specific user (e.g. Bills.Read, SupportRequests.Manage).",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Api.Controllers.AdminUsersController.UpdateRoleRequest": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "description": "Target role: Administrator or User.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
       },
       "BillSplitService.Api.Controllers.AuthController.DevLoginRequest": {
         "type": "object",
@@ -1796,8 +2318,7 @@
             "nullable": true
           }
         },
-        "additionalProperties": false,
-        "description": "Request body for development login."
+        "additionalProperties": false
       },
       "BillSplitService.Api.Controllers.AuthController.GoogleLoginRequest": {
         "type": "object",
@@ -1808,8 +2329,7 @@
             "nullable": true
           }
         },
-        "additionalProperties": false,
-        "description": "Request body for Google login."
+        "additionalProperties": false
       },
       "BillSplitService.Api.Controllers.AuthController.RefreshSessionRequest": {
         "type": "object",
@@ -1820,8 +2340,34 @@
             "nullable": true
           }
         },
-        "additionalProperties": false,
-        "description": "Request body for refreshing a session."
+        "additionalProperties": false
+      },
+      "BillSplitService.Api.Controllers.AuthController.SendLoginCodeRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "User email address to receive magic login passcode.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Api.Controllers.AuthController.VerifyLoginCodeRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "User email address.",
+            "nullable": true
+          },
+          "code": {
+            "type": "string",
+            "description": "10-character passcode sent to email.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
       },
       "BillSplitService.Api.Controllers.BillsController.AddBillMembersRequest": {
         "type": "object",
@@ -2046,6 +2592,34 @@
         "additionalProperties": false,
         "description": "Request body for creating a group."
       },
+      "BillSplitService.Api.Controllers.SupportRequestsController.CreateSupportRequestInput": {
+        "type": "object",
+        "properties": {
+          "contactEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "billId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "paymentOrderId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "BillSplitService.Api.Responses.ApiError": {
         "type": "object",
         "properties": {
@@ -2058,6 +2632,33 @@
             "nullable": true
           },
           "message": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Features.Admin.GetMemberPermissions.MemberPermissionsDto, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/BillSplitService.Application.Features.Admin.GetMemberPermissions.MemberPermissionsDto"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiError"
+            },
+            "nullable": true
+          },
+          "traceId": {
             "type": "string",
             "nullable": true
           }
@@ -2550,6 +3151,33 @@
         },
         "additionalProperties": false
       },
+      "BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Models.PagedResult`1[[BillSplitService.Application.Features.Admin.GetSupportRequests.SupportRequestDto, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/BillSplitService.Application.Models.PagedResult`1[[BillSplitService.Application.Features.Admin.GetSupportRequests.SupportRequestDto, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiError"
+            },
+            "nullable": true
+          },
+          "traceId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "BillSplitService.Api.Responses.ApiResponse`1[[BillSplitService.Application.Models.PagedResult`1[[BillSplitService.Application.Features.Administration.ListUsers.ListUsersHandler.Item, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
@@ -2777,6 +3405,206 @@
           },
           "traceId": {
             "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Api.Responses.ApiResponse`1[[System.Collections.Generic.IReadOnlyList`1[[BillSplitService.Domain.Constants.SystemPermissions.PermissionDescriptor, BillSplitService.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Domain.Constants.SystemPermissions.PermissionDescriptor"
+            },
+            "nullable": true
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiError"
+            },
+            "nullable": true
+          },
+          "traceId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Api.Responses.ApiResponse`1[[System.Collections.Generic.List`1[[System.String, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]], System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiError"
+            },
+            "nullable": true
+          },
+          "traceId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Api.Responses.ApiResponse`1[[System.Guid, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Api.Responses.ApiError"
+            },
+            "nullable": true
+          },
+          "traceId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Features.Admin.GetMemberPermissions.MemberPermissionsDto": {
+        "type": "object",
+        "properties": {
+          "memberId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fullName": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "role": {
+            "type": "string",
+            "nullable": true
+          },
+          "isAdministrator": {
+            "type": "boolean"
+          },
+          "customPermissions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "effectivePermissions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BillSplitService.Application.Features.Admin.GetSupportRequests.SupportRequestDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "memberId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "memberName": {
+            "type": "string",
+            "nullable": true
+          },
+          "contactEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "billId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "billTitle": {
+            "type": "string",
+            "nullable": true
+          },
+          "paymentOrderId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "resolutionNote": {
+            "type": "string",
+            "nullable": true
+          },
+          "resolvedByMemberId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "resolvedByMemberName": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "resolvedAtUtc": {
+            "type": "string",
+            "format": "date-time",
             "nullable": true
           }
         },
@@ -3810,6 +4638,44 @@
         },
         "additionalProperties": false
       },
+      "BillSplitService.Application.Models.PagedResult`1[[BillSplitService.Application.Features.Admin.GetSupportRequests.SupportRequestDto, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillSplitService.Application.Features.Admin.GetSupportRequests.SupportRequestDto"
+            },
+            "nullable": true
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageNumber": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32",
+            "readOnly": true
+          },
+          "hasPreviousPage": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "hasNextPage": {
+            "type": "boolean",
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
       "BillSplitService.Application.Models.PagedResult`1[[BillSplitService.Application.Features.Administration.ListUsers.ListUsersHandler.Item, BillSplitService.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]": {
         "type": "object",
         "properties": {
@@ -3960,6 +4826,24 @@
         },
         "additionalProperties": false
       },
+      "BillSplitService.Domain.Constants.SystemPermissions.PermissionDescriptor": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "category": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "BillSplitService.Domain.Enums.BillSplitMethod": {
         "enum": [
           "Equal",
@@ -4003,6 +4887,9 @@
       "name": "AdminPayouts"
     },
     {
+      "name": "AdminSupportRequests"
+    },
+    {
       "name": "AdminUsers"
     },
     {
@@ -4025,6 +4912,9 @@
     },
     {
       "name": "PayoutAccounts"
+    },
+    {
+      "name": "SupportRequests"
     },
     {
       "name": "VietQr"

@@ -6,9 +6,6 @@
  * OpenAPI spec version: v1
  */
 
-/**
- * Request body for Google login.
- */
 export interface BillSplitServiceApiControllersAuthControllerGoogleLoginRequest {
   /**
      * Google ID token from Google Identity Services response.credential.

@@ -10,14 +10,20 @@ function normalizedName(name: string) {
     name.includes("List");
   const isPagedResult = name.includes("Application.Models.PagedResult");
 
-  const featureMatch = name.match(/Features\.([^.]+)\.([^.]+)\./);
-  const feature = featureMatch ? featureMatch[2] : null;
-
   if (name.includes("VietQrBankInfo")) {
     return isReadOnlyCollection
       ? "ApiResponseListVietQrBankInfo"
       : "ApiResponseVietQrBankInfo";
   }
+
+  if (name.includes("PermissionDescriptor")) {
+    return isReadOnlyCollection
+      ? "ApiResponseListPermissionDescriptor"
+      : "ApiResponsePermissionDescriptor";
+  }
+
+  const featureMatch = name.match(/Features\.([^.]+)\.([^.]+)\./);
+  const feature = featureMatch ? featureMatch[2] : null;
 
   if (feature && name.includes("Api.Responses.ApiResponse")) {
     if (isReadOnlyCollection) return `ApiResponseList${feature}`;

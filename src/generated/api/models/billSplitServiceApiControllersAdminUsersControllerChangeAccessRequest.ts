@@ -7,9 +7,6 @@
  */
 import type { BillSplitServiceDomainEnumsMemberRole } from './billSplitServiceDomainEnumsMemberRole';
 
-/**
- * Request body for changing user access.
- */
 export interface BillSplitServiceApiControllersAdminUsersControllerChangeAccessRequest {
   /** True blocks the account; false keeps or restores active access. */
   blocked?: boolean;

@@ -6,10 +6,15 @@
  * OpenAPI spec version: v1
  */
 
-export interface BillSplitServiceApiControllersAuthControllerDevLoginRequest {
+export interface BillSplitServiceApiControllersAuthControllerVerifyLoginCodeRequest {
   /**
-     * Seeded member email to login as, for example admin@example.com.
+     * User email address.
      * @nullable
      */
   email?: string | null;
+  /**
+     * 10-character passcode sent to email.
+     * @nullable
+     */
+  code?: string | null;
 }

@@ -6,10 +6,10 @@
  * OpenAPI spec version: v1
  */
 
-export interface BillSplitServiceApiControllersAuthControllerDevLoginRequest {
+export interface BillSplitServiceApiControllersAdminUsersControllerUpdateRoleRequest {
   /**
-     * Seeded member email to login as, for example admin@example.com.
+     * Target role: Administrator or User.
      * @nullable
      */
-  email?: string | null;
+  role?: string | null;
 }

@@ -19,6 +19,7 @@ import type {
   ApiResponseDevLogin,
   ApiResponseGetBill,
   ApiResponseGetGroup,
+  ApiResponseGetMemberPermissions,
   ApiResponseGetPaymentOrder,
   ApiResponseGoogleLogin,
   ApiResponseListListBills,
@@ -27,15 +28,22 @@ import type {
   ApiResponseListListPayoutAccounts,
   ApiResponseListListReviewRequiredPayouts,
   ApiResponseListListUsers,
+  ApiResponseListPermissionDescriptor,
   ApiResponseListVietQrBankInfo,
+  ApiResponsePagedGetSupportRequests,
   ApiResponsePublishBill,
   ApiResponseRecordManualPayment,
   ApiResponseRefreshSession,
   ApiResponseSendBillReminders,
+  BillSplitServiceApiControllersAdminSupportRequestsControllerUpdateSupportRequestStatusInput,
   BillSplitServiceApiControllersAdminUsersControllerChangeAccessRequest,
+  BillSplitServiceApiControllersAdminUsersControllerUpdatePermissionsRequest,
+  BillSplitServiceApiControllersAdminUsersControllerUpdateRoleRequest,
   BillSplitServiceApiControllersAuthControllerDevLoginRequest,
   BillSplitServiceApiControllersAuthControllerGoogleLoginRequest,
   BillSplitServiceApiControllersAuthControllerRefreshSessionRequest,
+  BillSplitServiceApiControllersAuthControllerSendLoginCodeRequest,
+  BillSplitServiceApiControllersAuthControllerVerifyLoginCodeRequest,
   BillSplitServiceApiControllersBillsControllerAddBillMembersRequest,
   BillSplitServiceApiControllersBillsControllerCalculateBillRequest,
   BillSplitServiceApiControllersBillsControllerCancelBillRequest,
@@ -45,10 +53,14 @@ import type {
   BillSplitServiceApiControllersBillsControllerSendRemindersRequest,
   BillSplitServiceApiControllersGroupsControllerAddGroupMembersRequest,
   BillSplitServiceApiControllersGroupsControllerCreateGroupRequest,
+  BillSplitServiceApiControllersSupportRequestsControllerCreateSupportRequestInput,
+  BillSplitServiceApiResponsesApiResponse1SystemCollectionsGenericList1SystemStringSystemPrivateCoreLibVersion10000CultureNeutralPublicKeyToken7cec85d7bea7798eSystemPrivateCoreLibVersion10000CultureNeutralPublicKeyToken7cec85d7bea7798e,
+  BillSplitServiceApiResponsesApiResponse1SystemGuidSystemPrivateCoreLibVersion10000CultureNeutralPublicKeyToken7cec85d7bea7798e,
   BillSplitServiceApplicationFeaturesAdminManualResolvePayoutManualResolvePayoutHandlerRequest,
   BillSplitServiceApplicationFeaturesAdminRetryPayoutRetryPayoutHandlerRequest,
   BillSplitServiceApplicationFeaturesBillsPublishBillPublishBillHandlerRequest,
   BillSplitServiceApplicationFeaturesPayoutAccountsAddPayoutAccountAddPayoutAccountHandlerRequest,
+  GetApiAdminSupportRequestsParams,
   GetApiAdminUsersParams,
   GetApiBillsParams,
   GetApiGroupsParams
@@ -93,7 +105,34 @@ const postApiAdminPayoutsIdManualResolve = (
     }
 
 /**
- * Administrator-only endpoint. Supports search by text, optional status filter and pagination.
+ * @summary Lists all support requests and payment issue reports for Admin.
+ */
+const getApiAdminSupportRequests = (
+    params?: GetApiAdminSupportRequestsParams,
+ options?: SecondParameter<typeof orvalMutator<ApiResponsePagedGetSupportRequests>>,) => {
+      return orvalMutator<ApiResponsePagedGetSupportRequests>(
+      {url: `/api/admin/support-requests`, method: 'GET',
+        params
+    },
+      options);
+    }
+
+/**
+ * @summary Updates support request status (InReview, Resolved, Dismissed) and resolution notes.
+ */
+const patchApiAdminSupportRequestsRequestIdStatus = (
+    requestId: string,
+    billSplitServiceApiControllersAdminSupportRequestsControllerUpdateSupportRequestStatusInput?: BillSplitServiceApiControllersAdminSupportRequestsControllerUpdateSupportRequestStatusInput,
+ options?: SecondParameter<typeof orvalMutator<ApiResponseBoolean>>,) => {
+      return orvalMutator<ApiResponseBoolean>(
+      {url: `/api/admin/support-requests/${requestId}/status`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: billSplitServiceApiControllersAdminSupportRequestsControllerUpdateSupportRequestStatusInput
+    },
+      options);
+    }
+
+/**
  * @summary Lists users for administration.
  */
 const getApiAdminUsers = (
@@ -107,8 +146,45 @@ const getApiAdminUsers = (
     }
 
 /**
- * Administrator-only endpoint. The API prevents an administrator from blocking or demoting
- * themselves to avoid losing the last admin session accidentally.
+ * @summary Lists all system permissions available for custom assignment.
+ */
+const getApiAdminUsersPermissions = (
+
+ options?: SecondParameter<typeof orvalMutator<ApiResponseListPermissionDescriptor>>,) => {
+      return orvalMutator<ApiResponseListPermissionDescriptor>(
+      {url: `/api/admin/users/permissions`, method: 'GET'
+    },
+      options);
+    }
+
+/**
+ * @summary Gets the custom and effective permissions of a specific user.
+ */
+const getApiAdminUsersMemberIdPermissions = (
+    memberId: string,
+ options?: SecondParameter<typeof orvalMutator<ApiResponseGetMemberPermissions>>,) => {
+      return orvalMutator<ApiResponseGetMemberPermissions>(
+      {url: `/api/admin/users/${memberId}/permissions`, method: 'GET'
+    },
+      options);
+    }
+
+/**
+ * @summary Customizes fine-grained privileges/permissions for a specific user.
+ */
+const patchApiAdminUsersMemberIdPermissions = (
+    memberId: string,
+    billSplitServiceApiControllersAdminUsersControllerUpdatePermissionsRequest?: BillSplitServiceApiControllersAdminUsersControllerUpdatePermissionsRequest,
+ options?: SecondParameter<typeof orvalMutator<BillSplitServiceApiResponsesApiResponse1SystemCollectionsGenericList1SystemStringSystemPrivateCoreLibVersion10000CultureNeutralPublicKeyToken7cec85d7bea7798eSystemPrivateCoreLibVersion10000CultureNeutralPublicKeyToken7cec85d7bea7798e>>,) => {
+      return orvalMutator<BillSplitServiceApiResponsesApiResponse1SystemCollectionsGenericList1SystemStringSystemPrivateCoreLibVersion10000CultureNeutralPublicKeyToken7cec85d7bea7798eSystemPrivateCoreLibVersion10000CultureNeutralPublicKeyToken7cec85d7bea7798e>(
+      {url: `/api/admin/users/${memberId}/permissions`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: billSplitServiceApiControllersAdminUsersControllerUpdatePermissionsRequest
+    },
+      options);
+    }
+
+/**
  * @summary Changes a user's role or blocked status.
  */
 const putApiAdminUsersMemberIdAccess = (
@@ -124,8 +200,21 @@ const putApiAdminUsersMemberIdAccess = (
     }
 
 /**
- * Use this endpoint in production login flows. The frontend sends the Google ID token from
- * Google Sign-In, and the API returns an encrypted JWE access token plus an opaque refresh token.
+ * @summary Sets a member's role in the system (Administrator or User).
+ */
+const patchApiAdminUsersMemberIdRole = (
+    memberId: string,
+    billSplitServiceApiControllersAdminUsersControllerUpdateRoleRequest?: BillSplitServiceApiControllersAdminUsersControllerUpdateRoleRequest,
+ options?: SecondParameter<typeof orvalMutator<ApiResponseBoolean>>,) => {
+      return orvalMutator<ApiResponseBoolean>(
+      {url: `/api/admin/users/${memberId}/role`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: billSplitServiceApiControllersAdminUsersControllerUpdateRoleRequest
+    },
+      options);
+    }
+
+/**
  * @summary Logs in with a Google Identity Services ID token.
  */
 const postApiAuthGoogle = (
@@ -140,8 +229,46 @@ const postApiAuthGoogle = (
     }
 
 /**
- * Development-only endpoint for testing protected APIs before a Google frontend exists.
- * Use seeded emails such as admin@example.com. This endpoint returns 404 outside Development.
+ * @summary Sends a 10-character login code (OTP passcode) to user's email.
+ */
+const postApiAuthSendLoginCode = (
+    billSplitServiceApiControllersAuthControllerSendLoginCodeRequest?: BillSplitServiceApiControllersAuthControllerSendLoginCodeRequest,
+ options?: SecondParameter<typeof orvalMutator<ApiResponseBoolean>>,) => {
+      return orvalMutator<ApiResponseBoolean>(
+      {url: `/api/auth/send-login-code`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: billSplitServiceApiControllersAuthControllerSendLoginCodeRequest
+    },
+      options);
+    }
+
+/**
+ * @summary Verifies email login code and authenticates user.
+ */
+const postApiAuthVerifyLoginCode = (
+    billSplitServiceApiControllersAuthControllerVerifyLoginCodeRequest?: BillSplitServiceApiControllersAuthControllerVerifyLoginCodeRequest,
+ options?: SecondParameter<typeof orvalMutator<ApiResponseGoogleLogin>>,) => {
+      return orvalMutator<ApiResponseGoogleLogin>(
+      {url: `/api/auth/verify-login-code`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: billSplitServiceApiControllersAuthControllerVerifyLoginCodeRequest
+    },
+      options);
+    }
+
+/**
+ * @summary Gets the current logged-in user's role and effective permissions.
+ */
+const getApiAuthMePermissions = (
+
+ options?: SecondParameter<typeof orvalMutator<ApiResponseGetMemberPermissions>>,) => {
+      return orvalMutator<ApiResponseGetMemberPermissions>(
+      {url: `/api/auth/me/permissions`, method: 'GET'
+    },
+      options);
+    }
+
+/**
  * @summary Logs in as a seeded user for local development.
  */
 const postApiAuthDevLogin = (
@@ -156,8 +283,6 @@ const postApiAuthDevLogin = (
     }
 
 /**
- * Exchanges a valid refresh token for a new access token and refresh token. The old refresh
- * token is rotated and should be discarded by the client.
  * @summary Refreshes an internal session.
  */
 const postApiAuthRefresh = (
@@ -172,7 +297,6 @@ const postApiAuthRefresh = (
     }
 
 /**
- * Revokes the authenticated session represented by the Bearer access token.
  * @summary Logs out the current session.
  */
 const postApiAuthLogout = (
@@ -547,6 +671,20 @@ const putApiPayoutAccountsIdDefault = (
     }
 
 /**
+ * @summary Submits a support request or payment issue report.
+ */
+const postApiSupportRequests = (
+    billSplitServiceApiControllersSupportRequestsControllerCreateSupportRequestInput?: BillSplitServiceApiControllersSupportRequestsControllerCreateSupportRequestInput,
+ options?: SecondParameter<typeof orvalMutator<BillSplitServiceApiResponsesApiResponse1SystemGuidSystemPrivateCoreLibVersion10000CultureNeutralPublicKeyToken7cec85d7bea7798e>>,) => {
+      return orvalMutator<BillSplitServiceApiResponsesApiResponse1SystemGuidSystemPrivateCoreLibVersion10000CultureNeutralPublicKeyToken7cec85d7bea7798e>(
+      {url: `/api/support-requests`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: billSplitServiceApiControllersSupportRequestsControllerCreateSupportRequestInput
+    },
+      options);
+    }
+
+/**
  * @summary Returns the bank directory currently supported by VietQR.
  */
 const getApiVietqrBanks = (
@@ -558,13 +696,22 @@ const getApiVietqrBanks = (
       options);
     }
 
-return {getApiAdminPayoutsReviewRequired,postApiAdminPayoutsIdRetry,postApiAdminPayoutsIdManualResolve,getApiAdminUsers,putApiAdminUsersMemberIdAccess,postApiAuthGoogle,postApiAuthDevLogin,postApiAuthRefresh,postApiAuthLogout,postApiBills,getApiBills,putApiBillsBillId,getApiBillsBillId,postApiBillsBillIdMembers,deleteApiBillsBillIdMembersMemberId,postApiBillsBillIdCalculate,putApiBillsBillIdVietqrPayment,postApiBillsBillIdPublish,postApiBillsBillIdCancel,postApiBillsBillIdReminders,postApiBillsBillIdMembersMemberIdManualPayments,postApiGroups,getApiGroups,getApiGroupsGroupId,postApiGroupsGroupIdMembers,deleteApiGroupsGroupIdMembersMemberId,postApiGroupsGroupIdClose,getApiPaymentAccounts,putApiPaymentAccountsPaymentAccountIdDefault,postApiBillSplitsBillSplitIdPaymentOrder,getApiPaymentOrdersId,postApiIntegrationsPayosWebhook,postApiPayoutAccounts,getApiPayoutAccounts,putApiPayoutAccountsIdDefault,getApiVietqrBanks}};
+return {getApiAdminPayoutsReviewRequired,postApiAdminPayoutsIdRetry,postApiAdminPayoutsIdManualResolve,getApiAdminSupportRequests,patchApiAdminSupportRequestsRequestIdStatus,getApiAdminUsers,getApiAdminUsersPermissions,getApiAdminUsersMemberIdPermissions,patchApiAdminUsersMemberIdPermissions,putApiAdminUsersMemberIdAccess,patchApiAdminUsersMemberIdRole,postApiAuthGoogle,postApiAuthSendLoginCode,postApiAuthVerifyLoginCode,getApiAuthMePermissions,postApiAuthDevLogin,postApiAuthRefresh,postApiAuthLogout,postApiBills,getApiBills,putApiBillsBillId,getApiBillsBillId,postApiBillsBillIdMembers,deleteApiBillsBillIdMembersMemberId,postApiBillsBillIdCalculate,putApiBillsBillIdVietqrPayment,postApiBillsBillIdPublish,postApiBillsBillIdCancel,postApiBillsBillIdReminders,postApiBillsBillIdMembersMemberIdManualPayments,postApiGroups,getApiGroups,getApiGroupsGroupId,postApiGroupsGroupIdMembers,deleteApiGroupsGroupIdMembersMemberId,postApiGroupsGroupIdClose,getApiPaymentAccounts,putApiPaymentAccountsPaymentAccountIdDefault,postApiBillSplitsBillSplitIdPaymentOrder,getApiPaymentOrdersId,postApiIntegrationsPayosWebhook,postApiPayoutAccounts,getApiPayoutAccounts,putApiPayoutAccountsIdDefault,postApiSupportRequests,getApiVietqrBanks}};
 export type GetApiAdminPayoutsReviewRequiredResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['getApiAdminPayoutsReviewRequired']>>>
 export type PostApiAdminPayoutsIdRetryResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['postApiAdminPayoutsIdRetry']>>>
 export type PostApiAdminPayoutsIdManualResolveResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['postApiAdminPayoutsIdManualResolve']>>>
+export type GetApiAdminSupportRequestsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['getApiAdminSupportRequests']>>>
+export type PatchApiAdminSupportRequestsRequestIdStatusResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['patchApiAdminSupportRequestsRequestIdStatus']>>>
 export type GetApiAdminUsersResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['getApiAdminUsers']>>>
+export type GetApiAdminUsersPermissionsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['getApiAdminUsersPermissions']>>>
+export type GetApiAdminUsersMemberIdPermissionsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['getApiAdminUsersMemberIdPermissions']>>>
+export type PatchApiAdminUsersMemberIdPermissionsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['patchApiAdminUsersMemberIdPermissions']>>>
 export type PutApiAdminUsersMemberIdAccessResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['putApiAdminUsersMemberIdAccess']>>>
+export type PatchApiAdminUsersMemberIdRoleResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['patchApiAdminUsersMemberIdRole']>>>
 export type PostApiAuthGoogleResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['postApiAuthGoogle']>>>
+export type PostApiAuthSendLoginCodeResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['postApiAuthSendLoginCode']>>>
+export type PostApiAuthVerifyLoginCodeResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['postApiAuthVerifyLoginCode']>>>
+export type GetApiAuthMePermissionsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['getApiAuthMePermissions']>>>
 export type PostApiAuthDevLoginResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['postApiAuthDevLogin']>>>
 export type PostApiAuthRefreshResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['postApiAuthRefresh']>>>
 export type PostApiAuthLogoutResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['postApiAuthLogout']>>>
@@ -594,4 +741,5 @@ export type PostApiIntegrationsPayosWebhookResult = NonNullable<Awaited<ReturnTy
 export type PostApiPayoutAccountsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['postApiPayoutAccounts']>>>
 export type GetApiPayoutAccountsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['getApiPayoutAccounts']>>>
 export type PutApiPayoutAccountsIdDefaultResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['putApiPayoutAccountsIdDefault']>>>
+export type PostApiSupportRequestsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['postApiSupportRequests']>>>
 export type GetApiVietqrBanksResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['getApiVietqrBanks']>>>

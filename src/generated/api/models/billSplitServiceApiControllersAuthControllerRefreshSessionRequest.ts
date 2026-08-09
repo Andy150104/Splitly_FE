@@ -6,9 +6,6 @@
  * OpenAPI spec version: v1
  */
 
-/**
- * Request body for refreshing a session.
- */
 export interface BillSplitServiceApiControllersAuthControllerRefreshSessionRequest {
   /**
      * Opaque refresh token returned by login or a previous refresh call.

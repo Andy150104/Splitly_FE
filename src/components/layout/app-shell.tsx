@@ -8,8 +8,10 @@ import {
   FileText,
   Landmark,
   LayoutDashboard,
+  LifeBuoy,
   Menu,
   Plus,
+  ShieldCheck,
   UsersRound,
   WalletCards,
   X,
@@ -22,14 +24,24 @@ import { useEffect, useState, type ReactNode } from "react";
 import type { CurrentUser } from "@/lib/auth/session";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { LogoutButton } from "@/components/layout/logout-button";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { CreateSupportModal } from "@/features/support/components/create-support-modal";
 
 const nav = [
   { href: "/dashboard" as Route, label: "Tổng quan", icon: LayoutDashboard },
   { href: "/bills" as Route, label: "Hóa đơn", icon: FileText },
   { href: "/groups" as Route, label: "Nhóm", icon: UsersRound },
   { href: "/payout-accounts" as Route, label: "Tài khoản Payout", icon: Landmark },
+  { href: "/admin/users" as Route, label: "Quản lý người dùng", icon: ShieldCheck },
+  { href: "/admin/support-requests" as Route, label: "Yêu cầu hỗ trợ", icon: LifeBuoy },
 ] as const;
 
 export function AppShell({
@@ -42,6 +54,7 @@ export function AppShell({
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [avatarOpen, setAvatarOpen] = useState(false);
   const initials = user.displayName
     .split(" ")
     .slice(-2)
@@ -79,7 +92,11 @@ export function AppShell({
               ? { parent: "Splitly", href: "/dashboard" as Route, current: "Nhóm" }
               : pathname.startsWith("/payout-accounts")
                 ? { parent: "Splitly", href: "/dashboard" as Route, current: "Tài khoản Payout" }
-                : { parent: "Splitly", href: "/dashboard" as Route, current: "Tổng quan" };
+                : pathname.startsWith("/admin/users")
+                  ? { parent: "Quản trị", href: "/dashboard" as Route, current: "Quản lý người dùng" }
+                  : pathname.startsWith("/admin/support-requests")
+                    ? { parent: "Quản trị", href: "/dashboard" as Route, current: "Yêu cầu hỗ trợ" }
+                    : { parent: "Splitly", href: "/dashboard" as Route, current: "Tổng quan" };
 
   function sidebar(compact: boolean, mobile = false) {
     return (
@@ -247,20 +264,71 @@ export function AppShell({
               </Button>
             ) : null}
             <ThemeToggle />
-            <div className="border-border/70 hidden border-l pl-3 text-right sm:block">
-              <p className="text-sm leading-tight font-medium">
-                {user.displayName}
-              </p>
-              <p className="text-muted-foreground max-w-44 truncate text-xs">
-                {user.email}
-              </p>
-            </div>
-            <Avatar className="border-primary/15 bg-primary/10 text-primary inline-flex size-9 items-center justify-center overflow-hidden rounded-full border text-xs font-bold shadow-sm transition-transform duration-150 hover:scale-[1.04]">
-              {user.avatarUrl ? (
-                <AvatarImage src={user.avatarUrl} alt="" />
-              ) : null}
-              <AvatarFallback>{initials || "U"}</AvatarFallback>
-            </Avatar>
+            <CreateSupportModal defaultEmail={user.email} />
+            <button
+              type="button"
+              onClick={() => setAvatarOpen(true)}
+              title="Bấm để xem ảnh đại diện"
+              className="group cursor-pointer flex items-center gap-2.5 rounded-xl p-1 transition-all duration-150 hover:bg-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+            >
+              <div className="border-border/70 hidden border-l pl-3 text-right sm:block">
+                <p className="text-sm leading-tight font-medium group-hover:text-primary transition-colors">
+                  {user.displayName}
+                </p>
+                <p className="text-muted-foreground max-w-44 truncate text-xs">
+                  {user.email}
+                </p>
+              </div>
+              <Avatar className="border-primary/20 bg-primary/10 text-primary inline-flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full border text-xs font-bold shadow-sm transition-transform duration-150 group-hover:scale-105 group-hover:border-primary/40">
+                {user.avatarUrl ? (
+                  <AvatarImage src={user.avatarUrl} alt={user.displayName} />
+                ) : null}
+                <AvatarFallback>{initials || "U"}</AvatarFallback>
+              </Avatar>
+            </button>
+
+            {/* Avatar Preview Lightbox Modal */}
+            <Dialog open={avatarOpen} onOpenChange={setAvatarOpen}>
+              <DialogContent className="sm:max-w-md text-center p-6 sm:p-8">
+                <DialogHeader className="items-center text-center">
+                  <DialogTitle className="text-xl font-bold">
+                    {user.displayName}
+                  </DialogTitle>
+                  <DialogDescription className="text-sm text-muted-foreground mt-0.5">
+                    {user.email}
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="my-6 flex justify-center">
+                  <div className="relative flex size-48 sm:size-56 shrink-0 items-center justify-center rounded-full border-4 border-primary/20 bg-gradient-to-br from-primary/15 to-primary/5 p-1 shadow-xl ring-8 ring-primary/5">
+                    {user.avatarUrl ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={user.avatarUrl}
+                        alt={user.displayName}
+                        className="size-full rounded-full object-cover shadow-inner"
+                      />
+                    ) : (
+                      <div className="flex size-full items-center justify-center rounded-full bg-primary/15 font-bold text-4xl sm:text-5xl text-primary tracking-wider">
+                        {initials || "U"}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex justify-center">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setAvatarOpen(false)}
+                    className="w-full sm:w-auto px-6"
+                  >
+                    Đóng
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </header>
         <main className="mx-auto w-full max-w-[1440px] p-4 sm:p-5 lg:px-7 lg:py-5">

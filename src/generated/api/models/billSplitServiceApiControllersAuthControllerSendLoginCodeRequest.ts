@@ -6,9 +6,9 @@
  * OpenAPI spec version: v1
  */
 
-export interface BillSplitServiceApiControllersAuthControllerDevLoginRequest {
+export interface BillSplitServiceApiControllersAuthControllerSendLoginCodeRequest {
   /**
-     * Seeded member email to login as, for example admin@example.com.
+     * User email address to receive magic login passcode.
      * @nullable
      */
   email?: string | null;
