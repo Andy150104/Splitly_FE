@@ -18,7 +18,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { bffFetch } from "@/lib/http/browser-http-client";
 
-export function AddGroupMembers({ groupId }: { groupId: string }) {
+export function AddGroupMembers({
+  groupId,
+  allowed,
+}: {
+  groupId: string;
+  allowed: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
   const [pending, setPending] = useState(false);
@@ -35,7 +41,12 @@ export function AddGroupMembers({ groupId }: { groupId: string }) {
 
   return (
     <>
-      <Button size="sm" onClick={() => setOpen(true)}>
+      <Button
+        size="sm"
+        onClick={() => setOpen(true)}
+        disabled={!allowed}
+        title={!allowed ? "Bạn chưa có quyền Groups.ManageMembers" : undefined}
+      >
         <UserPlus2 className="size-4" />
         Thêm thành viên
       </Button>
@@ -76,7 +87,8 @@ export function AddGroupMembers({ groupId }: { groupId: string }) {
             <DialogHeader>
               <DialogTitle>Thêm thành viên</DialogTitle>
               <DialogDescription>
-                Nhập một hoặc nhiều email. Email chưa có tài khoản sẽ được tạo ở trạng thái Pending.
+                Nhập một hoặc nhiều email. Email chưa có tài khoản sẽ được tạo ở
+                trạng thái Pending.
               </DialogDescription>
             </DialogHeader>
 
@@ -127,10 +139,12 @@ export function RemoveGroupMember({
   groupId,
   memberId,
   memberName,
+  allowed,
 }: {
   groupId: string;
   memberId: string;
   memberName?: string;
+  allowed: boolean;
 }) {
   const [pending, setPending] = useState(false);
   const [open, setOpen] = useState(false);
@@ -143,6 +157,8 @@ export function RemoveGroupMember({
         size="icon"
         aria-label="Xóa thành viên"
         isLoading={pending}
+        disabled={!allowed}
+        title={!allowed ? "Bạn chưa có quyền Groups.ManageMembers" : undefined}
         onClick={() => setOpen(true)}
         className="hover:bg-destructive/8 hover:text-destructive"
       >
@@ -157,7 +173,8 @@ export function RemoveGroupMember({
               {memberName ? (
                 <>
                   <strong className="text-foreground">{memberName}</strong> sẽ
-                  bị xóa khỏi nhóm. Lịch sử hóa đơn đã phát sinh vẫn được giữ lại.
+                  bị xóa khỏi nhóm. Lịch sử hóa đơn đã phát sinh vẫn được giữ
+                  lại.
                 </>
               ) : (
                 "Thành viên sẽ bị xóa khỏi nhóm. Lịch sử hóa đơn đã phát sinh vẫn được giữ lại."
@@ -209,7 +226,13 @@ export function RemoveGroupMember({
   );
 }
 
-export function CloseGroupButton({ groupId }: { groupId: string }) {
+export function CloseGroupButton({
+  groupId,
+  allowed,
+}: {
+  groupId: string;
+  allowed: boolean;
+}) {
   const [pending, setPending] = useState(false);
   const [open, setOpen] = useState(false);
   const router = useRouter();
@@ -220,6 +243,8 @@ export function CloseGroupButton({ groupId }: { groupId: string }) {
         variant="outline"
         isLoading={pending}
         loadingText="Đang đóng…"
+        disabled={!allowed}
+        title={!allowed ? "Bạn chưa có quyền Groups.Delete" : undefined}
         onClick={() => setOpen(true)}
       >
         Đóng nhóm
@@ -230,15 +255,18 @@ export function CloseGroupButton({ groupId }: { groupId: string }) {
           <DialogHeader>
             <DialogTitle>Đóng nhóm?</DialogTitle>
             <DialogDescription>
-              Sau khi đóng, nhóm không thể nhận thêm thành viên hoặc hóa đơn mới. Dữ liệu hiện tại vẫn được giữ nguyên.
+              Sau khi đóng, nhóm không thể nhận thêm thành viên hoặc hóa đơn
+              mới. Dữ liệu hiện tại vẫn được giữ nguyên.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="bg-muted/65 mt-5 rounded-xl border border-border/80 px-4 py-4">
+          <div className="bg-muted/65 border-border/80 mt-5 rounded-xl border px-4 py-4">
             <div className="flex items-start gap-3">
               <AlertTriangle className="text-muted-foreground mt-0.5 size-4 shrink-0" />
               <div className="space-y-1.5 text-sm leading-6">
-                <p className="font-medium">Nhóm sẽ chuyển sang trạng thái đóng.</p>
+                <p className="font-medium">
+                  Nhóm sẽ chuyển sang trạng thái đóng.
+                </p>
                 <p className="text-muted-foreground">
                   Thành viên và hóa đơn cũ vẫn có thể được xem lại.
                 </p>

@@ -7,12 +7,12 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const body = (await request.json()) as { role?: string };
-    if (!body.role) {
+    const body = (await request.json()) as { roleId?: string };
+    if (!body.roleId) {
       return failure(new Error("Vai trò không được để trống."));
     }
 
-    const res = await adminApi.changeRole(id, body.role);
+    const res = await adminApi.changeRole(id, { roleId: body.roleId });
     return ok(res);
   } catch (error) {
     return failure(error);

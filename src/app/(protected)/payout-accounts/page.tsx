@@ -10,10 +10,15 @@ import { PayoutAccountList } from "@/features/payout-accounts/components/payout-
 import { payoutAccountQueryKeys } from "@/features/payout-accounts/hooks/use-payout-accounts";
 import { api } from "@/lib/api/server/api";
 import { toResult } from "@/lib/async-result";
+import { SYSTEM_PERMISSIONS, hasPermission } from "@/lib/auth/permissions";
+import { requirePermission } from "@/lib/auth/server-permissions";
 
 export const metadata = { title: "Tài khoản Payout" };
 
 export default async function PayoutAccountsPage() {
+  const permissions = await requirePermission(
+    SYSTEM_PERMISSIONS.PAYOUT_ACCOUNTS_READ,
+  );
   const loaded = await toResult(api.payoutAccounts.getAll());
 
   if ("error" in loaded) {
@@ -39,7 +44,20 @@ export default async function PayoutAccountsPage() {
         description="Quản lý tài khoản ngân hàng cá nhân để nhận tiền tự động khi các thành viên quét QR thanh toán hóa đơn."
       />
       <HydrationBoundary state={dehydrate(queryClient)}>
-        <PayoutAccountList />
+        <PayoutAccountList
+          canCreate={hasPermission(
+            permissions,
+            SYSTEM_PERMISSIONS.PAYOUT_ACCOUNTS_CREATE,
+          )}
+          canUpdate={hasPermission(
+            permissions,
+            SYSTEM_PERMISSIONS.PAYOUT_ACCOUNTS_UPDATE,
+          )}
+          canReadBanks={hasPermission(
+            permissions,
+            SYSTEM_PERMISSIONS.BANKS_READ,
+          )}
+        />
       </HydrationBoundary>
     </div>
   );

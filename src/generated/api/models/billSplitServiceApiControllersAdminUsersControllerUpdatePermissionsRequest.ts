@@ -8,8 +8,8 @@
 
 export interface BillSplitServiceApiControllersAdminUsersControllerUpdatePermissionsRequest {
   /**
-     * List of custom permission codes assigned to this specific user (e.g. Bills.Read, SupportRequests.Manage).
+     * Complete list of effective permission codes selected by the UI. The backend derives GRANT and DENY overrides relative to the role defaults.
      * @nullable
      */
-  permissions?: string[] | null;
+  effectivePermissionCodes?: string[] | null;
 }

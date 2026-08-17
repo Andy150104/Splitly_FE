@@ -6,11 +6,17 @@
  * OpenAPI spec version: v1
  */
 
-export interface BillSplitServiceDomainConstantsSystemPermissionsPermissionDescriptor {
+export interface BillSplitServiceApplicationFeaturesAdminListPermissionsPermissionDto {
+  permissionId?: string;
   /** @nullable */
   code?: string | null;
   /** @nullable */
+  name?: string | null;
+  /** @nullable */
   description?: string | null;
   /** @nullable */
-  category?: string | null;
+  groupCode?: string | null;
+  /** @nullable */
+  groupName?: string | null;
+  sortOrder?: number;
 }

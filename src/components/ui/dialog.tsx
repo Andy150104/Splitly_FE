@@ -26,34 +26,54 @@ export const DialogOverlay = React.forwardRef<
 ));
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
+type DialogContentProps = React.ComponentPropsWithoutRef<
+  typeof DialogPrimitive.Content
+> & {
+  panelClassName?: string;
+  bodyClassName?: string;
+};
+
 export const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
-  <DialogPortal>
-    <DialogOverlay />
-    <DialogPrimitive.Content
-      ref={ref}
-      className={cn(
-        "fixed inset-x-0 bottom-0 z-50 w-full outline-none sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:w-[calc(100vw-2rem)] sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2",
-        className,
-      )}
-      {...props}
-    >
-      <div
-        className="animate-dialog-panel bg-card text-card-foreground relative max-h-[88dvh] overflow-y-auto rounded-t-[1.6rem] border border-border/80 shadow-[0_-12px_48px_rgb(15_23_42/0.18)] sm:rounded-[1.35rem] sm:shadow-[0_24px_80px_rgb(15_23_42/0.22)] dark:shadow-[0_-12px_56px_rgb(2_6_23/0.55)] sm:dark:shadow-[0_24px_80px_rgb(2_6_23/0.6)]"
+  DialogContentProps
+>(
+  (
+    { className, panelClassName, bodyClassName, children, ...props },
+    ref,
+  ) => (
+    <DialogPortal>
+      <DialogOverlay />
+      <DialogPrimitive.Content
+        ref={ref}
+        className={cn(
+          "fixed inset-x-0 bottom-0 z-50 w-full outline-none sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:w-[calc(100vw-2rem)] sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2",
+          className,
+        )}
+        {...props}
       >
-        <div className="p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:p-6">
-          {children}
+        <div
+          className={cn(
+            "animate-dialog-panel bg-card text-card-foreground relative max-h-[88dvh] overflow-y-auto rounded-t-[1.6rem] border border-border/80 shadow-[0_-12px_48px_rgb(15_23_42/0.18)] sm:rounded-[1.35rem] sm:shadow-[0_24px_80px_rgb(15_23_42/0.22)] dark:shadow-[0_-12px_56px_rgb(2_6_23/0.55)] sm:dark:shadow-[0_24px_80px_rgb(2_6_23/0.6)]",
+            panelClassName,
+          )}
+        >
+          <div
+            className={cn(
+              "p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:p-6",
+              bodyClassName,
+            )}
+          >
+            {children}
+          </div>
+          <DialogPrimitive.Close className="text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-ring absolute right-4 top-4 rounded-full p-2 transition-colors focus-visible:outline-none focus-visible:ring-2">
+            <X className="size-4" />
+            <span className="sr-only">Đóng</span>
+          </DialogPrimitive.Close>
         </div>
-        <DialogPrimitive.Close className="text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-ring absolute right-4 top-4 rounded-full p-2 transition-colors focus-visible:outline-none focus-visible:ring-2">
-          <X className="size-4" />
-          <span className="sr-only">Đóng</span>
-        </DialogPrimitive.Close>
-      </div>
-    </DialogPrimitive.Content>
-  </DialogPortal>
-));
+      </DialogPrimitive.Content>
+    </DialogPortal>
+  ),
+);
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
 export function DialogHeader({

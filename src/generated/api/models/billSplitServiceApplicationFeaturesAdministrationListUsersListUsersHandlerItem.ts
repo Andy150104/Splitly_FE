@@ -14,6 +14,7 @@ export interface BillSplitServiceApplicationFeaturesAdministrationListUsersListU
   email?: string | null;
   /** @nullable */
   status?: string | null;
+  roleId?: string;
   /** @nullable */
   role?: string | null;
   createdAtUtc?: string;

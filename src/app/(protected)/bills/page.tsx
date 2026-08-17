@@ -14,6 +14,8 @@ import { billKeys } from "@/features/bills/query-keys";
 import { api } from "@/lib/api/server/api";
 import { toResult } from "@/lib/async-result";
 import { cn } from "@/lib/utils";
+import { SYSTEM_PERMISSIONS, hasPermission } from "@/lib/auth/permissions";
+import { requirePermission } from "@/lib/auth/server-permissions";
 
 export const metadata = { title: "Hóa đơn" };
 
@@ -22,6 +24,13 @@ export default async function BillsPage({
 }: {
   searchParams: Promise<{ view?: string }>;
 }) {
+  const permissionState = await requirePermission(
+    SYSTEM_PERMISSIONS.BILLS_READ,
+  );
+  const canWrite = hasPermission(
+    permissionState,
+    SYSTEM_PERMISSIONS.BILLS_CREATE,
+  );
   const view = (await searchParams).view === "owed" ? "owed" : "owned";
   const loaded = await toResult(
     api.bills.getAll({ owed: view === "owed", pageNumber: 1, pageSize: 100 }),
@@ -46,12 +55,19 @@ export default async function BillsPage({
         title="Hóa đơn"
         description="Theo dõi hóa đơn bạn tạo và các khoản được chia cho bạn."
         actions={
-          <Button asChild>
-            <Link href="/bills/new">
+          canWrite ? (
+            <Button asChild>
+              <Link href="/bills/new">
+                <Plus className="size-4" />
+                Tạo hóa đơn
+              </Link>
+            </Button>
+          ) : (
+            <Button disabled title="Bạn chưa có quyền Bills.Create">
               <Plus className="size-4" />
               Tạo hóa đơn
-            </Link>
-          </Button>
+            </Button>
+          )
         }
       />
       <div
@@ -75,7 +91,7 @@ export default async function BillsPage({
         ))}
       </div>
       <HydrationBoundary state={dehydrate(queryClient)}>
-        <BillsQueryView owed={view === "owed"} />
+        <BillsQueryView owed={view === "owed"} canCreate={canWrite} />
       </HydrationBoundary>
     </div>
   );

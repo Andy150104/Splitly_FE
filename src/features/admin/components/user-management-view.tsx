@@ -3,20 +3,16 @@
 import {
   Check,
   CheckSquare,
-  CreditCard,
-  FileText,
-  LifeBuoy,
-  Settings,
+  LoaderCircle,
   Shield,
   ShieldAlert,
   ShieldCheck,
   Square,
   UserCheck,
-  UsersRound,
   Wrench,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -30,190 +26,272 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Select } from "@/components/ui/select";
+import type { BillSplitServiceApplicationFeaturesAdminGetMemberPermissionsMemberPermissionsDto as MemberPermissionsDto } from "@/generated/api/models";
+import { getRoleDisplayName } from "@/lib/auth/permissions";
+import { bffFetch } from "@/lib/http/browser-http-client";
 
 export interface SystemPermissionItem {
+  permissionId: string;
   code: string;
-  label: string;
-  category: string;
+  name: string;
+  description: string;
+  groupCode: string;
+  groupName: string;
+  sortOrder: number;
 }
 
-const PERMISSION_GROUPS: {
-  category: string;
-  icon: typeof FileText;
+export interface SystemRoleItem {
+  roleId: string;
+  code: string;
+  name: string;
   description: string;
-  permissions: SystemPermissionItem[];
-}[] = [
-  {
-    category: "Hóa đơn (Bills)",
-    icon: FileText,
-    description: "Quyền quản lý, tạo lập và hủy bỏ hóa đơn chia tiền.",
-    permissions: [
-      { code: "Bills.Read", label: "Xem danh sách và chi tiết hóa đơn", category: "Bills" },
-      { code: "Bills.Write", label: "Tạo mới và chỉnh sửa thông tin hóa đơn", category: "Bills" },
-      { code: "Bills.Delete", label: "Hủy bỏ và xóa hoàn toàn hóa đơn", category: "Bills" },
-    ],
-  },
-  {
-    category: "Nhóm chi tiêu (Groups)",
-    icon: UsersRound,
-    description: "Quyền tạo và quản lý thành viên các nhóm dùng chung.",
-    permissions: [
-      { code: "Groups.Manage", label: "Tạo nhóm, mời và quản lý thành viên nhóm", category: "Groups" },
-    ],
-  },
-  {
-    category: "Thanh toán & Payout",
-    icon: CreditCard,
-    description: "Quyền ghi nhận thanh toán thủ công và duyệt giải ngân tự động.",
-    permissions: [
-      { code: "Payments.Record", label: "Ghi nhận thanh toán tiền mặt / thủ công", category: "Payments" },
-      { code: "Payouts.Review", label: "Duyệt và xử lý lệnh giải ngân Payout tự động", category: "Payouts" },
-    ],
-  },
-  {
-    category: "Hỗ trợ khách hàng (Support)",
-    icon: LifeBuoy,
-    description: "Quyền tiếp nhận và đối soát báo lỗi sự cố thanh toán.",
-    permissions: [
-      { code: "SupportRequests.Manage", label: "Xử lý, đối soát và cập nhật trạng thái báo lỗi", category: "Support" },
-    ],
-  },
-  {
-    category: "Quản trị & Hệ thống (Administration)",
-    icon: Settings,
-    description: "Quyền quản trị tài khoản người dùng và cấu hình hệ thống.",
-    permissions: [
-      { code: "Users.Manage", label: "Quản lý vai trò và phân quyền thành viên", category: "Admin" },
-      { code: "System.Configure", label: "Cấu hình tham số hệ thống và Template Email", category: "System" },
-    ],
-  },
-];
-
-const ALL_PERMISSION_CODES = PERMISSION_GROUPS.flatMap((g) =>
-  g.permissions.map((p) => p.code),
-);
+  isSystem: boolean;
+  defaultPermissionCodes: string[];
+}
 
 export interface AdminUserItem {
   memberId: string;
   displayName: string;
   email: string;
+  status: string;
+  roleId: string;
   role: string;
-  customPermissions?: string[];
   createdAtUtc?: string;
 }
 
-export function UserManagementView({ users }: { users: AdminUserItem[] }) {
+export function UserManagementView({
+  users,
+  systemPermissions,
+  roles,
+  currentMemberId,
+  canUpdateRole,
+  canReadPermissions,
+  canUpdatePermissions,
+}: {
+  users: AdminUserItem[];
+  systemPermissions: SystemPermissionItem[];
+  roles: SystemRoleItem[];
+  currentMemberId?: string;
+  canUpdateRole: boolean;
+  canReadPermissions: boolean;
+  canUpdatePermissions: boolean;
+}) {
   const router = useRouter();
   const [selectedUser, setSelectedUser] = useState<AdminUserItem | null>(null);
   const [roleModalOpen, setRoleModalOpen] = useState(false);
   const [permModalOpen, setPermModalOpen] = useState(false);
-
-  const [targetRole, setTargetRole] = useState<string>("User");
+  const [targetRoleId, setTargetRoleId] = useState("");
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
-  const [pending, setPending] = useState(false);
+  const [permissionDetails, setPermissionDetails] =
+    useState<MemberPermissionsDto | null>(null);
+  const [permissionCache, setPermissionCache] = useState<
+    Record<string, MemberPermissionsDto>
+  >({});
+  const [permissionsLoading, setPermissionsLoading] = useState(false);
+  const [permissionsError, setPermissionsError] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<
+    "role" | "permissions" | null
+  >(null);
+
+  const allPermissionCodes = useMemo(
+    () => systemPermissions.map((permission) => permission.code),
+    [systemPermissions],
+  );
+  const hasPermissionCatalog = allPermissionCodes.length > 0;
+
+  const permissionGroups = useMemo(() => {
+    const grouped = new Map<
+      string,
+      {
+        groupCode: string;
+        groupName: string;
+        permissions: SystemPermissionItem[];
+      }
+    >();
+    for (const permission of systemPermissions) {
+      const current = grouped.get(permission.groupCode);
+      grouped.set(permission.groupCode, {
+        groupCode: permission.groupCode,
+        groupName: permission.groupName,
+        permissions: [...(current?.permissions ?? []), permission],
+      });
+    }
+
+    return [...grouped.values()]
+      .map((group) => ({
+        ...group,
+        permissions: [...group.permissions].sort(
+          (left, right) => left.sortOrder - right.sortOrder,
+        ),
+      }))
+      .sort(
+        (left, right) =>
+          (left.permissions[0]?.sortOrder ?? 0) -
+          (right.permissions[0]?.sortOrder ?? 0),
+      );
+  }, [systemPermissions]);
 
   const openRoleModal = (user: AdminUserItem) => {
     setSelectedUser(user);
-    setTargetRole(user.role || "User");
+    setTargetRoleId(user.roleId);
     setRoleModalOpen(true);
+  };
+
+  const loadPermissionDetails = async (user: AdminUserItem) => {
+    setPermissionsLoading(true);
+    setPermissionsError(null);
+    setPermissionDetails(null);
+    setSelectedPermissions([]);
+
+    try {
+      const details = await bffFetch<MemberPermissionsDto>(
+        `/api/admin/users/${user.memberId}/permissions`,
+      );
+      setPermissionDetails(details);
+      setPermissionCache((current) => ({
+        ...current,
+        [user.memberId]: details,
+      }));
+      const availableCodes = new Set(allPermissionCodes);
+      setSelectedPermissions(
+        (details.effectivePermissionCodes ?? []).filter(
+          (code): code is string => Boolean(code) && availableCodes.has(code),
+        ),
+      );
+    } catch (error) {
+      setPermissionsError(
+        error instanceof Error
+          ? error.message
+          : "Không thể tải quyền hiện tại của thành viên.",
+      );
+    } finally {
+      setPermissionsLoading(false);
+    }
   };
 
   const openPermModal = (user: AdminUserItem) => {
     setSelectedUser(user);
-    setSelectedPermissions(user.customPermissions ?? []);
     setPermModalOpen(true);
+    void loadPermissionDetails(user);
   };
 
   const handleSaveRole = async () => {
-    if (!selectedUser) return;
-    setPending(true);
+    if (!selectedUser || !targetRoleId || !canUpdateRole) return;
+    setPendingAction("role");
     try {
-      const res = await fetch(`/api/admin/users/${selectedUser.memberId}/role`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role: targetRole }),
-      });
-      if (!res.ok) throw new Error("Không thể thay đổi vai trò.");
-      toast.success(`Đã đổi vai trò thành viên thành ${targetRole}`);
+      const details = await bffFetch<MemberPermissionsDto>(
+        `/api/admin/users/${selectedUser.memberId}/role`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({ roleId: targetRoleId }),
+        },
+      );
+      setPermissionCache((current) => ({
+        ...current,
+        [selectedUser.memberId]: details,
+      }));
+      setPermissionDetails(details);
+      const selectedRole = roles.find((role) => role.roleId === targetRoleId);
+      toast.success(
+        `Đã đổi vai trò thành viên thành ${selectedRole?.name ?? "vai trò mới"}`,
+      );
       setRoleModalOpen(false);
       router.refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Đổi vai trò thất bại.");
+      toast.error(
+        error instanceof Error ? error.message : "Đổi vai trò thất bại.",
+      );
     } finally {
-      setPending(false);
+      setPendingAction(null);
     }
   };
 
   const handleSavePermissions = async () => {
-    if (!selectedUser) return;
-    setPending(true);
+    if (
+      !selectedUser ||
+      permissionsLoading ||
+      permissionsError ||
+      !hasPermissionCatalog ||
+      !canUpdatePermissions
+    ) {
+      return;
+    }
+    setPendingAction("permissions");
     try {
-      const res = await fetch(`/api/admin/users/${selectedUser.memberId}/permissions`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ permissions: selectedPermissions }),
-      });
-      if (!res.ok) throw new Error("Không thể cập nhật quyền hạn.");
-      toast.success("Đã cập nhật danh sách quyền tùy chỉnh");
+      const details = await bffFetch<MemberPermissionsDto>(
+        `/api/admin/users/${selectedUser.memberId}/permissions`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({
+            effectivePermissionCodes: selectedPermissions,
+          }),
+        },
+      );
+      setPermissionCache((current) => ({
+        ...current,
+        [selectedUser.memberId]: details,
+      }));
+      setPermissionDetails(details);
+      setSelectedPermissions(
+        details.effectivePermissionCodes?.filter(Boolean) ?? [],
+      );
+      toast.success("Đã cập nhật danh sách quyền hiệu lực");
       setPermModalOpen(false);
       router.refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Cập nhật quyền thất bại.");
+      toast.error(
+        error instanceof Error ? error.message : "Cập nhật quyền thất bại.",
+      );
     } finally {
-      setPending(false);
+      setPendingAction(null);
     }
   };
 
   const togglePermission = (code: string) => {
-    setSelectedPermissions((prev) =>
-      prev.includes(code) ? prev.filter((p) => p !== code) : [...prev, code],
+    setSelectedPermissions((current) =>
+      current.includes(code)
+        ? current.filter((permission) => permission !== code)
+        : [...current, code],
     );
-  };
-
-  const handleSelectAll = () => {
-    setSelectedPermissions([...ALL_PERMISSION_CODES]);
-  };
-
-  const handleDeselectAll = () => {
-    setSelectedPermissions([]);
   };
 
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader className="border-b border-border/70 pb-4">
-          <CardTitle className="text-base font-bold flex items-center gap-2">
-            <ShieldCheck className="size-5 text-primary" />
+        <CardHeader className="border-border/70 border-b pb-4">
+          <CardTitle className="flex items-center gap-2 text-base font-bold">
+            <ShieldCheck className="text-primary size-5" />
             Danh sách Thành viên & Phân quyền ({users.length} người)
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="divide-y divide-border/60">
+          <div className="divide-border/60 divide-y">
             {users.map((user) => {
-              const isAdmin = user.role === "Administrator";
-              const permCount = user.customPermissions?.length ?? 0;
+              const cachedPermissions = permissionCache[user.memberId];
+              const overrideCount = cachedPermissions
+                ? (cachedPermissions.grantedPermissionCodes?.length ?? 0) +
+                  (cachedPermissions.deniedPermissionCodes?.length ?? 0)
+                : undefined;
+              const isCurrentUser = user.memberId === currentMemberId;
 
               return (
                 <div
                   key={user.memberId}
                   className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 font-bold text-sm text-primary">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-full text-sm font-bold">
                       {user.displayName.slice(0, 2).toUpperCase()}
                     </div>
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h4 className="truncate font-semibold text-sm">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h4 className="truncate text-sm font-semibold">
                           {user.displayName}
                         </h4>
-                        {isAdmin ? (
-                          <Badge variant="default" className="bg-primary text-primary-foreground">
-                            <Shield className="mr-1 size-3" /> Admin
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary">User</Badge>
-                        )}
+                        <Badge variant="secondary">
+                          <Shield className="mr-1 size-3" /> {user.role}
+                        </Badge>
                       </div>
                       <p className="text-muted-foreground truncate text-xs">
                         {user.email}
@@ -222,9 +300,14 @@ export function UserManagementView({ users }: { users: AdminUserItem[] }) {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                    {permCount > 0 ? (
-                      <Badge variant="secondary" className="border-primary/30 text-primary">
-                        {permCount} quyền tùy chỉnh
+                    {typeof overrideCount === "number" ? (
+                      <Badge
+                        variant="secondary"
+                        className="border-primary/30 text-primary"
+                      >
+                        {overrideCount > 0
+                          ? `${overrideCount} quyền ghi đè`
+                          : "Theo quyền mặc định"}
                       </Badge>
                     ) : null}
 
@@ -232,7 +315,19 @@ export function UserManagementView({ users }: { users: AdminUserItem[] }) {
                       variant="outline"
                       size="sm"
                       onClick={() => openRoleModal(user)}
-                      className="h-8 text-xs gap-1.5"
+                      disabled={
+                        isCurrentUser || !canUpdateRole || !roles.length
+                      }
+                      title={
+                        isCurrentUser
+                          ? "Bạn không thể đổi vai trò của chính mình."
+                          : !canUpdateRole
+                            ? "Bạn chưa có quyền Users.UpdateRole"
+                            : !roles.length
+                              ? "Bạn chưa có quyền Roles.Read"
+                              : undefined
+                      }
+                      className="h-8 gap-1.5 text-xs"
                     >
                       <UserCheck className="size-3.5" /> Đổi vai trò
                     </Button>
@@ -241,7 +336,21 @@ export function UserManagementView({ users }: { users: AdminUserItem[] }) {
                       variant="outline"
                       size="sm"
                       onClick={() => openPermModal(user)}
-                      className="h-8 text-xs gap-1.5"
+                      disabled={
+                        isCurrentUser ||
+                        !canReadPermissions ||
+                        !hasPermissionCatalog
+                      }
+                      title={
+                        isCurrentUser
+                          ? "Bạn không thể sửa quyền của chính mình."
+                          : !canReadPermissions
+                            ? "Bạn chưa có quyền Users.ReadPermissions"
+                            : !hasPermissionCatalog
+                              ? "Bạn chưa có quyền Permissions.Read"
+                              : undefined
+                      }
+                      className="h-8 gap-1.5 text-xs"
                     >
                       <Wrench className="size-3.5" /> Phân quyền chi tiết
                     </Button>
@@ -253,88 +362,120 @@ export function UserManagementView({ users }: { users: AdminUserItem[] }) {
         </CardContent>
       </Card>
 
-      {/* Role Change Modal */}
       <Dialog open={roleModalOpen} onOpenChange={setRoleModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Thay đổi Vai trò Hệ thống</DialogTitle>
             <DialogDescription>
-              Cập nhật vai trò Admin hoặc User cho thành viên <strong>{selectedUser?.displayName}</strong>.
+              Chọn vai trò được hệ thống công bố cho thành viên{" "}
+              <strong>{selectedUser?.displayName}</strong>.
             </DialogDescription>
           </DialogHeader>
 
           <div className="my-4 space-y-3">
-            <label
-              onClick={() => setTargetRole("Administrator")}
-              className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-all ${
-                targetRole === "Administrator"
-                  ? "border-primary bg-primary/10 ring-2 ring-primary/20"
-                  : "border-border/80 hover:border-primary/40"
-              }`}
-            >
-              <ShieldAlert className="mt-0.5 size-5 shrink-0 text-primary" />
-              <div>
-                <strong className="block text-sm font-semibold">Administrator (Quản trị viên)</strong>
-                <span className="text-muted-foreground text-xs">
-                  Toàn quyền quản trị hệ thống, quản lý người dùng, duyệt payout và báo lỗi support.
-                </span>
-              </div>
-            </label>
+            <Select
+              value={targetRoleId}
+              onChange={setTargetRoleId}
+              options={roles.map((role) => ({
+                value: role.roleId,
+                label: role.name,
+              }))}
+              placeholder="Chọn vai trò"
+              disabled={pendingAction === "role"}
+            />
 
-            <label
-              onClick={() => setTargetRole("User")}
-              className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-all ${
-                targetRole === "User"
-                  ? "border-primary bg-primary/10 ring-2 ring-primary/20"
-                  : "border-border/80 hover:border-primary/40"
-              }`}
-            >
-              <Shield className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
-              <div>
-                <strong className="block text-sm font-semibold">User (Người dùng thường)</strong>
-                <span className="text-muted-foreground text-xs">
-                  Tạo và chia hóa đơn, tham gia nhóm và thực hiện thanh toán cá nhân.
-                </span>
+            {roles.find((role) => role.roleId === targetRoleId) ? (
+              <div className="border-border/70 bg-muted/30 rounded-xl border p-4">
+                <div className="flex items-start gap-3">
+                  <Shield className="text-primary mt-0.5 size-5 shrink-0" />
+                  <div>
+                    <strong className="block text-sm font-semibold">
+                      {roles.find((role) => role.roleId === targetRoleId)?.name}
+                    </strong>
+                    <p className="text-muted-foreground mt-1 text-xs leading-5">
+                      {roles.find((role) => role.roleId === targetRoleId)
+                        ?.description || "Vai trò do hệ thống quản lý."}
+                    </p>
+                  </div>
+                </div>
               </div>
-            </label>
+            ) : null}
+
+            {targetRoleId !== selectedUser?.roleId ? (
+              <div className="rounded-xl border border-amber-500/30 bg-amber-500/[0.07] p-3 text-xs leading-5 text-amber-800 dark:text-amber-300">
+                Đổi vai trò sẽ xóa toàn bộ quyền cấp thêm hoặc thu hồi riêng của
+                người dùng này. Bộ quyền mới sẽ do hệ thống trả về sau khi lưu.
+              </div>
+            ) : null}
           </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setRoleModalOpen(false)}>
               Hủy
             </Button>
-            <Button onClick={handleSaveRole} isLoading={pending}>
+            <Button
+              onClick={handleSaveRole}
+              disabled={!targetRoleId || targetRoleId === selectedUser?.roleId}
+              isLoading={pendingAction === "role"}
+            >
               Lưu vai trò
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Spacious Category-Grouped Custom Permissions Modal */}
       <Dialog open={permModalOpen} onOpenChange={setPermModalOpen}>
-        <DialogContent className="sm:max-w-3xl lg:max-w-4xl max-h-[90vh] flex flex-col p-6 sm:p-8">
-          <DialogHeader className="border-b border-border/60 pb-4">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <DialogTitle className="text-xl font-bold flex items-center gap-2">
-                  <Wrench className="size-5 text-primary" />
+        <DialogContent
+          className="inset-x-2 bottom-2 w-auto sm:w-[calc(100vw-1.5rem)] sm:max-w-[1080px]"
+          panelClassName="h-[calc(100dvh-1rem)] max-h-[calc(100dvh-1rem)] overflow-hidden rounded-[1.25rem] sm:h-[min(92dvh,820px)] sm:max-h-[min(92dvh,820px)] sm:rounded-[1.35rem]"
+          bodyClassName="flex h-full min-h-0 flex-col p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-5 lg:p-6"
+        >
+          <DialogHeader className="border-border/60 shrink-0 border-b pb-4">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+              <div className="min-w-0">
+                <DialogTitle className="flex items-center gap-2 text-lg font-bold sm:text-xl">
+                  <Wrench className="text-primary size-5 shrink-0" />
                   Phân quyền Chi tiết (Custom Privileges)
                 </DialogTitle>
-                <DialogDescription className="mt-1 text-sm">
-                  Cấp quyền hạn chi tiết theo từng nhóm chức năng cho <strong>{selectedUser?.displayName}</strong> ({selectedUser?.email}).
+                <DialogDescription className="mt-1 max-w-3xl text-xs leading-5 sm:text-sm sm:leading-6">
+                  Cấp quyền hạn chi tiết theo từng nhóm chức năng cho{" "}
+                  <strong>{selectedUser?.displayName}</strong> (
+                  {selectedUser?.email}
+                  ).
                 </DialogDescription>
               </div>
 
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="px-3 py-1 text-xs font-semibold">
-                  Đã chọn: {selectedPermissions.length} / {ALL_PERMISSION_CODES.length} quyền
+              <div className="flex shrink-0 flex-wrap items-center gap-2 pr-8 lg:justify-end lg:pr-0">
+                <Badge
+                  variant="secondary"
+                  className="px-2.5 py-1 text-[11px] font-semibold sm:text-xs"
+                >
+                  Đã chọn: {selectedPermissions.length} /{" "}
+                  {allPermissionCodes.length}
                 </Badge>
+                {permissionDetails ? (
+                  <Badge
+                    variant="secondary"
+                    className="px-2.5 py-1 text-[11px] font-semibold sm:text-xs"
+                  >
+                    Hiệu lực:{" "}
+                    {permissionDetails.effectivePermissionCodes?.length ?? 0}
+                  </Badge>
+                ) : null}
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
-                  onClick={handleSelectAll}
-                  className="h-8 text-xs gap-1"
+                  onClick={() =>
+                    setSelectedPermissions([...allPermissionCodes])
+                  }
+                  disabled={
+                    permissionsLoading ||
+                    Boolean(permissionsError) ||
+                    !hasPermissionCatalog ||
+                    !canUpdatePermissions
+                  }
+                  className="h-8 gap-1.5 px-2.5 text-xs"
                 >
                   <CheckSquare className="size-3.5" /> Chọn tất cả
                 </Button>
@@ -342,86 +483,203 @@ export function UserManagementView({ users }: { users: AdminUserItem[] }) {
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={handleDeselectAll}
-                  className="h-8 text-xs gap-1 text-muted-foreground"
+                  onClick={() => setSelectedPermissions([])}
+                  disabled={
+                    permissionsLoading ||
+                    Boolean(permissionsError) ||
+                    !hasPermissionCatalog ||
+                    !canUpdatePermissions
+                  }
+                  className="text-muted-foreground h-8 gap-1.5 px-2.5 text-xs"
                 >
                   <Square className="size-3.5" /> Bỏ chọn
                 </Button>
               </div>
             </div>
+
+            {permissionDetails?.role ? (
+              <div className="border-primary/15 bg-primary/[0.045] text-muted-foreground mt-3 rounded-xl border px-3 py-2 text-xs leading-5">
+                Vai trò hiện tại:{" "}
+                <strong>
+                  {getRoleDisplayName(
+                    permissionDetails.role.code,
+                    permissionDetails.role.name,
+                  )}
+                </strong>
+                . Ô chọn thể hiện quyền hiệu lực do hệ thống tính từ quyền mặc
+                định, quyền cấp thêm và quyền thu hồi.
+              </div>
+            ) : null}
           </DialogHeader>
 
-          {/* Category Grouped Permission List */}
-          <div className="my-4 flex-1 overflow-y-auto space-y-6 pr-2">
-            {PERMISSION_GROUPS.map((group) => {
-              const GroupIcon = group.icon;
-              const selectedInGroup = group.permissions.filter((p) =>
-                selectedPermissions.includes(p.code),
-              ).length;
+          <div className="splitly-scrollbar -mr-1 min-h-0 flex-1 overflow-y-auto overscroll-contain py-4 pr-2 sm:py-5 sm:pr-3">
+            {permissionsLoading ? (
+              <div className="flex min-h-64 flex-col items-center justify-center gap-3 text-center">
+                <LoaderCircle className="text-primary size-7 animate-spin" />
+                <div>
+                  <p className="text-sm font-semibold">
+                    Đang tải quyền hiện tại
+                  </p>
+                  <p className="text-muted-foreground mt-1 text-xs">
+                    Lấy quyền mặc định, quyền cấp thêm, quyền thu hồi và quyền
+                    hiệu lực trực tiếp từ hệ thống.
+                  </p>
+                </div>
+              </div>
+            ) : permissionsError ? (
+              <div className="border-destructive/30 bg-destructive/[0.035] flex min-h-64 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed p-6 text-center">
+                <ShieldAlert className="text-destructive size-7" />
+                <div>
+                  <p className="text-sm font-semibold">Không tải được quyền</p>
+                  <p className="text-muted-foreground mt-1 max-w-lg text-xs leading-5">
+                    {permissionsError}
+                  </p>
+                </div>
+                {selectedUser ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => void loadPermissionDetails(selectedUser)}
+                  >
+                    Thử lại
+                  </Button>
+                ) : null}
+              </div>
+            ) : !hasPermissionCatalog ? (
+              <div className="border-border bg-muted/20 flex min-h-64 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed p-6 text-center">
+                <ShieldAlert className="text-muted-foreground size-7" />
+                <div>
+                  <p className="text-sm font-semibold">
+                    Chưa có danh mục quyền
+                  </p>
+                  <p className="text-muted-foreground mt-1 max-w-lg text-xs leading-5">
+                    Hệ thống chưa trả về danh sách quyền. Không thể lưu phân
+                    quyền để tránh vô tình thay đổi quyền hiện tại.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-5 sm:space-y-6">
+                {permissionGroups.map((group) => {
+                  const selectedInGroup = group.permissions.filter(
+                    (permission) =>
+                      selectedPermissions.includes(permission.code),
+                  ).length;
 
-              return (
-                <div key={group.category} className="space-y-3">
-                  <div className="flex items-center justify-between border-b border-border/50 pb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="grid size-7 place-items-center rounded-lg bg-primary/10 text-primary">
-                        <GroupIcon className="size-4" />
-                      </div>
-                      <h3 className="font-bold text-sm text-foreground">
-                        {group.category}
-                      </h3>
-                      <span className="text-xs text-muted-foreground hidden sm:inline">
-                        — {group.description}
-                      </span>
-                    </div>
-
-                    <Badge variant="secondary" className="text-[10px]">
-                      {selectedInGroup}/{group.permissions.length} chọn
-                    </Badge>
-                  </div>
-
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {group.permissions.map((perm) => {
-                      const isChecked = selectedPermissions.includes(perm.code);
-                      return (
-                        <label
-                          key={perm.code}
-                          className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3.5 transition-all duration-150 ${
-                            isChecked
-                              ? "border-primary bg-primary/8 ring-2 ring-primary/20 shadow-xs"
-                              : "border-border/70 bg-card hover:border-primary/40 hover:bg-muted/40"
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() => togglePermission(perm.code)}
-                            className="accent-primary mt-0.5 size-4 rounded cursor-pointer"
-                          />
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center justify-between gap-1 mb-1">
-                              <code className="font-mono text-xs font-bold text-primary truncate">
-                                {perm.code}
-                              </code>
-                            </div>
-                            <p className="text-muted-foreground text-xs leading-relaxed">
-                              {perm.label}
+                  return (
+                    <section key={group.groupCode} className="space-y-3">
+                      <div className="border-border/50 flex items-start justify-between gap-3 border-b pb-2.5 sm:items-center">
+                        <div className="flex min-w-0 items-start gap-2.5 sm:items-center">
+                          <div className="bg-primary/10 text-primary grid size-8 shrink-0 place-items-center rounded-lg">
+                            <ShieldCheck className="size-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <h3 className="text-foreground text-sm font-bold">
+                              {group.groupName}
+                            </h3>
+                            <p className="text-muted-foreground mt-0.5 text-[11px] leading-4 sm:mt-0 sm:text-xs">
+                              {group.groupCode}
                             </p>
                           </div>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
+                        </div>
+
+                        <Badge
+                          variant="secondary"
+                          className="shrink-0 text-[10px]"
+                        >
+                          {selectedInGroup}/{group.permissions.length} chọn
+                        </Badge>
+                      </div>
+
+                      <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
+                        {group.permissions.map((permission) => {
+                          const isChecked = selectedPermissions.includes(
+                            permission.code,
+                          );
+                          const isRoleDefault =
+                            permissionDetails?.rolePermissionCodes?.includes(
+                              permission.code,
+                            ) ?? false;
+                          const isGranted =
+                            permissionDetails?.grantedPermissionCodes?.includes(
+                              permission.code,
+                            ) ?? false;
+                          const isDenied =
+                            permissionDetails?.deniedPermissionCodes?.includes(
+                              permission.code,
+                            ) ?? false;
+
+                          return (
+                            <label
+                              key={permission.code}
+                              className={`group flex min-h-[92px] cursor-pointer items-start gap-3 rounded-xl border p-3.5 transition-[border-color,background-color,box-shadow,transform] duration-150 active:scale-[0.99] ${
+                                isChecked
+                                  ? "border-primary/70 bg-primary/[0.055] ring-primary/15 shadow-sm ring-2"
+                                  : "border-border/70 bg-card hover:border-primary/35 hover:bg-muted/35"
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                disabled={!canUpdatePermissions}
+                                onChange={() =>
+                                  togglePermission(permission.code)
+                                }
+                                className="accent-primary mt-0.5 size-4 shrink-0 cursor-pointer"
+                              />
+                              <div className="min-w-0 flex-1">
+                                <code className="text-primary block truncate font-mono text-xs font-bold">
+                                  {permission.code}
+                                </code>
+                                <p className="text-muted-foreground mt-1.5 text-xs leading-5">
+                                  {permission.description || permission.name}
+                                </p>
+                                <div className="mt-2 flex flex-wrap gap-1.5">
+                                  {isRoleDefault && !isDenied ? (
+                                    <Badge variant="secondary">
+                                      Mặc định theo role
+                                    </Badge>
+                                  ) : null}
+                                  {isGranted ? (
+                                    <Badge variant="success">Cấp thêm</Badge>
+                                  ) : null}
+                                  {isDenied ? (
+                                    <Badge variant="warning">Đã thu hồi</Badge>
+                                  ) : null}
+                                </div>
+                              </div>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
-          <DialogFooter className="border-t border-border/60 pt-4">
+          <DialogFooter className="border-border/60 mt-0 shrink-0 border-t pt-4">
             <Button variant="outline" onClick={() => setPermModalOpen(false)}>
               Hủy
             </Button>
-
-            <Button onClick={handleSavePermissions} isLoading={pending} className="gap-2">
+            <Button
+              onClick={handleSavePermissions}
+              disabled={
+                permissionsLoading ||
+                Boolean(permissionsError) ||
+                !hasPermissionCatalog ||
+                !canUpdatePermissions
+              }
+              title={
+                !canUpdatePermissions
+                  ? "Bạn chưa có quyền Users.UpdatePermissions"
+                  : undefined
+              }
+              isLoading={pendingAction === "permissions"}
+              className="gap-2"
+            >
               <Check className="size-4" /> Lưu phân quyền
             </Button>
           </DialogFooter>

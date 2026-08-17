@@ -1,0 +1,1954 @@
+diff --git a/src/app/(protected)/admin/support-requests/page.tsx b/src/app/(protected)/admin/support-requests/page.tsx
+index 81ab249..6f845ca 100644
+--- a/src/app/(protected)/admin/support-requests/page.tsx
++++ b/src/app/(protected)/admin/support-requests/page.tsx
+@@ -3,10 +3,14 @@ import { PageHeader } from "@/components/common/page-header";
+ import { SupportRequestManagementView } from "@/features/admin/components/support-request-management-view";
+ import { adminApi } from "@/lib/api/server/admin.api";
+ import { toResult } from "@/lib/async-result";
++import { SYSTEM_PERMISSIONS } from "@/lib/auth/permissions";
++import { requirePermission } from "@/lib/auth/server-permissions";
+ 
+ export const metadata = { title: "Quản lý Yêu cầu Hỗ trợ & Báo lỗi" };
+ 
+ export default async function AdminSupportRequestsPage() {
++  await requirePermission(SYSTEM_PERMISSIONS.SUPPORT_REQUESTS_MANAGE);
++
+   const loaded = await toResult(
+     adminApi.getSupportRequests({ page: 1, pageSize: 100 }),
+   );
+diff --git a/src/app/(protected)/admin/users/page.tsx b/src/app/(protected)/admin/users/page.tsx
+index 6d8ad60..fa4b0e1 100644
+--- a/src/app/(protected)/admin/users/page.tsx
++++ b/src/app/(protected)/admin/users/page.tsx
+@@ -3,12 +3,19 @@ import { PageHeader } from "@/components/common/page-header";
+ import { UserManagementView } from "@/features/admin/components/user-management-view";
+ import { adminApi } from "@/lib/api/server/admin.api";
+ import { toResult } from "@/lib/async-result";
++import { SYSTEM_PERMISSIONS } from "@/lib/auth/permissions";
++import { requirePermission } from "@/lib/auth/server-permissions";
+ 
+ export const metadata = { title: "Quản lý người dùng & Phân quyền" };
+ 
+ export default async function AdminUsersPage() {
++  await requirePermission(SYSTEM_PERMISSIONS.USERS_MANAGE);
++
+   const loaded = await toResult(
+-    adminApi.getUsers({ pageNumber: 1, pageSize: 100 }),
++    Promise.all([
++      adminApi.getUsers({ pageNumber: 1, pageSize: 100 }),
++      adminApi.getPermissions(),
++    ]),
+   );
+ 
+   if ("error" in loaded) {
+@@ -24,14 +31,21 @@ export default async function AdminUsersPage() {
+     );
+   }
+ 
+-  const users = (loaded.data.items ?? []).map((u) => ({
+-    memberId: u.memberId ?? "",
+-    displayName: u.name ?? u.email?.split("@")[0] ?? "Thành viên",
+-    email: u.email ?? "",
+-    role: u.role ?? "User",
+-    customPermissions: [],
+-    createdAtUtc: u.createdAtUtc,
++  const [userResult, permissionResult] = loaded.data;
++  const users = (userResult.items ?? []).map((user) => ({
++    memberId: user.memberId ?? "",
++    displayName: user.name ?? user.email?.split("@")[0] ?? "Thành viên",
++    email: user.email ?? "",
++    role: user.role ?? "User",
++    createdAtUtc: user.createdAtUtc,
+   }));
++  const systemPermissions = (permissionResult ?? [])
++    .filter((permission) => Boolean(permission.code))
++    .map((permission) => ({
++      code: permission.code ?? "",
++      label: permission.description ?? permission.code ?? "Quyền hệ thống",
++      category: permission.category ?? "Other",
++    }));
+ 
+   return (
+     <div className="space-y-6">
+@@ -40,7 +54,10 @@ export default async function AdminUsersPage() {
+         description="Quản lý vai trò Administrator / User và phân quyền chi tiết (Custom Privileges) cho từng tài khoản."
+       />
+ 
+-      <UserManagementView users={users} />
++      <UserManagementView
++        users={users}
++        systemPermissions={systemPermissions}
++      />
+     </div>
+   );
+ }
+diff --git a/src/app/(protected)/bills/[billId]/page.tsx b/src/app/(protected)/bills/[billId]/page.tsx
+index 35bb0a7..7dc844c 100644
+--- a/src/app/(protected)/bills/[billId]/page.tsx
++++ b/src/app/(protected)/bills/[billId]/page.tsx
+@@ -2,15 +2,34 @@ import { notFound } from "next/navigation";
+ 
+ import { BillDetailView } from "@/features/bills/components/bill-detail-view";
+ import { api } from "@/lib/api/server/api";
++import { SYSTEM_PERMISSIONS, hasPermission } from "@/lib/auth/permissions";
++import { requirePermission } from "@/lib/auth/server-permissions";
+ 
+ export default async function BillDetailPage({
+   params,
+ }: {
+   params: Promise<{ billId: string }>;
+ }) {
++  const permissionState = await requirePermission(
++    SYSTEM_PERMISSIONS.BILLS_READ,
++  );
+   const { billId } = await params;
+   const bill = await api.bills.getById(billId);
+   if (!bill.billId) notFound();
+ 
+-  return <BillDetailView billId={billId} initialData={bill} />;
++  return (
++    <BillDetailView
++      billId={billId}
++      initialData={bill}
++      canWrite={hasPermission(permissionState, SYSTEM_PERMISSIONS.BILLS_WRITE)}
++      canDelete={hasPermission(
++        permissionState,
++        SYSTEM_PERMISSIONS.BILLS_DELETE,
++      )}
++      canRecordPayment={hasPermission(
++        permissionState,
++        SYSTEM_PERMISSIONS.PAYMENTS_RECORD,
++      )}
++    />
++  );
+ }
+diff --git a/src/app/(protected)/bills/new/page.tsx b/src/app/(protected)/bills/new/page.tsx
+index 0146ef7..97f5575 100644
+--- a/src/app/(protected)/bills/new/page.tsx
++++ b/src/app/(protected)/bills/new/page.tsx
+@@ -2,12 +2,23 @@ import { PageHeader } from "@/components/common/page-header";
+ import { CreateBillFlow } from "@/features/bills/components/create-bill/create-bill-flow";
+ import { api } from "@/lib/api/server/api";
+ import { getCurrentUser } from "@/lib/auth/session";
++import { SYSTEM_PERMISSIONS, hasPermission } from "@/lib/auth/permissions";
++import { requirePermission } from "@/lib/auth/server-permissions";
+ 
+ export const metadata = { title: "Tạo hóa đơn" };
+ 
+ export default async function NewBillPage() {
++  const permissionState = await requirePermission(
++    SYSTEM_PERMISSIONS.BILLS_WRITE,
++  );
++  const canManageGroups = hasPermission(
++    permissionState,
++    SYSTEM_PERMISSIONS.GROUPS_MANAGE,
++  );
+   const [groups, user] = await Promise.all([
+-    api.groups.getAll({ pageNumber: 1, pageSize: 100 }),
++    canManageGroups
++      ? api.groups.getAll({ pageNumber: 1, pageSize: 100 })
++      : Promise.resolve({ items: [] }),
+     getCurrentUser(),
+   ]);
+ 
+diff --git a/src/app/(protected)/bills/page.tsx b/src/app/(protected)/bills/page.tsx
+index 9faf7fb..b658cd6 100644
+--- a/src/app/(protected)/bills/page.tsx
++++ b/src/app/(protected)/bills/page.tsx
+@@ -14,6 +14,8 @@ import { billKeys } from "@/features/bills/query-keys";
+ import { api } from "@/lib/api/server/api";
+ import { toResult } from "@/lib/async-result";
+ import { cn } from "@/lib/utils";
++import { SYSTEM_PERMISSIONS, hasPermission } from "@/lib/auth/permissions";
++import { requirePermission } from "@/lib/auth/server-permissions";
+ 
+ export const metadata = { title: "Hóa đơn" };
+ 
+@@ -22,6 +24,13 @@ export default async function BillsPage({
+ }: {
+   searchParams: Promise<{ view?: string }>;
+ }) {
++  const permissionState = await requirePermission(
++    SYSTEM_PERMISSIONS.BILLS_READ,
++  );
++  const canWrite = hasPermission(
++    permissionState,
++    SYSTEM_PERMISSIONS.BILLS_WRITE,
++  );
+   const view = (await searchParams).view === "owed" ? "owed" : "owned";
+   const loaded = await toResult(
+     api.bills.getAll({ owed: view === "owed", pageNumber: 1, pageSize: 100 }),
+@@ -46,12 +55,14 @@ export default async function BillsPage({
+         title="Hóa đơn"
+         description="Theo dõi hóa đơn bạn tạo và các khoản được chia cho bạn."
+         actions={
+-          <Button asChild>
+-            <Link href="/bills/new">
+-              <Plus className="size-4" />
+-              Tạo hóa đơn
+-            </Link>
+-          </Button>
++          canWrite ? (
++            <Button asChild>
++              <Link href="/bills/new">
++                <Plus className="size-4" />
++                Tạo hóa đơn
++              </Link>
++            </Button>
++          ) : undefined
+         }
+       />
+       <div
+diff --git a/src/app/(protected)/dashboard/page.tsx b/src/app/(protected)/dashboard/page.tsx
+index 1ebdce1..dadffaa 100644
+--- a/src/app/(protected)/dashboard/page.tsx
++++ b/src/app/(protected)/dashboard/page.tsx
+@@ -7,25 +7,48 @@ import {
+ } from "lucide-react";
+ import Link from "next/link";
+ 
+-import { PageHeader } from "@/components/common/page-header";
+ import { ErrorState } from "@/components/common/error-state";
++import { PageHeader } from "@/components/common/page-header";
+ import { Button } from "@/components/ui/button";
+ import { Card, CardContent } from "@/components/ui/card";
+ import { BillList } from "@/features/bills/components/bill-list";
+ import { api } from "@/lib/api/server/api";
+-import { formatCurrency } from "@/lib/formatters/currency";
+ import { toResult } from "@/lib/async-result";
++import { SYSTEM_PERMISSIONS, hasPermission } from "@/lib/auth/permissions";
++import { getCurrentPermissionState } from "@/lib/auth/server-permissions";
++import { formatCurrency } from "@/lib/formatters/currency";
+ 
+ export const metadata = { title: "Tổng quan" };
+ 
+ export default async function DashboardPage() {
++  const permissionState = await getCurrentPermissionState();
++  const canReadBills = hasPermission(
++    permissionState,
++    SYSTEM_PERMISSIONS.BILLS_READ,
++  );
++  const canWriteBills = hasPermission(
++    permissionState,
++    SYSTEM_PERMISSIONS.BILLS_WRITE,
++  );
++  const canManageGroups = hasPermission(
++    permissionState,
++    SYSTEM_PERMISSIONS.GROUPS_MANAGE,
++  );
++
+   const loaded = await toResult(
+     Promise.all([
+-      api.bills.getAll({ owed: false, pageNumber: 1, pageSize: 6 }),
+-      api.bills.getAll({ owed: true, pageNumber: 1, pageSize: 100 }),
+-      api.groups.getAll({ pageNumber: 1, pageSize: 100 }),
++      canReadBills
++        ? api.bills.getAll({ owed: false, pageNumber: 1, pageSize: 6 })
++        : Promise.resolve(null),
++      canReadBills
++        ? api.bills.getAll({ owed: true, pageNumber: 1, pageSize: 100 })
++        : Promise.resolve(null),
++      canManageGroups
++        ? api.groups.getAll({ pageNumber: 1, pageSize: 100 })
++        : Promise.resolve(null),
+     ]),
+   );
++
+   if ("error" in loaded) {
+     return (
+       <div className="space-y-8">
+@@ -41,9 +64,10 @@ export default async function DashboardPage() {
+       </div>
+     );
+   }
++
+   const [owned, owed, groups] = loaded.data;
+-  const ownedItems = owned.items ?? [];
+-  const owedItems = owed.items ?? [];
++  const ownedItems = owned?.items ?? [];
++  const owedItems = owed?.items ?? [];
+   const remainingToCollect = ownedItems.reduce(
+     (sum, item) => sum + (item.remainingAmount ?? 0),
+     0,
+@@ -55,82 +79,100 @@ export default async function DashboardPage() {
+   const pending = ownedItems.filter(
+     (item) => !["Paid", "Cancelled"].includes(item.status ?? ""),
+   ).length;
++
+   const metrics = [
+-    {
+-      label: "Còn chờ thu",
+-      value: formatCurrency(remainingToCollect),
+-      icon: HandCoins,
+-      tone: "text-blue-600 bg-blue-500/10",
+-    },
+-    {
+-      label: "Bạn cần trả",
+-      value: formatCurrency(amountYouOwe),
+-      icon: FileClock,
+-      tone: "text-amber-600 bg-amber-500/10",
+-    },
+-    {
+-      label: "Hóa đơn đang mở",
+-      value: String(pending),
+-      icon: FileClock,
+-      tone: "text-violet-600 bg-violet-500/10",
+-    },
+-    {
+-      label: "Nhóm đang tham gia",
+-      value: String(groups.totalCount ?? groups.items?.length ?? 0),
+-      icon: UsersRound,
+-      tone: "text-emerald-600 bg-emerald-500/10",
+-    },
++    ...(canReadBills
++      ? [
++          {
++            label: "Còn chờ thu",
++            value: formatCurrency(remainingToCollect),
++            icon: HandCoins,
++            tone: "text-blue-600 bg-blue-500/10",
++          },
++          {
++            label: "Bạn cần trả",
++            value: formatCurrency(amountYouOwe),
++            icon: FileClock,
++            tone: "text-amber-600 bg-amber-500/10",
++          },
++          {
++            label: "Hóa đơn đang mở",
++            value: String(pending),
++            icon: FileClock,
++            tone: "text-violet-600 bg-violet-500/10",
++          },
++        ]
++      : []),
++    ...(canManageGroups
++      ? [
++          {
++            label: "Nhóm đang tham gia",
++            value: String(groups?.totalCount ?? groups?.items?.length ?? 0),
++            icon: UsersRound,
++            tone: "text-emerald-600 bg-emerald-500/10",
++          },
++        ]
++      : []),
+   ];
++
+   return (
+     <div className="space-y-8">
+       <PageHeader
+         title="Tổng quan"
+         description="Nhìn nhanh các khoản đang chờ và tiếp tục công việc quan trọng nhất."
+         actions={
+-          <Button asChild>
+-            <Link href="/bills/new">
+-              <Plus className="size-4" />
+-              Tạo hóa đơn
+-            </Link>
+-          </Button>
++          canWriteBills ? (
++            <Button asChild>
++              <Link href="/bills/new">
++                <Plus className="size-4" />
++                Tạo hóa đơn
++              </Link>
++            </Button>
++          ) : undefined
+         }
+       />
+-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+-        {metrics.map((metric) => (
+-          <Card
+-            key={metric.label}
+-            className="group hover:border-primary/25 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgb(15_23_42/0.07)]"
+-          >
+-            <CardContent className="p-5">
+-              <div
+-                className={`mb-4 grid size-10 place-items-center rounded-xl transition-transform duration-200 group-hover:scale-105 ${metric.tone}`}
+-              >
+-                <metric.icon className="size-5" />
+-              </div>
+-              <p className="text-muted-foreground text-sm">{metric.label}</p>
+-              <p className="money mt-1 text-2xl font-bold tracking-tight">
+-                {metric.value}
++
++      {metrics.length ? (
++        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
++          {metrics.map((metric) => (
++            <Card
++              key={metric.label}
++              className="group hover:-translate-y-1 hover:border-primary/25 hover:shadow-[0_12px_30px_rgb(15_23_42/0.07)]"
++            >
++              <CardContent className="p-5">
++                <div
++                  className={`mb-4 grid size-10 place-items-center rounded-xl transition-transform duration-200 group-hover:scale-105 ${metric.tone}`}
++                >
++                  <metric.icon className="size-5" />
++                </div>
++                <p className="text-sm text-muted-foreground">{metric.label}</p>
++                <p className="money mt-1 text-2xl font-bold tracking-tight">
++                  {metric.value}
++                </p>
++              </CardContent>
++            </Card>
++          ))}
++        </section>
++      ) : null}
++
++      {canReadBills ? (
++        <section>
++          <div className="mb-4 flex items-end justify-between gap-4">
++            <div>
++              <h2 className="text-lg font-semibold">Hóa đơn gần đây</h2>
++              <p className="text-sm text-muted-foreground">
++                Các hóa đơn bạn tạo và đang theo dõi.
+               </p>
+-            </CardContent>
+-          </Card>
+-        ))}
+-      </section>
+-      <section>
+-        <div className="mb-4 flex items-end justify-between">
+-          <div>
+-            <h2 className="text-lg font-semibold">Hóa đơn gần đây</h2>
+-            <p className="text-muted-foreground text-sm">
+-              Các hóa đơn bạn tạo và đang theo dõi.
+-            </p>
++            </div>
++            <Button variant="ghost" size="sm" asChild>
++              <Link href="/bills">
++                Xem tất cả <ArrowRight className="size-4" />
++              </Link>
++            </Button>
+           </div>
+-          <Button variant="ghost" size="sm" asChild>
+-            <Link href="/bills">
+-              Xem tất cả <ArrowRight className="size-4" />
+-            </Link>
+-          </Button>
+-        </div>
+-        <BillList bills={ownedItems} />
+-      </section>
++          <BillList bills={ownedItems} />
++        </section>
++      ) : null}
+     </div>
+   );
+ }
+diff --git a/src/app/(protected)/groups/[groupId]/page.tsx b/src/app/(protected)/groups/[groupId]/page.tsx
+index 3acc09e..8e14196 100644
+--- a/src/app/(protected)/groups/[groupId]/page.tsx
++++ b/src/app/(protected)/groups/[groupId]/page.tsx
+@@ -19,12 +19,21 @@ import {
+ } from "@/features/groups/components/group-actions";
+ import { api } from "@/lib/api/server/api";
+ import { formatCurrency } from "@/lib/formatters/currency";
++import { SYSTEM_PERMISSIONS, hasPermission } from "@/lib/auth/permissions";
++import { requirePermission } from "@/lib/auth/server-permissions";
+ 
+ export default async function GroupDetailPage({
+   params,
+ }: {
+   params: Promise<{ groupId: string }>;
+ }) {
++  const permissionState = await requirePermission(
++    SYSTEM_PERMISSIONS.GROUPS_MANAGE,
++  );
++  const canReadBills = hasPermission(
++    permissionState,
++    SYSTEM_PERMISSIONS.BILLS_READ,
++  );
+   const { groupId } = await params;
+   const group = await api.groups.getById(groupId);
+   if (!group.groupId) notFound();
+@@ -186,12 +195,8 @@ export default async function GroupDetailPage({
+                     bill.currency ?? "VND",
+                   );
+ 
+-                  return (
+-                    <Link
+-                      key={bill.billId}
+-                      href={`/bills/${bill.billId}`}
+-                      className="group flex items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-muted/25 sm:px-6"
+-                    >
++                  const content = (
++                    <>
+                       <div className="min-w-0 flex-1">
+                         <p className="truncate text-sm font-semibold">
+                           {bill.title || "Hóa đơn chưa đặt tên"}
+@@ -201,14 +206,36 @@ export default async function GroupDetailPage({
+                         </div>
+                       </div>
+                       <div className="min-w-0 max-w-[45%] text-right">
+-                        <p className="money truncate text-sm font-semibold" title={amount}>
++                        <p
++                          className="money truncate text-sm font-semibold"
++                          title={amount}
++                        >
+                           {amount}
+                         </p>
+-                        <p className="text-muted-foreground mt-1 text-xs group-hover:text-foreground">
+-                          Xem chi tiết
+-                        </p>
++                        {canReadBills ? (
++                          <p className="mt-1 text-xs text-muted-foreground group-hover:text-foreground">
++                            Xem chi tiết
++                          </p>
++                        ) : null}
+                       </div>
++                    </>
++                  );
++
++                  return canReadBills && bill.billId ? (
++                    <Link
++                      key={bill.billId}
++                      href={`/bills/${bill.billId}`}
++                      className="group flex items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-muted/25 sm:px-6"
++                    >
++                      {content}
+                     </Link>
++                  ) : (
++                    <div
++                      key={bill.billId}
++                      className="flex items-center justify-between gap-4 px-5 py-4 sm:px-6"
++                    >
++                      {content}
++                    </div>
+                   );
+                 })}
+               </div>
+diff --git a/src/app/(protected)/groups/page.tsx b/src/app/(protected)/groups/page.tsx
+index d124736..818a562 100644
+--- a/src/app/(protected)/groups/page.tsx
++++ b/src/app/(protected)/groups/page.tsx
+@@ -8,10 +8,14 @@ import { CreateGroupModal } from "@/features/groups/components/create-group-form
+ import { GroupCard } from "@/features/groups/components/group-card";
+ import { api } from "@/lib/api/server/api";
+ import { toResult } from "@/lib/async-result";
++import { SYSTEM_PERMISSIONS } from "@/lib/auth/permissions";
++import { requirePermission } from "@/lib/auth/server-permissions";
+ 
+ export const metadata = { title: "Nhóm" };
+ 
+ export default async function GroupsPage() {
++  await requirePermission(SYSTEM_PERMISSIONS.GROUPS_MANAGE);
++
+   const loaded = await toResult(
+     api.groups.getAll({ pageNumber: 1, pageSize: 100 }),
+   );
+diff --git a/src/app/(protected)/layout.tsx b/src/app/(protected)/layout.tsx
+index 0aa5d8f..f631456 100644
+--- a/src/app/(protected)/layout.tsx
++++ b/src/app/(protected)/layout.tsx
+@@ -3,9 +3,16 @@ import type { ReactNode } from "react";
+ 
+ import { AppShell } from "@/components/layout/app-shell";
+ import { getCurrentUser, getSessionTokens } from "@/lib/auth/session";
++import { getCurrentPermissionState } from "@/lib/auth/server-permissions";
+ 
+ export default async function ProtectedLayout({ children }: { children: ReactNode }) {
+   const [user, tokens] = await Promise.all([getCurrentUser(), getSessionTokens()]);
+   if (!user || !tokens.accessToken) redirect("/login");
+-  return <AppShell user={user}>{children}</AppShell>;
++
++  const permissions = await getCurrentPermissionState();
++  return (
++    <AppShell user={user} permissions={permissions}>
++      {children}
++    </AppShell>
++  );
+ }
+diff --git a/src/app/api/admin/users/[id]/permissions/route.ts b/src/app/api/admin/users/[id]/permissions/route.ts
+index 2268aea..9ba7499 100644
+--- a/src/app/api/admin/users/[id]/permissions/route.ts
++++ b/src/app/api/admin/users/[id]/permissions/route.ts
+@@ -1,6 +1,19 @@
+ import { failure, ok } from "@/app/api/_shared/response";
+ import { adminApi } from "@/lib/api/server/admin.api";
+ 
++
++export async function GET(
++  _request: Request,
++  { params }: { params: Promise<{ id: string }> },
++) {
++  try {
++    const { id } = await params;
++    return ok(await adminApi.getMemberPermissions(id));
++  } catch (error) {
++    return failure(error);
++  }
++}
++
+ export async function PATCH(
+   request: Request,
+   { params }: { params: Promise<{ id: string }> },
+diff --git a/src/app/api/auth/me/permissions/route.ts b/src/app/api/auth/me/permissions/route.ts
+new file mode 100644
+index 0000000..da2119f
+--- /dev/null
++++ b/src/app/api/auth/me/permissions/route.ts
+@@ -0,0 +1,10 @@
++import { failure, ok } from "@/app/api/_shared/response";
++import { api } from "@/lib/api/server/api";
++
++export async function GET() {
++  try {
++    return ok(await api.auth.getMyPermissions());
++  } catch (error) {
++    return failure(error);
++  }
++}
+diff --git a/src/app/globals.css b/src/app/globals.css
+index c21b881..9f22681 100644
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -206,3 +206,33 @@ select {
+     transition-duration: 0.01ms !important;
+   }
+ }
++
++/* Compact, low-contrast scrollbar for nested panels and permission dialogs. */
++.splitly-scrollbar {
++  scrollbar-color: color-mix(in oklab, var(--muted-foreground) 42%, transparent)
++    transparent;
++  scrollbar-width: thin;
++  scrollbar-gutter: stable;
++}
++
++.splitly-scrollbar::-webkit-scrollbar {
++  width: 8px;
++  height: 8px;
++}
++
++.splitly-scrollbar::-webkit-scrollbar-track {
++  background: transparent;
++}
++
++.splitly-scrollbar::-webkit-scrollbar-thumb {
++  min-height: 48px;
++  border: 2px solid transparent;
++  border-radius: 999px;
++  background: color-mix(in oklab, var(--muted-foreground) 38%, transparent);
++  background-clip: padding-box;
++}
++
++.splitly-scrollbar::-webkit-scrollbar-thumb:hover {
++  background: color-mix(in oklab, var(--primary) 58%, var(--muted-foreground));
++  background-clip: padding-box;
++}
+diff --git a/src/components/layout/app-shell.tsx b/src/components/layout/app-shell.tsx
+index fe34e52..618aa9b 100644
+--- a/src/components/layout/app-shell.tsx
++++ b/src/components/layout/app-shell.tsx
+@@ -21,6 +21,12 @@ import Link from "next/link";
+ import { usePathname } from "next/navigation";
+ import { useEffect, useState, type ReactNode } from "react";
+ 
++import {
++  SYSTEM_PERMISSIONS,
++  hasPermission,
++  type PermissionState,
++  type SystemPermission,
++} from "@/lib/auth/permissions";
+ import type { CurrentUser } from "@/lib/auth/session";
+ import { cn } from "@/lib/utils";
+ import { Button } from "@/components/ui/button";
+@@ -35,26 +41,68 @@ import { LogoutButton } from "@/components/layout/logout-button";
+ import { ThemeToggle } from "@/components/layout/theme-toggle";
+ import { CreateSupportModal } from "@/features/support/components/create-support-modal";
+ 
+-const nav = [
++const nav: readonly {
++  href: Route;
++  label: string;
++  icon: typeof LayoutDashboard;
++  permission?: SystemPermission;
++}[] = [
+   { href: "/dashboard" as Route, label: "Tổng quan", icon: LayoutDashboard },
+-  { href: "/bills" as Route, label: "Hóa đơn", icon: FileText },
+-  { href: "/groups" as Route, label: "Nhóm", icon: UsersRound },
+-  { href: "/payout-accounts" as Route, label: "Tài khoản Payout", icon: Landmark },
+-  { href: "/admin/users" as Route, label: "Quản lý người dùng", icon: ShieldCheck },
+-  { href: "/admin/support-requests" as Route, label: "Yêu cầu hỗ trợ", icon: LifeBuoy },
+-] as const;
++  {
++    href: "/bills" as Route,
++    label: "Hóa đơn",
++    icon: FileText,
++    permission: SYSTEM_PERMISSIONS.BILLS_READ,
++  },
++  {
++    href: "/groups" as Route,
++    label: "Nhóm",
++    icon: UsersRound,
++    permission: SYSTEM_PERMISSIONS.GROUPS_MANAGE,
++  },
++  {
++    href: "/payout-accounts" as Route,
++    label: "Tài khoản Payout",
++    icon: Landmark,
++  },
++  {
++    href: "/admin/users" as Route,
++    label: "Quản lý người dùng",
++    icon: ShieldCheck,
++    permission: SYSTEM_PERMISSIONS.USERS_MANAGE,
++  },
++  {
++    href: "/admin/support-requests" as Route,
++    label: "Yêu cầu hỗ trợ",
++    icon: LifeBuoy,
++    permission: SYSTEM_PERMISSIONS.SUPPORT_REQUESTS_MANAGE,
++  },
++];
+ 
+ export function AppShell({
+   user,
++  permissions,
+   children,
+ }: {
+   user: CurrentUser;
++  permissions: PermissionState;
+   children: ReactNode;
+ }) {
+   const pathname = usePathname();
+   const [open, setOpen] = useState(false);
+   const [collapsed, setCollapsed] = useState(false);
+   const [avatarOpen, setAvatarOpen] = useState(false);
++  const visibleNav = nav.filter(
++    (item) => !item.permission || hasPermission(permissions, item.permission),
++  );
++  const canReadBills = hasPermission(
++    permissions,
++    SYSTEM_PERMISSIONS.BILLS_READ,
++  );
++  const canCreateBill = hasPermission(
++    permissions,
++    SYSTEM_PERMISSIONS.BILLS_WRITE,
++  );
+   const initials = user.displayName
+     .split(" ")
+     .slice(-2)
+@@ -81,7 +129,9 @@ export function AppShell({
+ 
+   const breadcrumb: { parent: string; href: Route; current: string } =
+     pathname.startsWith("/bills/new")
+-      ? { parent: "Hóa đơn", href: "/bills" as Route, current: "Tạo hóa đơn" }
++      ? canReadBills
++        ? { parent: "Hóa đơn", href: "/bills" as Route, current: "Tạo hóa đơn" }
++        : { parent: "Splitly", href: "/dashboard" as Route, current: "Tạo hóa đơn" }
+       : pathname.startsWith("/bills/")
+         ? { parent: "Hóa đơn", href: "/bills" as Route, current: "Chi tiết hóa đơn" }
+         : pathname.startsWith("/bills")
+@@ -149,7 +199,7 @@ export function AppShell({
+           className="flex-1 space-y-1 px-3 py-4"
+           aria-label="Điều hướng chính"
+         >
+-          {nav.map((item) => {
++          {visibleNav.map((item) => {
+             const active =
+               pathname === item.href || pathname.startsWith(`${item.href}/`);
+             return (
+@@ -255,7 +305,7 @@ export function AppShell({
+             </span>
+           </nav>
+           <div className="ml-auto flex items-center gap-2">
+-            {!pathname.startsWith("/bills/new") ? (
++            {canCreateBill && !pathname.startsWith("/bills/new") ? (
+               <Button asChild size="sm" className="hidden sm:inline-flex">
+                 <Link href="/bills/new">
+                   <Plus className="size-4" />
+diff --git a/src/components/ui/dialog.tsx b/src/components/ui/dialog.tsx
+index 2362261..5312baf 100644
+--- a/src/components/ui/dialog.tsx
++++ b/src/components/ui/dialog.tsx
+@@ -26,34 +26,54 @@ export const DialogOverlay = React.forwardRef<
+ ));
+ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
+ 
++type DialogContentProps = React.ComponentPropsWithoutRef<
++  typeof DialogPrimitive.Content
++> & {
++  panelClassName?: string;
++  bodyClassName?: string;
++};
++
+ export const DialogContent = React.forwardRef<
+   React.ElementRef<typeof DialogPrimitive.Content>,
+-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
+->(({ className, children, ...props }, ref) => (
+-  <DialogPortal>
+-    <DialogOverlay />
+-    <DialogPrimitive.Content
+-      ref={ref}
+-      className={cn(
+-        "fixed inset-x-0 bottom-0 z-50 w-full outline-none sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:w-[calc(100vw-2rem)] sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2",
+-        className,
+-      )}
+-      {...props}
+-    >
+-      <div
+-        className="animate-dialog-panel bg-card text-card-foreground relative max-h-[88dvh] overflow-y-auto rounded-t-[1.6rem] border border-border/80 shadow-[0_-12px_48px_rgb(15_23_42/0.18)] sm:rounded-[1.35rem] sm:shadow-[0_24px_80px_rgb(15_23_42/0.22)] dark:shadow-[0_-12px_56px_rgb(2_6_23/0.55)] sm:dark:shadow-[0_24px_80px_rgb(2_6_23/0.6)]"
++  DialogContentProps
++>(
++  (
++    { className, panelClassName, bodyClassName, children, ...props },
++    ref,
++  ) => (
++    <DialogPortal>
++      <DialogOverlay />
++      <DialogPrimitive.Content
++        ref={ref}
++        className={cn(
++          "fixed inset-x-0 bottom-0 z-50 w-full outline-none sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:w-[calc(100vw-2rem)] sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2",
++          className,
++        )}
++        {...props}
+       >
+-        <div className="p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:p-6">
+-          {children}
++        <div
++          className={cn(
++            "animate-dialog-panel bg-card text-card-foreground relative max-h-[88dvh] overflow-y-auto rounded-t-[1.6rem] border border-border/80 shadow-[0_-12px_48px_rgb(15_23_42/0.18)] sm:rounded-[1.35rem] sm:shadow-[0_24px_80px_rgb(15_23_42/0.22)] dark:shadow-[0_-12px_56px_rgb(2_6_23/0.55)] sm:dark:shadow-[0_24px_80px_rgb(2_6_23/0.6)]",
++            panelClassName,
++          )}
++        >
++          <div
++            className={cn(
++              "p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:p-6",
++              bodyClassName,
++            )}
++          >
++            {children}
++          </div>
++          <DialogPrimitive.Close className="text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-ring absolute right-4 top-4 rounded-full p-2 transition-colors focus-visible:outline-none focus-visible:ring-2">
++            <X className="size-4" />
++            <span className="sr-only">Đóng</span>
++          </DialogPrimitive.Close>
+         </div>
+-        <DialogPrimitive.Close className="text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-ring absolute right-4 top-4 rounded-full p-2 transition-colors focus-visible:outline-none focus-visible:ring-2">
+-          <X className="size-4" />
+-          <span className="sr-only">Đóng</span>
+-        </DialogPrimitive.Close>
+-      </div>
+-    </DialogPrimitive.Content>
+-  </DialogPortal>
+-));
++      </DialogPrimitive.Content>
++    </DialogPortal>
++  ),
++);
+ DialogContent.displayName = DialogPrimitive.Content.displayName;
+ 
+ export function DialogHeader({
+diff --git a/src/features/admin/components/user-management-view.tsx b/src/features/admin/components/user-management-view.tsx
+index fb73605..f9a1d11 100644
+--- a/src/features/admin/components/user-management-view.tsx
++++ b/src/features/admin/components/user-management-view.tsx
+@@ -6,6 +6,7 @@ import {
+   CreditCard,
+   FileText,
+   LifeBuoy,
++  LoaderCircle,
+   Settings,
+   Shield,
+   ShieldAlert,
+@@ -14,9 +15,10 @@ import {
+   UserCheck,
+   UsersRound,
+   Wrench,
++  type LucideIcon,
+ } from "lucide-react";
+ import { useRouter } from "next/navigation";
+-import { useState } from "react";
++import { useMemo, useState } from "react";
+ import { toast } from "sonner";
+ 
+ import { Badge } from "@/components/ui/badge";
+@@ -30,6 +32,8 @@ import {
+   DialogHeader,
+   DialogTitle,
+ } from "@/components/ui/dialog";
++import type { BillSplitServiceApplicationFeaturesAdminGetMemberPermissionsMemberPermissionsDto as MemberPermissionsDto } from "@/generated/api/models";
++import { bffFetch } from "@/lib/http/browser-http-client";
+ 
+ export interface SystemPermissionItem {
+   code: string;
+@@ -37,80 +41,118 @@ export interface SystemPermissionItem {
+   category: string;
+ }
+ 
+-const PERMISSION_GROUPS: {
+-  category: string;
+-  icon: typeof FileText;
++interface PermissionGroupMeta {
++  title: string;
++  icon: LucideIcon;
+   description: string;
+-  permissions: SystemPermissionItem[];
+-}[] = [
+-  {
+-    category: "Hóa đơn (Bills)",
++}
++
++const PERMISSION_GROUP_META: Record<string, PermissionGroupMeta> = {
++  Bills: {
++    title: "Hóa đơn (Bills)",
+     icon: FileText,
+     description: "Quyền quản lý, tạo lập và hủy bỏ hóa đơn chia tiền.",
+-    permissions: [
+-      { code: "Bills.Read", label: "Xem danh sách và chi tiết hóa đơn", category: "Bills" },
+-      { code: "Bills.Write", label: "Tạo mới và chỉnh sửa thông tin hóa đơn", category: "Bills" },
+-      { code: "Bills.Delete", label: "Hủy bỏ và xóa hoàn toàn hóa đơn", category: "Bills" },
+-    ],
+   },
+-  {
+-    category: "Nhóm chi tiêu (Groups)",
++  Groups: {
++    title: "Nhóm chi tiêu (Groups)",
+     icon: UsersRound,
+     description: "Quyền tạo và quản lý thành viên các nhóm dùng chung.",
+-    permissions: [
+-      { code: "Groups.Manage", label: "Tạo nhóm, mời và quản lý thành viên nhóm", category: "Groups" },
+-    ],
+   },
+-  {
+-    category: "Thanh toán & Payout",
++  PaymentsAndPayouts: {
++    title: "Thanh toán & Payout",
+     icon: CreditCard,
+     description: "Quyền ghi nhận thanh toán thủ công và duyệt giải ngân tự động.",
+-    permissions: [
+-      { code: "Payments.Record", label: "Ghi nhận thanh toán tiền mặt / thủ công", category: "Payments" },
+-      { code: "Payouts.Review", label: "Duyệt và xử lý lệnh giải ngân Payout tự động", category: "Payouts" },
+-    ],
+   },
+-  {
+-    category: "Hỗ trợ khách hàng (Support)",
++  Support: {
++    title: "Hỗ trợ khách hàng (Support)",
+     icon: LifeBuoy,
+     description: "Quyền tiếp nhận và đối soát báo lỗi sự cố thanh toán.",
+-    permissions: [
+-      { code: "SupportRequests.Manage", label: "Xử lý, đối soát và cập nhật trạng thái báo lỗi", category: "Support" },
+-    ],
+   },
+-  {
+-    category: "Quản trị & Hệ thống (Administration)",
++  Administration: {
++    title: "Quản trị & Hệ thống (Administration)",
+     icon: Settings,
+     description: "Quyền quản trị tài khoản người dùng và cấu hình hệ thống.",
+-    permissions: [
+-      { code: "Users.Manage", label: "Quản lý vai trò và phân quyền thành viên", category: "Admin" },
+-      { code: "System.Configure", label: "Cấu hình tham số hệ thống và Template Email", category: "System" },
+-    ],
+   },
+-];
+-
+-const ALL_PERMISSION_CODES = PERMISSION_GROUPS.flatMap((g) =>
+-  g.permissions.map((p) => p.code),
+-);
++  Other: {
++    title: "Quyền khác",
++    icon: ShieldCheck,
++    description: "Các quyền hệ thống khác được backend công bố.",
++  },
++};
++
++const PERMISSION_GROUP_ORDER = [
++  "Bills",
++  "Groups",
++  "PaymentsAndPayouts",
++  "Support",
++  "Administration",
++  "Other",
++] as const;
++
++function resolvePermissionGroup(permission: SystemPermissionItem) {
++  const prefix = permission.code.split(".")[0];
++  if (prefix === "Bills") return "Bills";
++  if (prefix === "Groups") return "Groups";
++  if (prefix === "Payments" || prefix === "Payouts") {
++    return "PaymentsAndPayouts";
++  }
++  if (prefix === "SupportRequests") return "Support";
++  if (prefix === "Users" || prefix === "System") return "Administration";
++  return "Other";
++}
+ 
+ export interface AdminUserItem {
+   memberId: string;
+   displayName: string;
+   email: string;
+   role: string;
+-  customPermissions?: string[];
+   createdAtUtc?: string;
+ }
+ 
+-export function UserManagementView({ users }: { users: AdminUserItem[] }) {
++export function UserManagementView({
++  users,
++  systemPermissions,
++}: {
++  users: AdminUserItem[];
++  systemPermissions: SystemPermissionItem[];
++}) {
+   const router = useRouter();
+   const [selectedUser, setSelectedUser] = useState<AdminUserItem | null>(null);
+   const [roleModalOpen, setRoleModalOpen] = useState(false);
+   const [permModalOpen, setPermModalOpen] = useState(false);
+-
+-  const [targetRole, setTargetRole] = useState<string>("User");
++  const [targetRole, setTargetRole] = useState("User");
+   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
+-  const [pending, setPending] = useState(false);
++  const [permissionDetails, setPermissionDetails] =
++    useState<MemberPermissionsDto | null>(null);
++  const [permissionCache, setPermissionCache] = useState<
++    Record<string, MemberPermissionsDto>
++  >({});
++  const [permissionsLoading, setPermissionsLoading] = useState(false);
++  const [permissionsError, setPermissionsError] = useState<string | null>(null);
++  const [pendingAction, setPendingAction] = useState<
++    "role" | "permissions" | null
++  >(null);
++
++  const allPermissionCodes = useMemo(
++    () => systemPermissions.map((permission) => permission.code),
++    [systemPermissions],
++  );
++  const hasPermissionCatalog = allPermissionCodes.length > 0;
++
++  const permissionGroups = useMemo(() => {
++    const grouped = new Map<string, SystemPermissionItem[]>();
++    for (const permission of systemPermissions) {
++      const key = resolvePermissionGroup(permission);
++      grouped.set(key, [...(grouped.get(key) ?? []), permission]);
++    }
++
++    return PERMISSION_GROUP_ORDER.flatMap((key) => {
++      const permissions = grouped.get(key) ?? [];
++      return permissions.length
++        ? [{ key, meta: PERMISSION_GROUP_META[key], permissions }]
++        : [];
++    });
++  }, [systemPermissions]);
+ 
+   const openRoleModal = (user: AdminUserItem) => {
+     setSelectedUser(user);
+@@ -118,71 +160,111 @@ export function UserManagementView({ users }: { users: AdminUserItem[] }) {
+     setRoleModalOpen(true);
+   };
+ 
++  const loadPermissionDetails = async (user: AdminUserItem) => {
++    setPermissionsLoading(true);
++    setPermissionsError(null);
++    setPermissionDetails(null);
++    setSelectedPermissions([]);
++
++    try {
++      const details = await bffFetch<MemberPermissionsDto>(
++        `/api/admin/users/${user.memberId}/permissions`,
++      );
++      setPermissionDetails(details);
++      setPermissionCache((current) => ({
++        ...current,
++        [user.memberId]: details,
++      }));
++      const availableCodes = new Set(allPermissionCodes);
++      setSelectedPermissions(
++        (details.customPermissions ?? []).filter(
++          (code): code is string => Boolean(code) && availableCodes.has(code),
++        ),
++      );
++    } catch (error) {
++      setPermissionsError(
++        error instanceof Error
++          ? error.message
++          : "Không thể tải quyền hiện tại của thành viên.",
++      );
++    } finally {
++      setPermissionsLoading(false);
++    }
++  };
++
+   const openPermModal = (user: AdminUserItem) => {
+     setSelectedUser(user);
+-    setSelectedPermissions(user.customPermissions ?? []);
+     setPermModalOpen(true);
++    void loadPermissionDetails(user);
+   };
+ 
+   const handleSaveRole = async () => {
+     if (!selectedUser) return;
+-    setPending(true);
++    setPendingAction("role");
+     try {
+-      const res = await fetch(`/api/admin/users/${selectedUser.memberId}/role`, {
++      await bffFetch(`/api/admin/users/${selectedUser.memberId}/role`, {
+         method: "PATCH",
+-        headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({ role: targetRole }),
+       });
+-      if (!res.ok) throw new Error("Không thể thay đổi vai trò.");
+       toast.success(`Đã đổi vai trò thành viên thành ${targetRole}`);
+       setRoleModalOpen(false);
+       router.refresh();
+     } catch (error) {
+-      toast.error(error instanceof Error ? error.message : "Đổi vai trò thất bại.");
++      toast.error(
++        error instanceof Error ? error.message : "Đổi vai trò thất bại.",
++      );
+     } finally {
+-      setPending(false);
++      setPendingAction(null);
+     }
+   };
+ 
+   const handleSavePermissions = async () => {
+-    if (!selectedUser) return;
+-    setPending(true);
++    if (
++      !selectedUser ||
++      permissionsLoading ||
++      permissionsError ||
++      !hasPermissionCatalog
++    ) {
++      return;
++    }
++    setPendingAction("permissions");
+     try {
+-      const res = await fetch(`/api/admin/users/${selectedUser.memberId}/permissions`, {
++      await bffFetch(`/api/admin/users/${selectedUser.memberId}/permissions`, {
+         method: "PATCH",
+-        headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({ permissions: selectedPermissions }),
+       });
+-      if (!res.ok) throw new Error("Không thể cập nhật quyền hạn.");
++      setPermissionCache((current) => ({
++        ...current,
++        [selectedUser.memberId]: {
++          ...(current[selectedUser.memberId] ?? permissionDetails ?? {}),
++          customPermissions: [...selectedPermissions],
++        },
++      }));
+       toast.success("Đã cập nhật danh sách quyền tùy chỉnh");
+       setPermModalOpen(false);
+       router.refresh();
+     } catch (error) {
+-      toast.error(error instanceof Error ? error.message : "Cập nhật quyền thất bại.");
++      toast.error(
++        error instanceof Error ? error.message : "Cập nhật quyền thất bại.",
++      );
+     } finally {
+-      setPending(false);
++      setPendingAction(null);
+     }
+   };
+ 
+   const togglePermission = (code: string) => {
+-    setSelectedPermissions((prev) =>
+-      prev.includes(code) ? prev.filter((p) => p !== code) : [...prev, code],
++    setSelectedPermissions((current) =>
++      current.includes(code)
++        ? current.filter((permission) => permission !== code)
++        : [...current, code],
+     );
+   };
+ 
+-  const handleSelectAll = () => {
+-    setSelectedPermissions([...ALL_PERMISSION_CODES]);
+-  };
+-
+-  const handleDeselectAll = () => {
+-    setSelectedPermissions([]);
+-  };
+-
+   return (
+     <div className="space-y-4">
+       <Card>
+         <CardHeader className="border-b border-border/70 pb-4">
+-          <CardTitle className="text-base font-bold flex items-center gap-2">
++          <CardTitle className="flex items-center gap-2 text-base font-bold">
+             <ShieldCheck className="size-5 text-primary" />
+             Danh sách Thành viên & Phân quyền ({users.length} người)
+           </CardTitle>
+@@ -191,40 +273,49 @@ export function UserManagementView({ users }: { users: AdminUserItem[] }) {
+           <div className="divide-y divide-border/60">
+             {users.map((user) => {
+               const isAdmin = user.role === "Administrator";
+-              const permCount = user.customPermissions?.length ?? 0;
++              const cachedPermissions = permissionCache[user.memberId];
++              const customCount = cachedPermissions?.customPermissions?.length;
+ 
+               return (
+                 <div
+                   key={user.memberId}
+                   className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5"
+                 >
+-                  <div className="flex items-center gap-3 min-w-0">
+-                    <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 font-bold text-sm text-primary">
++                  <div className="flex min-w-0 items-center gap-3">
++                    <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+                       {user.displayName.slice(0, 2).toUpperCase()}
+                     </div>
+                     <div className="min-w-0">
+-                      <div className="flex items-center gap-2">
+-                        <h4 className="truncate font-semibold text-sm">
++                      <div className="flex flex-wrap items-center gap-2">
++                        <h4 className="truncate text-sm font-semibold">
+                           {user.displayName}
+                         </h4>
+                         {isAdmin ? (
+-                          <Badge variant="default" className="bg-primary text-primary-foreground">
++                          <Badge
++                            variant="default"
++                            className="bg-primary text-primary-foreground"
++                          >
+                             <Shield className="mr-1 size-3" /> Admin
+                           </Badge>
+                         ) : (
+                           <Badge variant="secondary">User</Badge>
+                         )}
+                       </div>
+-                      <p className="text-muted-foreground truncate text-xs">
++                      <p className="truncate text-xs text-muted-foreground">
+                         {user.email}
+                       </p>
+                     </div>
+                   </div>
+ 
+                   <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+-                    {permCount > 0 ? (
+-                      <Badge variant="secondary" className="border-primary/30 text-primary">
+-                        {permCount} quyền tùy chỉnh
++                    {typeof customCount === "number" ? (
++                      <Badge
++                        variant="secondary"
++                        className="border-primary/30 text-primary"
++                      >
++                        {customCount > 0
++                          ? `${customCount} quyền tùy chỉnh`
++                          : "Theo quyền mặc định"}
+                       </Badge>
+                     ) : null}
+ 
+@@ -232,7 +323,7 @@ export function UserManagementView({ users }: { users: AdminUserItem[] }) {
+                       variant="outline"
+                       size="sm"
+                       onClick={() => openRoleModal(user)}
+-                      className="h-8 text-xs gap-1.5"
++                      className="h-8 gap-1.5 text-xs"
+                     >
+                       <UserCheck className="size-3.5" /> Đổi vai trò
+                     </Button>
+@@ -241,7 +332,7 @@ export function UserManagementView({ users }: { users: AdminUserItem[] }) {
+                       variant="outline"
+                       size="sm"
+                       onClick={() => openPermModal(user)}
+-                      className="h-8 text-xs gap-1.5"
++                      className="h-8 gap-1.5 text-xs"
+                     >
+                       <Wrench className="size-3.5" /> Phân quyền chi tiết
+                     </Button>
+@@ -253,47 +344,67 @@ export function UserManagementView({ users }: { users: AdminUserItem[] }) {
+         </CardContent>
+       </Card>
+ 
+-      {/* Role Change Modal */}
+       <Dialog open={roleModalOpen} onOpenChange={setRoleModalOpen}>
+         <DialogContent className="sm:max-w-md">
+           <DialogHeader>
+             <DialogTitle>Thay đổi Vai trò Hệ thống</DialogTitle>
+             <DialogDescription>
+-              Cập nhật vai trò Admin hoặc User cho thành viên <strong>{selectedUser?.displayName}</strong>.
++              Cập nhật vai trò Admin hoặc User cho thành viên{" "}
++              <strong>{selectedUser?.displayName}</strong>.
+             </DialogDescription>
+           </DialogHeader>
+ 
+           <div className="my-4 space-y-3">
+             <label
+-              onClick={() => setTargetRole("Administrator")}
+               className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-all ${
+                 targetRole === "Administrator"
+                   ? "border-primary bg-primary/10 ring-2 ring-primary/20"
+                   : "border-border/80 hover:border-primary/40"
+               }`}
+             >
++              <input
++                type="radio"
++                name="system-role"
++                value="Administrator"
++                checked={targetRole === "Administrator"}
++                onChange={() => setTargetRole("Administrator")}
++                className="sr-only"
++              />
+               <ShieldAlert className="mt-0.5 size-5 shrink-0 text-primary" />
+               <div>
+-                <strong className="block text-sm font-semibold">Administrator (Quản trị viên)</strong>
+-                <span className="text-muted-foreground text-xs">
+-                  Toàn quyền quản trị hệ thống, quản lý người dùng, duyệt payout và báo lỗi support.
++                <strong className="block text-sm font-semibold">
++                  Administrator (Quản trị viên)
++                </strong>
++                <span className="text-xs text-muted-foreground">
++                  Toàn quyền quản trị hệ thống, quản lý người dùng, duyệt payout
++                  và báo lỗi support.
+                 </span>
+               </div>
+             </label>
+ 
+             <label
+-              onClick={() => setTargetRole("User")}
+               className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-all ${
+                 targetRole === "User"
+                   ? "border-primary bg-primary/10 ring-2 ring-primary/20"
+                   : "border-border/80 hover:border-primary/40"
+               }`}
+             >
++              <input
++                type="radio"
++                name="system-role"
++                value="User"
++                checked={targetRole === "User"}
++                onChange={() => setTargetRole("User")}
++                className="sr-only"
++              />
+               <Shield className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
+               <div>
+-                <strong className="block text-sm font-semibold">User (Người dùng thường)</strong>
+-                <span className="text-muted-foreground text-xs">
+-                  Tạo và chia hóa đơn, tham gia nhóm và thực hiện thanh toán cá nhân.
++                <strong className="block text-sm font-semibold">
++                  User (Người dùng thường)
++                </strong>
++                <span className="text-xs text-muted-foreground">
++                  Tạo và chia hóa đơn, tham gia nhóm và thực hiện thanh toán cá
++                  nhân.
+                 </span>
+               </div>
+             </label>
+@@ -303,38 +414,62 @@ export function UserManagementView({ users }: { users: AdminUserItem[] }) {
+             <Button variant="outline" onClick={() => setRoleModalOpen(false)}>
+               Hủy
+             </Button>
+-            <Button onClick={handleSaveRole} isLoading={pending}>
++            <Button
++              onClick={handleSaveRole}
++              isLoading={pendingAction === "role"}
++            >
+               Lưu vai trò
+             </Button>
+           </DialogFooter>
+         </DialogContent>
+       </Dialog>
+ 
+-      {/* Spacious Category-Grouped Custom Permissions Modal */}
+       <Dialog open={permModalOpen} onOpenChange={setPermModalOpen}>
+-        <DialogContent className="sm:max-w-3xl lg:max-w-4xl max-h-[90vh] flex flex-col p-6 sm:p-8">
+-          <DialogHeader className="border-b border-border/60 pb-4">
+-            <div className="flex flex-wrap items-center justify-between gap-4">
+-              <div>
+-                <DialogTitle className="text-xl font-bold flex items-center gap-2">
+-                  <Wrench className="size-5 text-primary" />
++        <DialogContent
++          className="inset-x-2 bottom-2 w-auto sm:w-[calc(100vw-1.5rem)] sm:max-w-[1080px]"
++          panelClassName="h-[calc(100dvh-1rem)] max-h-[calc(100dvh-1rem)] overflow-hidden rounded-[1.25rem] sm:h-[min(92dvh,820px)] sm:max-h-[min(92dvh,820px)] sm:rounded-[1.35rem]"
++          bodyClassName="flex h-full min-h-0 flex-col p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-5 lg:p-6"
++        >
++          <DialogHeader className="shrink-0 border-b border-border/60 pb-4">
++            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
++              <div className="min-w-0">
++                <DialogTitle className="flex items-center gap-2 text-lg font-bold sm:text-xl">
++                  <Wrench className="size-5 shrink-0 text-primary" />
+                   Phân quyền Chi tiết (Custom Privileges)
+                 </DialogTitle>
+-                <DialogDescription className="mt-1 text-sm">
+-                  Cấp quyền hạn chi tiết theo từng nhóm chức năng cho <strong>{selectedUser?.displayName}</strong> ({selectedUser?.email}).
++                <DialogDescription className="mt-1 max-w-3xl text-xs leading-5 sm:text-sm sm:leading-6">
++                  Cấp quyền hạn chi tiết theo từng nhóm chức năng cho{" "}
++                  <strong>{selectedUser?.displayName}</strong> ({selectedUser?.email}
++                  ).
+                 </DialogDescription>
+               </div>
+ 
+-              <div className="flex items-center gap-2">
+-                <Badge variant="secondary" className="px-3 py-1 text-xs font-semibold">
+-                  Đã chọn: {selectedPermissions.length} / {ALL_PERMISSION_CODES.length} quyền
++              <div className="flex shrink-0 flex-wrap items-center gap-2 pr-8 lg:justify-end lg:pr-0">
++                <Badge
++                  variant="secondary"
++                  className="px-2.5 py-1 text-[11px] font-semibold sm:text-xs"
++                >
++                  Đã chọn: {selectedPermissions.length} / {allPermissionCodes.length}
+                 </Badge>
++                {permissionDetails ? (
++                  <Badge
++                    variant="secondary"
++                    className="px-2.5 py-1 text-[11px] font-semibold sm:text-xs"
++                  >
++                    Hiệu lực: {permissionDetails.effectivePermissions?.length ?? 0}
++                  </Badge>
++                ) : null}
+                 <Button
+                   type="button"
+-                  variant="ghost"
++                  variant="outline"
+                   size="sm"
+-                  onClick={handleSelectAll}
+-                  className="h-8 text-xs gap-1"
++                  onClick={() => setSelectedPermissions([...allPermissionCodes])}
++                  disabled={
++                    permissionsLoading ||
++                    Boolean(permissionsError) ||
++                    !hasPermissionCatalog
++                  }
++                  className="h-8 gap-1.5 px-2.5 text-xs"
+                 >
+                   <CheckSquare className="size-3.5" /> Chọn tất cả
+                 </Button>
+@@ -342,86 +477,159 @@ export function UserManagementView({ users }: { users: AdminUserItem[] }) {
+                   type="button"
+                   variant="ghost"
+                   size="sm"
+-                  onClick={handleDeselectAll}
+-                  className="h-8 text-xs gap-1 text-muted-foreground"
++                  onClick={() => setSelectedPermissions([])}
++                  disabled={
++                    permissionsLoading ||
++                    Boolean(permissionsError) ||
++                    !hasPermissionCatalog
++                  }
++                  className="h-8 gap-1.5 px-2.5 text-xs text-muted-foreground"
+                 >
+                   <Square className="size-3.5" /> Bỏ chọn
+                 </Button>
+               </div>
+             </div>
++
++            {permissionDetails?.isAdministrator ||
++            permissionDetails?.role === "Administrator" ? (
++              <div className="mt-3 rounded-xl border border-primary/15 bg-primary/[0.045] px-3 py-2 text-xs leading-5 text-muted-foreground">
++                Tài khoản này là Administrator nên có toàn quyền theo vai trò.
++                Các ô bên dưới chỉ thể hiện <strong>customPermissions</strong>
++                {" "}được lưu riêng; quyền thực tế được hiển thị ở mục “Hiệu lực”.
++              </div>
++            ) : null}
+           </DialogHeader>
+ 
+-          {/* Category Grouped Permission List */}
+-          <div className="my-4 flex-1 overflow-y-auto space-y-6 pr-2">
+-            {PERMISSION_GROUPS.map((group) => {
+-              const GroupIcon = group.icon;
+-              const selectedInGroup = group.permissions.filter((p) =>
+-                selectedPermissions.includes(p.code),
+-              ).length;
++          <div className="splitly-scrollbar -mr-1 min-h-0 flex-1 overflow-y-auto overscroll-contain py-4 pr-2 sm:py-5 sm:pr-3">
++            {permissionsLoading ? (
++              <div className="flex min-h-64 flex-col items-center justify-center gap-3 text-center">
++                <LoaderCircle className="size-7 animate-spin text-primary" />
++                <div>
++                  <p className="text-sm font-semibold">Đang tải quyền hiện tại</p>
++                  <p className="mt-1 text-xs text-muted-foreground">
++                    Lấy customPermissions và effectivePermissions trực tiếp từ
++                    backend.
++                  </p>
++                </div>
++              </div>
++            ) : permissionsError ? (
++              <div className="flex min-h-64 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-destructive/30 bg-destructive/[0.035] p-6 text-center">
++                <ShieldAlert className="size-7 text-destructive" />
++                <div>
++                  <p className="text-sm font-semibold">Không tải được quyền</p>
++                  <p className="mt-1 max-w-lg text-xs leading-5 text-muted-foreground">
++                    {permissionsError}
++                  </p>
++                </div>
++                {selectedUser ? (
++                  <Button
++                    type="button"
++                    variant="outline"
++                    size="sm"
++                    onClick={() => void loadPermissionDetails(selectedUser)}
++                  >
++                    Thử lại
++                  </Button>
++                ) : null}
++              </div>
++            ) : !hasPermissionCatalog ? (
++              <div className="flex min-h-64 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border bg-muted/20 p-6 text-center">
++                <ShieldAlert className="size-7 text-muted-foreground" />
++                <div>
++                  <p className="text-sm font-semibold">Chưa có danh mục quyền</p>
++                  <p className="mt-1 max-w-lg text-xs leading-5 text-muted-foreground">
++                    Backend chưa trả về danh sách quyền hệ thống. Không thể lưu
++                    phân quyền để tránh vô tình xóa customPermissions hiện tại.
++                  </p>
++                </div>
++              </div>
++            ) : (
++              <div className="space-y-5 sm:space-y-6">
++                {permissionGroups.map((group) => {
++                  const GroupIcon = group.meta.icon;
++                  const selectedInGroup = group.permissions.filter((permission) =>
++                    selectedPermissions.includes(permission.code),
++                  ).length;
++
++                  return (
++                    <section key={group.key} className="space-y-3">
++                      <div className="flex items-start justify-between gap-3 border-b border-border/50 pb-2.5 sm:items-center">
++                        <div className="flex min-w-0 items-start gap-2.5 sm:items-center">
++                          <div className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
++                            <GroupIcon className="size-4" />
++                          </div>
++                          <div className="min-w-0 sm:flex sm:items-baseline sm:gap-2">
++                            <h3 className="text-sm font-bold text-foreground">
++                              {group.meta.title}
++                            </h3>
++                            <p className="mt-0.5 text-[11px] leading-4 text-muted-foreground sm:mt-0 sm:text-xs">
++                              {group.meta.description}
++                            </p>
++                          </div>
++                        </div>
+ 
+-              return (
+-                <div key={group.category} className="space-y-3">
+-                  <div className="flex items-center justify-between border-b border-border/50 pb-2">
+-                    <div className="flex items-center gap-2">
+-                      <div className="grid size-7 place-items-center rounded-lg bg-primary/10 text-primary">
+-                        <GroupIcon className="size-4" />
++                        <Badge
++                          variant="secondary"
++                          className="shrink-0 text-[10px]"
++                        >
++                          {selectedInGroup}/{group.permissions.length} chọn
++                        </Badge>
+                       </div>
+-                      <h3 className="font-bold text-sm text-foreground">
+-                        {group.category}
+-                      </h3>
+-                      <span className="text-xs text-muted-foreground hidden sm:inline">
+-                        — {group.description}
+-                      </span>
+-                    </div>
+-
+-                    <Badge variant="secondary" className="text-[10px]">
+-                      {selectedInGroup}/{group.permissions.length} chọn
+-                    </Badge>
+-                  </div>
+ 
+-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+-                    {group.permissions.map((perm) => {
+-                      const isChecked = selectedPermissions.includes(perm.code);
+-                      return (
+-                        <label
+-                          key={perm.code}
+-                          className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3.5 transition-all duration-150 ${
+-                            isChecked
+-                              ? "border-primary bg-primary/8 ring-2 ring-primary/20 shadow-xs"
+-                              : "border-border/70 bg-card hover:border-primary/40 hover:bg-muted/40"
+-                          }`}
+-                        >
+-                          <input
+-                            type="checkbox"
+-                            checked={isChecked}
+-                            onChange={() => togglePermission(perm.code)}
+-                            className="accent-primary mt-0.5 size-4 rounded cursor-pointer"
+-                          />
+-                          <div className="min-w-0 flex-1">
+-                            <div className="flex items-center justify-between gap-1 mb-1">
+-                              <code className="font-mono text-xs font-bold text-primary truncate">
+-                                {perm.code}
+-                              </code>
+-                            </div>
+-                            <p className="text-muted-foreground text-xs leading-relaxed">
+-                              {perm.label}
+-                            </p>
+-                          </div>
+-                        </label>
+-                      );
+-                    })}
+-                  </div>
+-                </div>
+-              );
+-            })}
++                      <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
++                        {group.permissions.map((permission) => {
++                          const isChecked = selectedPermissions.includes(
++                            permission.code,
++                          );
++
++                          return (
++                            <label
++                              key={permission.code}
++                              className={`group flex min-h-[92px] cursor-pointer items-start gap-3 rounded-xl border p-3.5 transition-[border-color,background-color,box-shadow,transform] duration-150 active:scale-[0.99] ${
++                                isChecked
++                                  ? "border-primary/70 bg-primary/[0.055] shadow-sm ring-2 ring-primary/15"
++                                  : "border-border/70 bg-card hover:border-primary/35 hover:bg-muted/35"
++                              }`}
++                            >
++                              <input
++                                type="checkbox"
++                                checked={isChecked}
++                                onChange={() => togglePermission(permission.code)}
++                                className="mt-0.5 size-4 shrink-0 cursor-pointer accent-primary"
++                              />
++                              <div className="min-w-0 flex-1">
++                                <code className="block truncate font-mono text-xs font-bold text-primary">
++                                  {permission.code}
++                                </code>
++                                <p className="mt-1.5 text-xs leading-5 text-muted-foreground">
++                                  {permission.label}
++                                </p>
++                              </div>
++                            </label>
++                          );
++                        })}
++                      </div>
++                    </section>
++                  );
++                })}
++              </div>
++            )}
+           </div>
+ 
+-          <DialogFooter className="border-t border-border/60 pt-4">
++          <DialogFooter className="mt-0 shrink-0 border-t border-border/60 pt-4">
+             <Button variant="outline" onClick={() => setPermModalOpen(false)}>
+               Hủy
+             </Button>
+-
+-            <Button onClick={handleSavePermissions} isLoading={pending} className="gap-2">
++            <Button
++              onClick={handleSavePermissions}
++              disabled={
++                permissionsLoading ||
++                Boolean(permissionsError) ||
++                !hasPermissionCatalog
++              }
++              isLoading={pendingAction === "permissions"}
++              className="gap-2"
++            >
+               <Check className="size-4" /> Lưu phân quyền
+             </Button>
+           </DialogFooter>
+diff --git a/src/features/bills/components/bill-actions.tsx b/src/features/bills/components/bill-actions.tsx
+index b4a57d4..02e25a2 100644
+--- a/src/features/bills/components/bill-actions.tsx
++++ b/src/features/bills/components/bill-actions.tsx
+@@ -8,17 +8,102 @@ import { toast } from "sonner";
+ import { Button } from "@/components/ui/button";
+ import { bffFetch } from "@/lib/http/browser-http-client";
+ 
+-export function BillActions({ billId, status, unpaidMemberIds }: { billId: string; status?: string | null; unpaidMemberIds: string[] }) {
+-  const router = useRouter(); const [pending, setPending] = useState<string | null>(null);
++export function BillActions({
++  billId,
++  status,
++  unpaidMemberIds,
++  canWrite,
++  canDelete,
++}: {
++  billId: string;
++  status?: string | null;
++  unpaidMemberIds: string[];
++  canWrite: boolean;
++  canDelete: boolean;
++}) {
++  const router = useRouter();
++  const [pending, setPending] = useState<string | null>(null);
++
+   async function act(action: "publish" | "remind" | "cancel") {
+     let payload: object = { action };
+-    if (action === "remind") payload = { action, memberIds: unpaidMemberIds };
+-    if (action === "cancel") { const reason = window.prompt("Lý do hủy hóa đơn:"); if (!reason) return; payload = { action, reason }; }
++    if (action === "remind") {
++      payload = { action, memberIds: unpaidMemberIds };
++    }
++    if (action === "cancel") {
++      const reason = window.prompt("Lý do hủy hóa đơn:");
++      if (!reason) return;
++      payload = { action, reason };
++    }
++
+     setPending(action);
+-    try { await bffFetch(`/api/bills/${billId}/actions`, { method: "POST", body: JSON.stringify(payload) }); toast.success(action === "publish" ? "Đã công bố hóa đơn" : action === "remind" ? "Đã xếp hàng email nhắc thanh toán" : "Đã hủy hóa đơn"); router.refresh(); }
+-    catch (error) { toast.error(error instanceof Error ? error.message : "Không thể hoàn tất thao tác."); }
+-    finally { setPending(null); }
++    try {
++      await bffFetch(`/api/bills/${billId}/actions`, {
++        method: "POST",
++        body: JSON.stringify(payload),
++      });
++      toast.success(
++        action === "publish"
++          ? "Đã công bố hóa đơn"
++          : action === "remind"
++            ? "Đã xếp hàng email nhắc thanh toán"
++            : "Đã hủy hóa đơn",
++      );
++      router.refresh();
++    } catch (error) {
++      toast.error(
++        error instanceof Error
++          ? error.message
++          : "Không thể hoàn tất thao tác.",
++      );
++    } finally {
++      setPending(null);
++    }
+   }
++
+   if (["Paid", "Cancelled"].includes(status ?? "")) return null;
+-  return <div className="flex flex-wrap gap-2">{status === "Draft" ? <Button onClick={() => act("publish")} disabled={Boolean(pending)} isLoading={pending === "publish"} loadingText="Đang công bố…"><Rocket className="size-4" />Công bố</Button> : null}{status !== "Draft" && unpaidMemberIds.length ? <Button variant="outline" onClick={() => act("remind")} disabled={Boolean(pending)} isLoading={pending === "remind"} loadingText="Đang gửi nhắc…"><BellRing className="size-4" />Nhắc thanh toán</Button> : null}<Button variant="ghost" onClick={() => act("cancel")} disabled={Boolean(pending)} isLoading={pending === "cancel"} loadingText="Đang hủy…"><XCircle className="size-4" />Hủy hóa đơn</Button></div>;
++
++  const showPublish = canWrite && status === "Draft";
++  const showRemind = canWrite && status !== "Draft" && unpaidMemberIds.length > 0;
++  const showCancel = canDelete;
++  if (!showPublish && !showRemind && !showCancel) return null;
++
++  return (
++    <div className="flex flex-wrap gap-2">
++      {showPublish ? (
++        <Button
++          onClick={() => act("publish")}
++          disabled={Boolean(pending)}
++          isLoading={pending === "publish"}
++          loadingText="Đang công bố…"
++        >
++          <Rocket className="size-4" />
++          Công bố
++        </Button>
++      ) : null}
++      {showRemind ? (
++        <Button
++          variant="outline"
++          onClick={() => act("remind")}
++          disabled={Boolean(pending)}
++          isLoading={pending === "remind"}
++          loadingText="Đang gửi nhắc…"
++        >
++          <BellRing className="size-4" />
++          Nhắc thanh toán
++        </Button>
++      ) : null}
++      {showCancel ? (
++        <Button
++          variant="ghost"
++          onClick={() => act("cancel")}
++          disabled={Boolean(pending)}
++          isLoading={pending === "cancel"}
++          loadingText="Đang hủy…"
++        >
++          <XCircle className="size-4" />
++          Hủy hóa đơn
++        </Button>
++      ) : null}
++    </div>
++  );
+ }
+diff --git a/src/features/bills/components/bill-detail-view.tsx b/src/features/bills/components/bill-detail-view.tsx
+index 6697093..76a3102 100644
+--- a/src/features/bills/components/bill-detail-view.tsx
++++ b/src/features/bills/components/bill-detail-view.tsx
+@@ -24,9 +24,15 @@ import { bffFetch } from "@/lib/http/browser-http-client";
+ export function BillDetailView({
+   billId,
+   initialData,
++  canWrite,
++  canDelete,
++  canRecordPayment,
+ }: {
+   billId: string;
+   initialData: BillDetail;
++  canWrite: boolean;
++  canDelete: boolean;
++  canRecordPayment: boolean;
+ }) {
+   const { data: bill = initialData } = useQuery({
+     queryKey: ["bills", "detail", billId],
+@@ -66,6 +72,8 @@ export function BillDetailView({
+               billId={billId}
+               status={bill.status}
+               unpaidMemberIds={unpaidIds}
++              canWrite={canWrite}
++              canDelete={canDelete}
+             />
+           ) : undefined
+         }
+@@ -147,6 +155,7 @@ export function BillDetailView({
+             currency={currency}
+             members={members}
+             canManage={Boolean(bill.isOwner)}
++            canRecordPayment={canRecordPayment}
+           />
+         </CardContent>
+       </Card>
+diff --git a/src/features/bills/components/bill-member-list.tsx b/src/features/bills/components/bill-member-list.tsx
+index b2a532f..ce47133 100644
+--- a/src/features/bills/components/bill-member-list.tsx
++++ b/src/features/bills/components/bill-member-list.tsx
+@@ -30,11 +30,13 @@ export function BillMemberList({
+   currency,
+   members,
+   canManage,
++  canRecordPayment,
+ }: {
+   billId: string;
+   currency: string;
+   members: MemberItem[];
+   canManage: boolean;
++  canRecordPayment: boolean;
+ }) {
+   const [expanded, setExpanded] = useState<string | null>(null);
+   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+@@ -63,7 +65,9 @@ export function BillMemberList({
+         const isOpen = expanded === id || (!isPaid && hasQr && expanded === null);
+         const payments = member.payments ?? [];
+         const canExpand =
+-          hasQr || payments.length > 0 || (canManage && (member.remainingAmount ?? 0) > 0);
++          hasQr ||
++          payments.length > 0 ||
++          (canManage && canRecordPayment && (member.remainingAmount ?? 0) > 0);
+ 
+         return (
+           <div
+@@ -273,7 +277,10 @@ export function BillMemberList({
+                 ) : null}
+ 
+                 {/* MANUAL PAYMENT RECORD (for Owner) */}
+-                {canManage && id && (member.remainingAmount ?? 0) > 0 ? (
++                {canManage &&
++                canRecordPayment &&
++                id &&
++                (member.remainingAmount ?? 0) > 0 ? (
+                   <div className="mt-4">
+                     <ManualPaymentForm
+                       billId={billId}
+diff --git a/src/lib/api/server/admin.api.ts b/src/lib/api/server/admin.api.ts
+index 0465fd9..1bfa067 100644
+--- a/src/lib/api/server/admin.api.ts
++++ b/src/lib/api/server/admin.api.ts
+@@ -38,6 +38,11 @@ export const adminApi = {
+       unwrap(await generated.getApiAdminUsersPermissions(opts)),
+     );
+   },
++  async getMemberPermissions(memberId: string) {
++    return authenticatedCall(async (opts) =>
++      unwrap(await generated.getApiAdminUsersMemberIdPermissions(memberId, opts)),
++    );
++  },
+   async changePermissions(memberId: string, permissions: string[]) {
+     return authenticatedCall(async (opts) =>
+       unwrap(
+diff --git a/src/lib/api/server/auth.api.ts b/src/lib/api/server/auth.api.ts
+index 4e9df9b..7e82f69 100644
+--- a/src/lib/api/server/auth.api.ts
++++ b/src/lib/api/server/auth.api.ts
+@@ -6,12 +6,19 @@ import type {
+ } from "@/generated/api/models";
+ import { getBillSplitServiceAPI } from "@/generated/api/endpoints";
+ import { getSessionTokens } from "@/lib/auth/session";
++import { authenticatedCall } from "@/lib/api/server/require-session";
+ import { serverRequestOptions } from "@/lib/http/server-http-client";
+ import { unwrap } from "@/lib/api/shared/unwrap";
+ 
+ const generated = getBillSplitServiceAPI();
+ 
+ export const authApi = {
++  async getMyPermissions() {
++    return authenticatedCall(async (opts) =>
++      unwrap(await generated.getApiAuthMePermissions(opts)),
++    );
++  },
++
+   async google(input: GoogleLoginRequest) {
+     return unwrap(
+       await generated.postApiAuthGoogle(input, serverRequestOptions()),
+diff --git a/src/lib/auth/permissions.ts b/src/lib/auth/permissions.ts
+new file mode 100644
+index 0000000..34b7530
+--- /dev/null
++++ b/src/lib/auth/permissions.ts
+@@ -0,0 +1,49 @@
++import type { BillSplitServiceApplicationFeaturesAdminGetMemberPermissionsMemberPermissionsDto as MemberPermissionsDto } from "@/generated/api/models";
++
++export const SYSTEM_PERMISSIONS = {
++  BILLS_READ: "Bills.Read",
++  BILLS_WRITE: "Bills.Write",
++  BILLS_DELETE: "Bills.Delete",
++  GROUPS_MANAGE: "Groups.Manage",
++  PAYMENTS_RECORD: "Payments.Record",
++  PAYOUTS_REVIEW: "Payouts.Review",
++  SUPPORT_REQUESTS_MANAGE: "SupportRequests.Manage",
++  USERS_MANAGE: "Users.Manage",
++  SYSTEM_CONFIGURE: "System.Configure",
++} as const;
++
++export type SystemPermission =
++  (typeof SYSTEM_PERMISSIONS)[keyof typeof SYSTEM_PERMISSIONS];
++
++export interface PermissionState {
++  memberId?: string;
++  role: string;
++  isAdministrator: boolean;
++  customPermissions: string[];
++  effectivePermissions: string[];
++}
++
++export function normalizePermissionState(
++  permissions: MemberPermissionsDto,
++): PermissionState {
++  const role = permissions.role?.trim() || "User";
++
++  return {
++    ...(permissions.memberId ? { memberId: permissions.memberId } : {}),
++    role,
++    isAdministrator:
++      permissions.isAdministrator === true || role === "Administrator",
++    customPermissions: permissions.customPermissions?.filter(Boolean) ?? [],
++    effectivePermissions:
++      permissions.effectivePermissions?.filter(Boolean) ?? [],
++  };
++}
++
++export function hasPermission(
++  state: Pick<PermissionState, "isAdministrator" | "effectivePermissions">,
++  permission: SystemPermission,
++) {
++  return (
++    state.isAdministrator || state.effectivePermissions.includes(permission)
++  );
++}
+diff --git a/src/lib/auth/server-permissions.ts b/src/lib/auth/server-permissions.ts
+new file mode 100644
+index 0000000..dc634d8
+--- /dev/null
++++ b/src/lib/auth/server-permissions.ts
+@@ -0,0 +1,23 @@
++import "server-only";
++
++import { redirect } from "next/navigation";
++import { cache } from "react";
++
++import { authApi } from "@/lib/api/server/auth.api";
++import {
++  hasPermission,
++  normalizePermissionState,
++  type SystemPermission,
++} from "@/lib/auth/permissions";
++
++export const getCurrentPermissionState = cache(async () =>
++  normalizePermissionState(await authApi.getMyPermissions()),
++);
++
++export async function requirePermission(permission: SystemPermission) {
++  const state = await getCurrentPermissionState();
++  if (!hasPermission(state, permission)) {
++    redirect("/dashboard");
++  }
++  return state;
++}

@@ -3,6 +3,8 @@ import "server-only";
 import { getBillSplitServiceAPI } from "@/generated/api/endpoints";
 import type {
   BillSplitServiceApiControllersAdminUsersControllerChangeAccessRequest as ChangeAccessRequest,
+  BillSplitServiceApiControllersAdminUsersControllerUpdatePermissionsRequest as UpdatePermissionsRequest,
+  BillSplitServiceApiControllersAdminUsersControllerUpdateRoleRequest as UpdateRoleRequest,
   GetApiAdminSupportRequestsParams,
   GetApiAdminUsersParams,
 } from "@/generated/api/models";
@@ -19,17 +21,15 @@ export const adminApi = {
   },
   async changeAccess(memberId: string, input: ChangeAccessRequest) {
     return authenticatedCall(async (opts) =>
-      unwrap(await generated.putApiAdminUsersMemberIdAccess(memberId, input, opts)),
+      unwrap(
+        await generated.putApiAdminUsersMemberIdAccess(memberId, input, opts),
+      ),
     );
   },
-  async changeRole(memberId: string, role: string) {
+  async changeRole(memberId: string, input: UpdateRoleRequest) {
     return authenticatedCall(async (opts) =>
       unwrap(
-        await generated.patchApiAdminUsersMemberIdRole(
-          memberId,
-          { role },
-          opts,
-        ),
+        await generated.patchApiAdminUsersMemberIdRole(memberId, input, opts),
       ),
     );
   },
@@ -38,12 +38,24 @@ export const adminApi = {
       unwrap(await generated.getApiAdminUsersPermissions(opts)),
     );
   },
-  async changePermissions(memberId: string, permissions: string[]) {
+  async getRoles() {
+    return authenticatedCall(async (opts) =>
+      unwrap(await generated.getApiAdminUsersRoles(opts)),
+    );
+  },
+  async getMemberPermissions(memberId: string) {
+    return authenticatedCall(async (opts) =>
+      unwrap(
+        await generated.getApiAdminUsersMemberIdPermissions(memberId, opts),
+      ),
+    );
+  },
+  async changePermissions(memberId: string, input: UpdatePermissionsRequest) {
     return authenticatedCall(async (opts) =>
       unwrap(
         await generated.patchApiAdminUsersMemberIdPermissions(
           memberId,
-          { permissions },
+          input,
           opts,
         ),
       ),

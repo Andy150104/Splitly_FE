@@ -3,9 +3,16 @@ import type { ReactNode } from "react";
 
 import { AppShell } from "@/components/layout/app-shell";
 import { getCurrentUser, getSessionTokens } from "@/lib/auth/session";
+import { getCurrentPermissionState } from "@/lib/auth/server-permissions";
 
 export default async function ProtectedLayout({ children }: { children: ReactNode }) {
   const [user, tokens] = await Promise.all([getCurrentUser(), getSessionTokens()]);
   if (!user || !tokens.accessToken) redirect("/login");
-  return <AppShell user={user}>{children}</AppShell>;
+
+  const permissions = await getCurrentPermissionState();
+  return (
+    <AppShell user={user} permissions={permissions}>
+      {children}
+    </AppShell>
+  );
 }

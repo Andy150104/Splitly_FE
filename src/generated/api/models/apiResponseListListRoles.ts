@@ -6,13 +6,14 @@
  * OpenAPI spec version: v1
  */
 import type { BillSplitServiceApiResponsesApiError } from './billSplitServiceApiResponsesApiError';
+import type { BillSplitServiceApplicationFeaturesAdminListRolesRoleDto } from './billSplitServiceApplicationFeaturesAdminListRolesRoleDto';
 
-export interface BillSplitServiceApiResponsesApiResponse1SystemCollectionsGenericList1SystemStringSystemPrivateCoreLibVersion10000CultureNeutralPublicKeyToken7cec85d7bea7798eSystemPrivateCoreLibVersion10000CultureNeutralPublicKeyToken7cec85d7bea7798e {
+export interface ApiResponseListListRoles {
   success?: boolean;
   /** @nullable */
   message?: string | null;
   /** @nullable */
-  data?: string[] | null;
+  data?: BillSplitServiceApplicationFeaturesAdminListRolesRoleDto[] | null;
   /** @nullable */
   errors?: BillSplitServiceApiResponsesApiError[] | null;
   /** @nullable */

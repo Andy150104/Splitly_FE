@@ -5,6 +5,7 @@
  * API for bill splitting, Google login, payment tracking and administration.
  * OpenAPI spec version: v1
  */
+import type { BillSplitServiceApplicationFeaturesAdminGetMemberPermissionsMemberRoleDto } from './billSplitServiceApplicationFeaturesAdminGetMemberPermissionsMemberRoleDto';
 
 export interface BillSplitServiceApplicationFeaturesAdminGetMemberPermissionsMemberPermissionsDto {
   memberId?: string;
@@ -12,11 +13,13 @@ export interface BillSplitServiceApplicationFeaturesAdminGetMemberPermissionsMem
   fullName?: string | null;
   /** @nullable */
   email?: string | null;
+  role?: BillSplitServiceApplicationFeaturesAdminGetMemberPermissionsMemberRoleDto;
   /** @nullable */
-  role?: string | null;
-  isAdministrator?: boolean;
+  rolePermissionCodes?: string[] | null;
   /** @nullable */
-  customPermissions?: string[] | null;
+  grantedPermissionCodes?: string[] | null;
   /** @nullable */
-  effectivePermissions?: string[] | null;
+  deniedPermissionCodes?: string[] | null;
+  /** @nullable */
+  effectivePermissionCodes?: string[] | null;
 }

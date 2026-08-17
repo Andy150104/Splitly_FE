@@ -1,6 +1,12 @@
 "use client";
 
-import { CheckCircle2, Clock, HelpCircle, LifeBuoy, XCircle } from "lucide-react";
+import {
+  CheckCircle2,
+  Clock,
+  HelpCircle,
+  LifeBuoy,
+  XCircle,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -20,6 +26,7 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDateTime } from "@/lib/formatters/date";
+import { bffFetch } from "@/lib/http/browser-http-client";
 
 export interface SupportRequestItem {
   id: string;
@@ -32,14 +39,32 @@ export interface SupportRequestItem {
   createdAtUtc?: string;
 }
 
+const SUPPORT_TYPE_LABELS: Record<string, string> = {
+  PaymentIssue: "Sự cố thanh toán",
+  PayoutIssue: "Sự cố chuyển tiền",
+  AccountIssue: "Sự cố tài khoản",
+  Other: "Yêu cầu khác",
+};
+
+const SUPPORT_STATUS_LABELS: Record<string, string> = {
+  Pending: "Chờ xử lý",
+  InReview: "Đang kiểm tra",
+  Resolved: "Đã giải quyết",
+  Dismissed: "Từ chối",
+};
+
 export function SupportRequestManagementView({
   requests,
+  canUpdate,
 }: {
   requests: SupportRequestItem[];
+  canUpdate: boolean;
 }) {
   const router = useRouter();
   const [selectedFilter, setSelectedFilter] = useState<string>("All");
-  const [selectedItem, setSelectedItem] = useState<SupportRequestItem | null>(null);
+  const [selectedItem, setSelectedItem] = useState<SupportRequestItem | null>(
+    null,
+  );
   const [modalOpen, setModalOpen] = useState(false);
 
   const [newStatus, setNewStatus] = useState<string>("Resolved");
@@ -62,21 +87,23 @@ export function SupportRequestManagementView({
     if (!selectedItem) return;
     setPending(true);
     try {
-      const res = await fetch(`/api/admin/support-requests/${selectedItem.id}/status`, {
+      await bffFetch(`/api/admin/support-requests/${selectedItem.id}/status`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           status: newStatus,
           resolutionNote,
         }),
       });
 
-      if (!res.ok) throw new Error("Không thể cập nhật trạng thái.");
-      toast.success(`Đã cập nhật trạng thái yêu cầu thành ${newStatus}`);
+      toast.success(
+        `Đã cập nhật trạng thái yêu cầu thành ${SUPPORT_STATUS_LABELS[newStatus] ?? newStatus}`,
+      );
       setModalOpen(false);
       router.refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Cập nhật thất bại.");
+      toast.error(
+        error instanceof Error ? error.message : "Cập nhật thất bại.",
+      );
     } finally {
       setPending(false);
     }
@@ -98,7 +125,7 @@ export function SupportRequestManagementView({
               variant={selectedFilter === tab ? "default" : "outline"}
               size="sm"
               onClick={() => setSelectedFilter(tab)}
-              className="text-xs h-8"
+              className="h-8 text-xs"
             >
               {tab === "All"
                 ? `Tất cả (${count})`
@@ -115,27 +142,24 @@ export function SupportRequestManagementView({
       </div>
 
       <Card>
-        <CardHeader className="border-b border-border/70 pb-4">
-          <CardTitle className="text-base font-bold flex items-center gap-2">
-            <LifeBuoy className="size-5 text-primary" />
+        <CardHeader className="border-border/70 border-b pb-4">
+          <CardTitle className="flex items-center gap-2 text-base font-bold">
+            <LifeBuoy className="text-primary size-5" />
             Yêu cầu hỗ trợ & Báo lỗi ({filteredRequests.length})
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           {filteredRequests.length > 0 ? (
-            <div className="divide-y divide-border/60">
+            <div className="divide-border/60 divide-y">
               {filteredRequests.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex flex-col gap-3 p-4 sm:p-5"
-                >
+                <div key={item.id} className="flex flex-col gap-3 p-4 sm:p-5">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-sm">
+                      <span className="text-sm font-semibold">
                         {item.contactEmail}
                       </span>
                       <Badge variant="secondary" className="text-[11px]">
-                        {item.type}
+                        {SUPPORT_TYPE_LABELS[item.type] ?? item.type}
                       </Badge>
                     </div>
 
@@ -145,11 +169,17 @@ export function SupportRequestManagementView({
                           <Clock className="mr-1 size-3" /> Chờ xử lý
                         </Badge>
                       ) : item.status === "InReview" ? (
-                        <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 dark:text-blue-400">
+                        <Badge
+                          variant="secondary"
+                          className="bg-blue-500/10 text-blue-700 dark:text-blue-400"
+                        >
                           <HelpCircle className="mr-1 size-3" /> Đang kiểm tra
                         </Badge>
                       ) : item.status === "Resolved" ? (
-                        <Badge variant="default" className="bg-emerald-600 text-white dark:bg-emerald-500">
+                        <Badge
+                          variant="default"
+                          className="bg-emerald-600 text-white dark:bg-emerald-500"
+                        >
                           <CheckCircle2 className="mr-1 size-3" /> Đã giải quyết
                         </Badge>
                       ) : (
@@ -162,6 +192,12 @@ export function SupportRequestManagementView({
                         variant="outline"
                         size="sm"
                         onClick={() => openUpdateModal(item)}
+                        disabled={!canUpdate}
+                        title={
+                          !canUpdate
+                            ? "Bạn chưa có quyền SupportRequests.Update"
+                            : undefined
+                        }
                         className="h-7 text-xs"
                       >
                         Cập nhật
@@ -169,24 +205,28 @@ export function SupportRequestManagementView({
                     </div>
                   </div>
 
-                  <p className="text-sm bg-muted/30 p-3 rounded-xl border border-border/60 text-foreground leading-relaxed">
+                  <p className="bg-muted/30 border-border/60 text-foreground rounded-xl border p-3 text-sm leading-relaxed">
                     {item.description}
                   </p>
 
                   {item.billId ? (
-                    <p className="text-xs text-muted-foreground">
-                      Mã hóa đơn liên quan: <code className="font-mono font-semibold text-primary">{item.billId}</code>
+                    <p className="text-muted-foreground text-xs">
+                      Mã hóa đơn liên quan:{" "}
+                      <code className="text-primary font-mono font-semibold">
+                        {item.billId}
+                      </code>
                     </p>
                   ) : null}
 
                   {item.resolutionNote ? (
                     <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-xs text-emerald-700 dark:text-emerald-300">
-                      <strong>Ghi chú xử lý Admin:</strong> {item.resolutionNote}
+                      <strong>Ghi chú xử lý Admin:</strong>{" "}
+                      {item.resolutionNote}
                     </div>
                   ) : null}
 
                   {item.createdAtUtc ? (
-                    <span className="text-[11px] text-muted-foreground">
+                    <span className="text-muted-foreground text-[11px]">
                       Thời gian gửi: {formatDateTime(item.createdAtUtc)}
                     </span>
                   ) : null}
@@ -194,7 +234,7 @@ export function SupportRequestManagementView({
               ))}
             </div>
           ) : (
-            <div className="p-8 text-center text-xs text-muted-foreground">
+            <div className="text-muted-foreground p-8 text-center text-xs">
               Không có yêu cầu hỗ trợ nào khớp với bộ lọc.
             </div>
           )}
@@ -241,7 +281,11 @@ export function SupportRequestManagementView({
             <Button variant="outline" onClick={() => setModalOpen(false)}>
               Hủy
             </Button>
-            <Button onClick={handleUpdateStatus} isLoading={pending}>
+            <Button
+              onClick={handleUpdateStatus}
+              isLoading={pending}
+              disabled={!canUpdate}
+            >
               Lưu kết quả
             </Button>
           </DialogFooter>

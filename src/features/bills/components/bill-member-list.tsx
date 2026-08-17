@@ -30,11 +30,17 @@ export function BillMemberList({
   currency,
   members,
   canManage,
+  canRecordPayment,
+  canReadPayments,
+  canCreatePayment,
 }: {
   billId: string;
   currency: string;
   members: MemberItem[];
   canManage: boolean;
+  canRecordPayment: boolean;
+  canReadPayments: boolean;
+  canCreatePayment: boolean;
 }) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
@@ -58,12 +64,22 @@ export function BillMemberList({
     <div className="space-y-3">
       {members.map((member) => {
         const id = member.memberId ?? "";
-        const isPaid = (member.remainingAmount ?? 0) === 0 || member.status === "Paid";
-        const hasQr = !isPaid && Boolean(member.paymentQrImageUrl || member.paymentUrl || member.transferContent);
-        const isOpen = expanded === id || (!isPaid && hasQr && expanded === null);
+        const isPaid =
+          (member.remainingAmount ?? 0) === 0 || member.status === "Paid";
+        const hasQr =
+          !isPaid &&
+          Boolean(
+            member.paymentQrImageUrl ||
+            member.paymentUrl ||
+            member.transferContent,
+          );
+        const isOpen =
+          expanded === id || (!isPaid && hasQr && expanded === null);
         const payments = member.payments ?? [];
         const canExpand =
-          hasQr || payments.length > 0 || (canManage && (member.remainingAmount ?? 0) > 0);
+          hasQr ||
+          payments.length > 0 ||
+          (canManage && (member.remainingAmount ?? 0) > 0);
 
         return (
           <div
@@ -93,13 +109,14 @@ export function BillMemberList({
                     {member.name || member.email}
                   </p>
                   {isPaid ? (
-                    <Badge variant="default" className="bg-emerald-600 text-white dark:bg-emerald-500">
+                    <Badge
+                      variant="default"
+                      className="bg-emerald-600 text-white dark:bg-emerald-500"
+                    >
                       ✓ Đã thanh toán
                     </Badge>
                   ) : (
-                    <Badge variant="warning">
-                      Chờ thanh toán
-                    </Badge>
+                    <Badge variant="warning">Chờ thanh toán</Badge>
                   )}
                 </div>
                 <p className="text-muted-foreground truncate text-xs sm:text-sm">
@@ -149,28 +166,29 @@ export function BillMemberList({
             </div>
 
             {isOpen ? (
-              <div className="animate-expand border-t border-border/70 bg-muted/30 px-4 py-4 sm:px-5 sm:py-5">
+              <div className="animate-expand border-border/70 bg-muted/30 border-t px-4 py-4 sm:px-5 sm:py-5">
                 {/* UNPAID FLOW: Display PayOS QR Code & Checkout Button */}
                 {!isPaid && hasQr ? (
-                  <div className="mb-5 rounded-2xl border border-amber-500/25 bg-background/90 p-4 shadow-sm sm:p-5">
+                  <div className="bg-background/90 mb-5 rounded-2xl border border-amber-500/25 p-4 shadow-sm sm:p-5">
                     <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-start sm:text-left">
                       {member.paymentQrImageUrl ? (
-                        <div className="relative flex shrink-0 flex-col items-center rounded-xl border border-border bg-white p-2.5 shadow-sm dark:bg-slate-900">
+                        <div className="border-border relative flex shrink-0 flex-col items-center rounded-xl border bg-white p-2.5 shadow-sm dark:bg-slate-900">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={member.paymentQrImageUrl}
                             alt="Mã QR PayOS"
-                            className="size-44 object-contain rounded-lg sm:size-48"
+                            className="size-44 rounded-lg object-contain sm:size-48"
                           />
                           <span className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-                            <QrCode className="size-3" /> Quét bằng App Ngân hàng
+                            <QrCode className="size-3" /> Quét bằng App Ngân
+                            hàng
                           </span>
                         </div>
                       ) : null}
 
                       <div className="flex-1 space-y-3">
                         <div>
-                          <span className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                          <span className="text-xs font-semibold tracking-wider text-amber-600 uppercase dark:text-amber-400">
                             Thanh toán trực tuyến PayOS
                           </span>
                           <h4 className="mt-0.5 text-base font-bold">
@@ -181,29 +199,33 @@ export function BillMemberList({
                             <strong className="text-foreground">
                               {formatCurrency(member.remainingAmount, currency)}
                             </strong>
-                            . Sau khi quét thành công, trạng thái sẽ tự động cập nhật ngay lập tức.
+                            . Sau khi quét thành công, trạng thái sẽ tự động cập
+                            nhật ngay lập tức.
                           </p>
                         </div>
 
                         {member.transferContent ? (
-                          <div className="rounded-xl border border-border/80 bg-muted/40 p-3 text-xs">
+                          <div className="border-border/80 bg-muted/40 rounded-xl border p-3 text-xs">
                             <span className="text-muted-foreground block font-medium">
                               Cú pháp chuyển khoản (Mã đơn)
                             </span>
                             <div className="mt-1 flex items-center justify-between gap-2">
-                              <code className="font-mono text-sm font-bold tracking-wider text-primary">
+                              <code className="text-primary font-mono text-sm font-bold tracking-wider">
                                 {member.transferContent}
                               </code>
                               <Button
                                 type="button"
                                 variant="outline"
                                 size="sm"
-                                className="h-7 text-xs gap-1"
-                                onClick={() => handleCopy(member.transferContent!)}
+                                className="h-7 gap-1 text-xs"
+                                onClick={() =>
+                                  handleCopy(member.transferContent!)
+                                }
                               >
                                 {copiedCode === member.transferContent ? (
                                   <>
-                                    <Check className="size-3 text-emerald-600" /> Đã chép
+                                    <Check className="size-3 text-emerald-600" />{" "}
+                                    Đã chép
                                   </>
                                 ) : (
                                   <>
@@ -216,16 +238,27 @@ export function BillMemberList({
                         ) : null}
 
                         {member.paymentUrl ? (
-                          <Button asChild className="w-full sm:w-auto gap-2">
-                            <a
-                              href={member.paymentUrl}
-                              target="_blank"
-                              rel="noreferrer"
+                          canCreatePayment ? (
+                            <Button asChild className="w-full gap-2 sm:w-auto">
+                              <a
+                                href={member.paymentUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                <ExternalLink className="size-4" />
+                                Thanh toán ngay (PayOS Checkout)
+                              </a>
+                            </Button>
+                          ) : (
+                            <Button
+                              disabled
+                              className="w-full gap-2 sm:w-auto"
+                              title="Bạn chưa có quyền Payments.Create"
                             >
                               <ExternalLink className="size-4" />
                               Thanh toán ngay (PayOS Checkout)
-                            </a>
-                          </Button>
+                            </Button>
+                          )
                         ) : null}
                       </div>
                     </div>
@@ -250,7 +283,7 @@ export function BillMemberList({
                 ) : null}
 
                 {/* PAYMENT HISTORY */}
-                {payments.length ? (
+                {canReadPayments && payments.length ? (
                   <div className="mt-4 space-y-2.5">
                     <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
                       Lịch sử giao dịch ({payments.length} lần)
@@ -258,7 +291,7 @@ export function BillMemberList({
                     {payments.map((payment) => (
                       <div
                         key={payment.paymentId}
-                        className="flex flex-col gap-2 rounded-2xl border border-border/70 bg-background/80 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+                        className="border-border/70 bg-background/80 flex flex-col gap-2 rounded-2xl border px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
                       >
                         <span className="flex items-center gap-2 text-sm">
                           <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
@@ -280,6 +313,7 @@ export function BillMemberList({
                       memberId={id}
                       max={member.remainingAmount ?? 0}
                       currency={currency}
+                      allowed={canRecordPayment}
                     />
                   </div>
                 ) : null}
@@ -297,11 +331,13 @@ function ManualPaymentForm({
   memberId,
   max,
   currency,
+  allowed,
 }: {
   billId: string;
   memberId: string;
   max: number;
   currency: string;
+  allowed: boolean;
 }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
@@ -312,9 +348,10 @@ function ManualPaymentForm({
 
   return (
     <form
-      className="space-y-4 rounded-2xl border border-border/75 bg-background/75 p-4"
+      className="border-border/75 bg-background/75 space-y-4 rounded-2xl border p-4"
       onSubmit={async (event) => {
         event.preventDefault();
+        if (!allowed) return;
         setPending(true);
         try {
           await bffFetch(`/api/bills/${billId}/actions`, {
@@ -350,6 +387,7 @@ function ManualPaymentForm({
         <div className="space-y-2">
           <Label>Số tiền</Label>
           <Input
+            disabled={!allowed}
             value={amount}
             money={{
               currency,
@@ -362,6 +400,7 @@ function ManualPaymentForm({
         <div className="space-y-2">
           <Label>Phương thức</Label>
           <Input
+            disabled={!allowed}
             value={method}
             onChange={(event) => setMethod(event.target.value)}
           />
@@ -370,7 +409,10 @@ function ManualPaymentForm({
         <Button
           size="sm"
           className="w-full sm:w-auto"
-          disabled={numericAmount <= 0 || numericAmount > max}
+          disabled={!allowed || numericAmount <= 0 || numericAmount > max}
+          title={
+            !allowed ? "Bạn chưa có quyền Payments.RecordManual" : undefined
+          }
           isLoading={pending}
           loadingText="Đang ghi nhận…"
         >

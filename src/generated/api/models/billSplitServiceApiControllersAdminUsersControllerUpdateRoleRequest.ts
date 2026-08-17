@@ -7,9 +7,6 @@
  */
 
 export interface BillSplitServiceApiControllersAdminUsersControllerUpdateRoleRequest {
-  /**
-     * Target role: Administrator or User.
-     * @nullable
-     */
-  role?: string | null;
+  /** Role id returned by GET /api/admin/users/roles. Changing role clears existing user overrides. */
+  roleId?: string;
 }

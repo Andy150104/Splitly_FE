@@ -76,9 +76,19 @@ const emailsFrom = (value?: string) =>
 export function CreateBillFlow({
   groups,
   ownerEmail,
+  capabilities,
 }: {
   groups: GroupItem[];
   ownerEmail: string;
+  capabilities: {
+    canUpdate: boolean;
+    canManageMembers: boolean;
+    canCalculate: boolean;
+    canPublish: boolean;
+    canReadPayoutAccounts: boolean;
+    canCreatePayoutAccounts: boolean;
+    canReadBanks: boolean;
+  };
 }) {
   const router = useRouter();
   const [step, setStep] = useState(0);
@@ -107,11 +117,13 @@ export function CreateBillFlow({
       includeOwner: true,
       splitMethod: "Equal",
       allocations: {},
-      publish: true,
+      publish: capabilities.canPublish,
     },
   });
   const values = useWatch({ control: form.control }) as CreateBillValues;
-  const { data: payoutAccounts = [] } = usePayoutAccounts();
+  const { data: payoutAccounts = [] } = usePayoutAccounts(
+    capabilities.canReadPayoutAccounts,
+  );
   const groupQuery = useQuery({
     queryKey: ["groups", "detail", values.groupId],
     queryFn: () => bffFetch<GroupDetail>(`/api/groups/${values.groupId}`),
@@ -122,7 +134,8 @@ export function CreateBillFlow({
 
   useEffect(() => {
     if (!values.payoutAccountId && payoutAccounts.length > 0) {
-      const defaultAccount = payoutAccounts.find((a) => a.isDefault) ?? payoutAccounts[0];
+      const defaultAccount =
+        payoutAccounts.find((a) => a.isDefault) ?? payoutAccounts[0];
       if (defaultAccount?.id) {
         form.setValue("payoutAccountId", defaultAccount.id);
       }
@@ -215,6 +228,18 @@ export function CreateBillFlow({
   }
 
   async function next() {
+    const requiredPermission =
+      step === 0 && billId && !capabilities.canUpdate
+        ? "Bills.Update"
+        : step === 1 && !capabilities.canManageMembers
+          ? "Bills.ManageMembers"
+          : step === 2 && !capabilities.canCalculate
+            ? "Bills.Calculate"
+            : null;
+    if (requiredPermission) {
+      toast.error(`Bạn chưa có quyền ${requiredPermission}.`);
+      return;
+    }
     if (requestLockRef.current) return;
 
     if (
@@ -330,10 +355,7 @@ export function CreateBillFlow({
       onKeyDown={(e) => {
         if (e.key === "Enter") {
           const target = e.target as HTMLElement;
-          if (
-            target.tagName === "INPUT" ||
-            target.tagName === "SELECT"
-          ) {
+          if (target.tagName === "INPUT" || target.tagName === "SELECT") {
             e.preventDefault();
             if (step < 3) {
               void next();
@@ -360,6 +382,10 @@ export function CreateBillFlow({
             }
 
             const parsed = createBillSchema.parse(input);
+            if (parsed.publish && !capabilities.canPublish) {
+              toast.error("Bạn chưa có quyền Bills.Publish.");
+              return;
+            }
             await runExclusive("publish", async () => {
               if (parsed.publish) {
                 // Step 4 performs exactly one mutation: publish.
@@ -373,9 +399,7 @@ export function CreateBillFlow({
               }
 
               toast.success(
-                parsed.publish
-                  ? "Đã công bố hóa đơn"
-                  : "Đã lưu hóa đơn nháp",
+                parsed.publish ? "Đã công bố hóa đơn" : "Đã lưu hóa đơn nháp",
               );
               router.push(`/bills/${billId}`);
               router.refresh();
@@ -395,9 +419,9 @@ export function CreateBillFlow({
       }}
       className="w-full lg:flex lg:min-h-0 lg:flex-1 lg:flex-col"
     >
-      <Card className="border-border/80 bg-card/95 overflow-hidden shadow-[0_18px_52px_rgb(15_23_42/0.065)] lg:flex lg:min-h-0 lg:flex-1 lg:flex-col dark:bg-card/90 dark:shadow-[0_22px_60px_rgb(0_0_0/0.26)]">
+      <Card className="border-border/80 bg-card/95 dark:bg-card/90 overflow-hidden shadow-[0_18px_52px_rgb(15_23_42/0.065)] lg:flex lg:min-h-0 lg:flex-1 lg:flex-col dark:shadow-[0_22px_60px_rgb(0_0_0/0.26)]">
         <div className="lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-[190px_minmax(0,1fr)] xl:grid-cols-[190px_minmax(0,1fr)_260px] 2xl:grid-cols-[200px_minmax(0,1fr)_270px]">
-          <aside className="border-border/70 bg-muted/20 hidden min-h-0 border-r lg:block lg:overflow-y-auto lg:overscroll-contain lg:[scrollbar-gutter:stable] dark:bg-muted/[0.08]">
+          <aside className="border-border/70 bg-muted/20 dark:bg-muted/[0.08] hidden min-h-0 border-r lg:block lg:[scrollbar-gutter:stable] lg:overflow-y-auto lg:overscroll-contain">
             <div className="p-4 xl:p-5">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-muted-foreground text-[11px] font-bold tracking-[0.16em] uppercase">
@@ -434,7 +458,7 @@ export function CreateBillFlow({
                       ) : null}
                       <span
                         className={cn(
-                          "bg-background text-muted-foreground border-border relative z-10 grid size-8 shrink-0 place-items-center rounded-full border text-xs font-bold shadow-[0_1px_2px_rgb(15_23_42/0.05)] transition-[border-color,background-color,color,box-shadow] duration-200 dark:bg-background/70",
+                          "bg-background text-muted-foreground border-border dark:bg-background/70 relative z-10 grid size-8 shrink-0 place-items-center rounded-full border text-xs font-bold shadow-[0_1px_2px_rgb(15_23_42/0.05)] transition-[border-color,background-color,color,box-shadow] duration-200",
                           completed &&
                             "border-primary/25 bg-primary/10 text-primary",
                           active &&
@@ -474,7 +498,7 @@ export function CreateBillFlow({
           </aside>
 
           <section className="min-w-0 lg:flex lg:min-h-0 lg:flex-col">
-            <div className="border-border/70 bg-muted/15 border-b px-4 py-3 lg:hidden dark:bg-muted/[0.06]">
+            <div className="border-border/70 bg-muted/15 dark:bg-muted/[0.06] border-b px-4 py-3 lg:hidden">
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-muted-foreground text-[11px] font-semibold tracking-wide uppercase">
@@ -488,10 +512,7 @@ export function CreateBillFlow({
                   {Math.round(((step + 1) / steps.length) * 100)}%
                 </span>
               </div>
-              <div
-                className="mt-3 grid grid-cols-4 gap-1.5"
-                aria-hidden="true"
-              >
+              <div className="mt-3 grid grid-cols-4 gap-1.5" aria-hidden="true">
                 {steps.map((item, index) => (
                   <span
                     key={item.label}
@@ -504,456 +525,506 @@ export function CreateBillFlow({
               </div>
             </div>
 
-            <CardContent className="p-4 sm:p-5 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overscroll-contain lg:p-5 lg:[scrollbar-gutter:stable]">
+            <CardContent className="p-4 sm:p-5 lg:min-h-0 lg:flex-1 lg:[scrollbar-gutter:stable] lg:overflow-y-auto lg:overscroll-contain lg:p-5">
               <div key={step} className="animate-step-in">
-            {step === 0 ? (
-              <div className="space-y-4">
-                <StepSectionHeader
-                  icon={steps[0].icon}
-                  title="Thông tin hóa đơn"
-                  description="Cho mọi người biết khoản chi này là gì và khi nào cần thanh toán."
-                />
-                <Field
-                  label="Tên hóa đơn"
-                  htmlFor="bill-title"
-                  error={form.formState.errors.title?.message}
-                >
-                  <Input
-                    id="bill-title"
-                    aria-invalid={Boolean(form.formState.errors.title)}
-                    autoFocus
-                    placeholder="Ví dụ: YouTube Premium tháng 8"
-                    {...form.register("title")}
-                  />
-                </Field>
-                <Field
-                  label="Tổng tiền"
-                  htmlFor="bill-total-amount"
-                  error={form.formState.errors.totalAmount?.message}
-                >
-                  <Controller
-                    control={form.control}
-                    name="totalAmount"
-                    render={({ field }) => (
-                      <Input
-                        id="bill-total-amount"
-                        aria-invalid={Boolean(form.formState.errors.totalAmount)}
-                        name={field.name}
-                        ref={field.ref}
-                        value={field.value !== undefined && field.value !== null ? String(field.value) : ""}
-                        onBlur={field.onBlur}
-                        placeholder="Nhập số tiền"
-                        money={{
-                          currency: values.currency || "VND",
-                          onValueChange: (amount) => field.onChange(amount),
-                        }}
-                      />
-                    )}
-                  />
-                  <input type="hidden" {...form.register("currency")} />
-                </Field>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Field
-                    label="Ngày hóa đơn"
-                    htmlFor="bill-date"
-                    error={form.formState.errors.billDate?.message}
-                  >
-                    <DatePicker
-                      id="bill-date"
-                      invalid={Boolean(form.formState.errors.billDate)}
-                      name="billDate"
-                      value={values.billDate}
-                      clearable={false}
-                      placeholder="Chọn ngày hóa đơn"
-                      onChange={(value) =>
-                        form.setValue("billDate", value, {
-                          shouldDirty: true,
-                          shouldTouch: true,
-                          shouldValidate: true,
-                        })
-                      }
+                {step === 0 ? (
+                  <div className="space-y-4">
+                    <StepSectionHeader
+                      icon={steps[0].icon}
+                      title="Thông tin hóa đơn"
+                      description="Cho mọi người biết khoản chi này là gì và khi nào cần thanh toán."
                     />
-                  </Field>
-                  <Field
-                    label="Hạn thanh toán"
-                    htmlFor="bill-due-date"
-                    error={form.formState.errors.dueDate?.message}
-                  >
-                    <DatePicker
-                      id="bill-due-date"
-                      invalid={Boolean(form.formState.errors.dueDate)}
-                      name="dueDate"
-                      value={values.dueDate}
-                      placeholder="Chọn hạn thanh toán"
-                      onChange={(value) =>
-                        form.setValue("dueDate", value, {
-                          shouldDirty: true,
-                          shouldTouch: true,
-                          shouldValidate: true,
-                        })
-                      }
-                    />
-                  </Field>
-                </div>
-                <Field
-                  label="Ghi chú (không bắt buộc)"
-                  htmlFor="bill-description"
-                  error={form.formState.errors.description?.message}
-                >
-                  <Textarea
-                    id="bill-description"
-                    aria-invalid={Boolean(form.formState.errors.description)}
-                    className="min-h-20"
-                    placeholder="Mô tả ngắn về khoản chi…"
-                    {...form.register("description")}
-                  />
-                </Field>
-              </div>
-            ) : null}
-
-            {step === 1 ? (
-              <div className="space-y-4">
-                <StepSectionHeader
-                  icon={steps[1].icon}
-                  title="Chọn người tham gia"
-                  description="Thêm trực tiếp bằng email, hoặc chọn thành viên từ một nhóm có sẵn."
-                />
-                <label
-                  className={cn(
-                    "border-border hover:border-primary/30 hover:bg-primary/[0.025] focus-within:border-primary/40 focus-within:ring-primary/10 flex cursor-pointer items-start gap-3 rounded-xl border p-3.5 transition-[border-color,background-color,box-shadow,transform] duration-150 focus-within:ring-4 active:scale-[0.995]",
-                    values.includeOwner &&
-                      "border-primary/35 bg-primary/[0.035]",
-                  )}
-                >
-                  <input
-                    type="checkbox"
-                    className="accent-primary mt-0.5 size-5 cursor-pointer"
-                    {...form.register("includeOwner")}
-                  />
-                  <span>
-                    <span className="block text-sm font-medium">
-                      Tôi cũng tham gia chia
-                    </span>
-                    <span className="text-muted-foreground text-xs">
-                      {ownerEmail}
-                    </span>
-                  </span>
-                </label>
-                <div
-                  className={cn(
-                    "grid gap-4",
-                    groups.length &&
-                      "xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] xl:items-start",
-                  )}
-                >
-                  <Field label="Thêm bằng email">
-                    <Textarea
-                      className="min-h-20"
-                      autoComplete="off"
-                      spellCheck={false}
-                      placeholder={"anna@example.com\nminh@example.com"}
-                      {...form.register("emailsText")}
-                    />
-                    <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-muted-foreground text-xs">
-                        Mỗi dòng một email. Email chưa có tài khoản sẽ được backend
-                        tạo ở trạng thái Pending.
-                      </p>
-                      {directEmails.length ? (
-                        <span className="bg-primary/10 text-primary rounded-full px-2.5 py-1 text-xs font-semibold">
-                          {directEmails.length} email
-                        </span>
-                      ) : null}
-                    </div>
-                  </Field>
-
-                  {groups.length ? (
-                    <div className="space-y-3">
-                      <Field label="Chọn từ nhóm">
-                        <Select
-                          value={values.groupId || ""}
-                          onChange={(value) => {
-                            form.setValue("groupId", value, {
-                              shouldDirty: true,
-                              shouldTouch: true,
-                              shouldValidate: true,
-                            });
-                            form.setValue("groupMemberIds", [], {
-                              shouldDirty: true,
-                            });
-                          }}
-                          options={[
-                            { value: "", label: "Không dùng nhóm" },
-                            ...groups.flatMap((item) =>
-                              item.groupId
-                                ? [
-                                    {
-                                      value: item.groupId,
-                                      label: item.name || "Nhóm chưa đặt tên",
-                                    },
-                                  ]
-                                : [],
-                            ),
-                          ]}
-                          placeholder="Chọn nhóm"
-                        />
-                      </Field>
-                      {loadingGroup ? (
-                        <p className="text-muted-foreground flex items-center gap-2 text-sm">
-                          <LoaderCircle className="size-4 animate-spin" />
-                          Đang tải thành viên…
-                        </p>
-                      ) : null}
-                      {group ? (
-                        <div>
-                          <Label>Thành viên nhóm</Label>
-                          <div className="divide-border border-border mt-2 divide-y overflow-hidden rounded-xl border shadow-[0_1px_2px_rgb(15_23_42/0.03)]">
-                            {(group.members ?? []).map((member) => (
-                              <label
-                                key={member.memberId}
-                                className={cn(
-                                  "hover:bg-muted/60 focus-within:bg-primary/[0.035] flex cursor-pointer items-center gap-3 p-2.5 text-sm transition-colors",
-                                  member.memberId &&
-                                    values.groupMemberIds?.includes(member.memberId) &&
-                                    "bg-primary/[0.035]",
-                                )}
-                              >
-                                <input
-                                  type="checkbox"
-                                  value={member.memberId}
-                                  className="accent-primary size-5 cursor-pointer"
-                                  {...form.register("groupMemberIds")}
-                                />
-                                <span className="min-w-0">
-                                  <span className="block font-medium">
-                                    {member.name || member.email}
-                                  </span>
-                                  <span className="text-muted-foreground block truncate text-xs">
-                                    {member.email}
-                                  </span>
-                                </span>
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-                      ) : null}
-                    </div>
-                  ) : null}
-                </div>
-                <div className="border-primary/10 bg-primary/[0.035] rounded-xl border p-3 text-sm transition-colors">
-                  <span className="text-primary font-semibold">
-                    {participants.length}
-                  </span>{" "}
-                  người sẽ tham gia hóa đơn này.
-                </div>
-              </div>
-            ) : null}
-
-            {step === 2 ? (
-              <div className="space-y-4">
-                <StepSectionHeader
-                  icon={steps[2].icon}
-                  title="Chọn cách chia"
-                  description="Chia đều hoặc nhập chính xác số tiền mỗi người cần trả."
-                />
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {[
-                    {
-                      value: "Equal",
-                      title: "Chia đều",
-                      description: `${formatCurrency(Number(values.totalAmount) / Math.max(1, participants.length), values.currency)} mỗi người`,
-                    },
-                    {
-                      value: "CustomAmount",
-                      title: "Số tiền tùy chỉnh",
-                      description: "Phân bổ chính xác cho từng người",
-                    },
-                  ].map((method) => (
-                    <label
-                      key={method.value}
-                      className={cn(
-                        "hover:border-primary/35 cursor-pointer rounded-xl border p-3.5 transition-[border-color,background-color,box-shadow,transform] duration-150 hover:-translate-y-0.5 active:scale-[0.99]",
-                        values.splitMethod === method.value
-                          ? "border-primary bg-primary/5 shadow-[0_0_0_3px_color-mix(in_oklab,var(--primary)_8%,transparent)]"
-                          : "border-border",
-                      )}
+                    <Field
+                      label="Tên hóa đơn"
+                      htmlFor="bill-title"
+                      error={form.formState.errors.title?.message}
                     >
-                      <input
-                        type="radio"
-                        value={method.value}
-                        className="sr-only"
-                        {...form.register("splitMethod")}
+                      <Input
+                        id="bill-title"
+                        aria-invalid={Boolean(form.formState.errors.title)}
+                        autoFocus
+                        placeholder="Ví dụ: YouTube Premium tháng 8"
+                        {...form.register("title")}
                       />
-                      <span className="block font-semibold">
-                        {method.title}
-                      </span>
-                      <span className="text-muted-foreground mt-1 block text-xs">
-                        {method.description}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-                {values.splitMethod === "CustomAmount" ? (
-                  <div className="animate-expand space-y-3">
-                    <div className="border-border/70 divide-border/70 divide-y overflow-hidden rounded-xl border">
-                      {participants.map((email) => (
-                        <div
-                          key={email}
-                          className="grid gap-2 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(220px,280px)] sm:items-start"
-                        >
-                          <div className="min-w-0 pt-1">
-                            <p className="truncate text-sm font-medium">{email}</p>
-                            <p className="text-muted-foreground mt-0.5 text-xs">
-                              Số tiền phải trả
-                            </p>
-                          </div>
+                    </Field>
+                    <Field
+                      label="Tổng tiền"
+                      htmlFor="bill-total-amount"
+                      error={form.formState.errors.totalAmount?.message}
+                    >
+                      <Controller
+                        control={form.control}
+                        name="totalAmount"
+                        render={({ field }) => (
                           <Input
-                            aria-label={`Số tiền của ${email}`}
-                            value={getAllocationAmount(email)}
+                            id="bill-total-amount"
+                            aria-invalid={Boolean(
+                              form.formState.errors.totalAmount,
+                            )}
+                            name={field.name}
+                            ref={field.ref}
+                            value={
+                              field.value !== undefined && field.value !== null
+                                ? String(field.value)
+                                : ""
+                            }
+                            onBlur={field.onBlur}
                             placeholder="Nhập số tiền"
                             money={{
                               currency: values.currency || "VND",
-                              suggestionCount: 3,
-                              onValueChange: (amount) =>
-                                setAllocationAmount(email, amount),
+                              onValueChange: (amount) => field.onChange(amount),
                             }}
                           />
-                        </div>
-                      ))}
+                        )}
+                      />
+                      <input type="hidden" {...form.register("currency")} />
+                    </Field>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <Field
+                        label="Ngày hóa đơn"
+                        htmlFor="bill-date"
+                        error={form.formState.errors.billDate?.message}
+                      >
+                        <DatePicker
+                          id="bill-date"
+                          invalid={Boolean(form.formState.errors.billDate)}
+                          name="billDate"
+                          value={values.billDate}
+                          clearable={false}
+                          placeholder="Chọn ngày hóa đơn"
+                          onChange={(value) =>
+                            form.setValue("billDate", value, {
+                              shouldDirty: true,
+                              shouldTouch: true,
+                              shouldValidate: true,
+                            })
+                          }
+                        />
+                      </Field>
+                      <Field
+                        label="Hạn thanh toán"
+                        htmlFor="bill-due-date"
+                        error={form.formState.errors.dueDate?.message}
+                      >
+                        <DatePicker
+                          id="bill-due-date"
+                          invalid={Boolean(form.formState.errors.dueDate)}
+                          name="dueDate"
+                          value={values.dueDate}
+                          placeholder="Chọn hạn thanh toán"
+                          onChange={(value) =>
+                            form.setValue("dueDate", value, {
+                              shouldDirty: true,
+                              shouldTouch: true,
+                              shouldValidate: true,
+                            })
+                          }
+                        />
+                      </Field>
                     </div>
-                    <div
+                    <Field
+                      label="Ghi chú (không bắt buộc)"
+                      htmlFor="bill-description"
+                      error={form.formState.errors.description?.message}
+                    >
+                      <Textarea
+                        id="bill-description"
+                        aria-invalid={Boolean(
+                          form.formState.errors.description,
+                        )}
+                        className="min-h-20"
+                        placeholder="Mô tả ngắn về khoản chi…"
+                        {...form.register("description")}
+                      />
+                    </Field>
+                  </div>
+                ) : null}
+
+                {step === 1 ? (
+                  <div className="space-y-4">
+                    <StepSectionHeader
+                      icon={steps[1].icon}
+                      title="Chọn người tham gia"
+                      description="Thêm trực tiếp bằng email, hoặc chọn thành viên từ một nhóm có sẵn."
+                    />
+                    <label
                       className={cn(
-                        "money rounded-xl border p-3 text-sm transition-colors duration-200",
-                        Math.abs(allocationDifference) < 0.001
-                          ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                          : "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-400",
+                        "border-border hover:border-primary/30 hover:bg-primary/[0.025] focus-within:border-primary/40 focus-within:ring-primary/10 flex cursor-pointer items-start gap-3 rounded-xl border p-3.5 transition-[border-color,background-color,box-shadow,transform] duration-150 focus-within:ring-4 active:scale-[0.995]",
+                        values.includeOwner &&
+                          "border-primary/35 bg-primary/[0.035]",
                       )}
                     >
-                      <div className="flex items-center justify-between gap-4">
-                        <span>Đã phân bổ</span>
-                        <strong className="tabular-nums">
-                          {formatCurrency(allocationTotal, values.currency)} /{" "}
-                          {formatCurrency(
-                            Number(values.totalAmount),
-                            values.currency,
-                          )}
-                        </strong>
-                      </div>
-                      <p className="mt-1 text-xs font-medium">
-                        {Math.abs(allocationDifference) < 0.001
-                          ? "Đã phân bổ đủ tổng tiền hóa đơn."
-                          : allocationDifference > 0
-                            ? `Còn thiếu ${formatCurrency(allocationDifference, values.currency)}.`
-                            : `Đang vượt ${formatCurrency(Math.abs(allocationDifference), values.currency)}.`}
-                      </p>
+                      <input
+                        type="checkbox"
+                        className="accent-primary mt-0.5 size-5 cursor-pointer"
+                        {...form.register("includeOwner")}
+                      />
+                      <span>
+                        <span className="block text-sm font-medium">
+                          Tôi cũng tham gia chia
+                        </span>
+                        <span className="text-muted-foreground text-xs">
+                          {ownerEmail}
+                        </span>
+                      </span>
+                    </label>
+                    <div
+                      className={cn(
+                        "grid gap-4",
+                        groups.length &&
+                          "xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] xl:items-start",
+                      )}
+                    >
+                      <Field label="Thêm bằng email">
+                        <Textarea
+                          className="min-h-20"
+                          autoComplete="off"
+                          spellCheck={false}
+                          placeholder={"anna@example.com\nminh@example.com"}
+                          {...form.register("emailsText")}
+                        />
+                        <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                          <p className="text-muted-foreground text-xs">
+                            Mỗi dòng một email. Email chưa có tài khoản sẽ được
+                            hệ thống tạo ở trạng thái chờ xác nhận.
+                          </p>
+                          {directEmails.length ? (
+                            <span className="bg-primary/10 text-primary rounded-full px-2.5 py-1 text-xs font-semibold">
+                              {directEmails.length} email
+                            </span>
+                          ) : null}
+                        </div>
+                      </Field>
+
+                      {groups.length ? (
+                        <div className="space-y-3">
+                          <Field label="Chọn từ nhóm">
+                            <Select
+                              value={values.groupId || ""}
+                              onChange={(value) => {
+                                form.setValue("groupId", value, {
+                                  shouldDirty: true,
+                                  shouldTouch: true,
+                                  shouldValidate: true,
+                                });
+                                form.setValue("groupMemberIds", [], {
+                                  shouldDirty: true,
+                                });
+                              }}
+                              options={[
+                                { value: "", label: "Không dùng nhóm" },
+                                ...groups.flatMap((item) =>
+                                  item.groupId
+                                    ? [
+                                        {
+                                          value: item.groupId,
+                                          label:
+                                            item.name || "Nhóm chưa đặt tên",
+                                        },
+                                      ]
+                                    : [],
+                                ),
+                              ]}
+                              placeholder="Chọn nhóm"
+                            />
+                          </Field>
+                          {loadingGroup ? (
+                            <p className="text-muted-foreground flex items-center gap-2 text-sm">
+                              <LoaderCircle className="size-4 animate-spin" />
+                              Đang tải thành viên…
+                            </p>
+                          ) : null}
+                          {group ? (
+                            <div>
+                              <Label>Thành viên nhóm</Label>
+                              <div className="divide-border border-border mt-2 divide-y overflow-hidden rounded-xl border shadow-[0_1px_2px_rgb(15_23_42/0.03)]">
+                                {(group.members ?? []).map((member) => (
+                                  <label
+                                    key={member.memberId}
+                                    className={cn(
+                                      "hover:bg-muted/60 focus-within:bg-primary/[0.035] flex cursor-pointer items-center gap-3 p-2.5 text-sm transition-colors",
+                                      member.memberId &&
+                                        values.groupMemberIds?.includes(
+                                          member.memberId,
+                                        ) &&
+                                        "bg-primary/[0.035]",
+                                    )}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      value={member.memberId}
+                                      className="accent-primary size-5 cursor-pointer"
+                                      {...form.register("groupMemberIds")}
+                                    />
+                                    <span className="min-w-0">
+                                      <span className="block font-medium">
+                                        {member.name || member.email}
+                                      </span>
+                                      <span className="text-muted-foreground block truncate text-xs">
+                                        {member.email}
+                                      </span>
+                                    </span>
+                                  </label>
+                                ))}
+                              </div>
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
+                    </div>
+                    <div className="border-primary/10 bg-primary/[0.035] rounded-xl border p-3 text-sm transition-colors">
+                      <span className="text-primary font-semibold">
+                        {participants.length}
+                      </span>{" "}
+                      người sẽ tham gia hóa đơn này.
                     </div>
                   </div>
                 ) : null}
-              </div>
-            ) : null}
 
-            {step === 3 ? (
-              <div className="space-y-5">
-                <StepSectionHeader
-                  icon={steps[3].icon}
-                  title="Xác nhận & STK Payout"
-                  description="Chọn tài khoản ngân hàng nhận tiền tự động khi các thành viên thanh toán qua PayOS."
-                />
-                <div className="rounded-2xl bg-gradient-to-br from-[#16366b] to-[#0b234b] p-6 text-white shadow-[0_18px_40px_rgb(15_42_86/0.2)]">
-                  <p className="text-sm text-blue-100/70">{values.title}</p>
-                  <p className="money mt-2 text-3xl font-bold">
-                    {formatCurrency(
-                      Number(values.totalAmount),
-                      values.currency,
-                    )}
-                  </p>
-                  <div className="mt-6 grid grid-cols-2 gap-4 border-t border-white/15 pt-5 text-sm">
-                    <div>
-                      <p className="text-blue-100/60">Người tham gia</p>
-                      <p className="mt-1 font-semibold">
-                        {participants.length} người
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-blue-100/60">Cách chia</p>
-                      <p className="mt-1 font-semibold">
-                        {values.splitMethod === "Equal"
-                          ? "Chia đều"
-                          : "Tùy chỉnh"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <Label className="text-sm font-semibold">Tài khoản ngân hàng nhận Payout</Label>
-                      <p className="text-muted-foreground text-xs">
-                        Chọn tài khoản cá nhân để Splitly giải ngân tiền thu được từ PayOS.
-                      </p>
-                    </div>
-                    <CreatePayoutAccountModal
-                      onSuccess={(newId) => {
-                        if (newId) form.setValue("payoutAccountId", newId);
-                      }}
-                      trigger={
-                        <Button type="button" variant="outline" size="sm" className="h-8 gap-1.5 text-xs shrink-0">
-                          + Thêm tài khoản mới
-                        </Button>
-                      }
+                {step === 2 ? (
+                  <div className="space-y-4">
+                    <StepSectionHeader
+                      icon={steps[2].icon}
+                      title="Chọn cách chia"
+                      description="Chia đều hoặc nhập chính xác số tiền mỗi người cần trả."
                     />
-                  </div>
-
-                  {payoutAccounts.length > 0 ? (
                     <div className="grid gap-3 sm:grid-cols-2">
-                      {payoutAccounts.map((acc) => (
-                        <PayoutAccountCard
-                          key={acc.id}
-                          account={acc}
-                          selected={values.payoutAccountId === acc.id}
-                          onSelect={() => acc.id && form.setValue("payoutAccountId", acc.id)}
-                        />
+                      {[
+                        {
+                          value: "Equal",
+                          title: "Chia đều",
+                          description: `${formatCurrency(Number(values.totalAmount) / Math.max(1, participants.length), values.currency)} mỗi người`,
+                        },
+                        {
+                          value: "CustomAmount",
+                          title: "Số tiền tùy chỉnh",
+                          description: "Phân bổ chính xác cho từng người",
+                        },
+                      ].map((method) => (
+                        <label
+                          key={method.value}
+                          className={cn(
+                            "hover:border-primary/35 cursor-pointer rounded-xl border p-3.5 transition-[border-color,background-color,box-shadow,transform] duration-150 hover:-translate-y-0.5 active:scale-[0.99]",
+                            values.splitMethod === method.value
+                              ? "border-primary bg-primary/5 shadow-[0_0_0_3px_color-mix(in_oklab,var(--primary)_8%,transparent)]"
+                              : "border-border",
+                          )}
+                        >
+                          <input
+                            type="radio"
+                            value={method.value}
+                            className="sr-only"
+                            {...form.register("splitMethod")}
+                          />
+                          <span className="block font-semibold">
+                            {method.title}
+                          </span>
+                          <span className="text-muted-foreground mt-1 block text-xs">
+                            {method.description}
+                          </span>
+                        </label>
                       ))}
                     </div>
-                  ) : (
-                    <div className="flex items-center justify-between gap-2 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-xs text-amber-700 dark:text-amber-400">
-                      <span>Bạn chưa có tài khoản ngân hàng Payout. Vui lòng thêm mới để nhận tiền tự động.</span>
-                      <CreatePayoutAccountModal
-                        onSuccess={(newId) => {
-                          if (newId) form.setValue("payoutAccountId", newId);
-                        }}
-                        trigger={
-                          <Button type="button" variant="outline" size="sm" className="h-8 shrink-0 text-xs font-semibold">
-                            + Thêm ngay
-                          </Button>
-                        }
-                      />
-                    </div>
-                  )}
-                </div>
+                    {values.splitMethod === "CustomAmount" ? (
+                      <div className="animate-expand space-y-3">
+                        <div className="border-border/70 divide-border/70 divide-y overflow-hidden rounded-xl border">
+                          {participants.map((email) => (
+                            <div
+                              key={email}
+                              className="grid gap-2 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(220px,280px)] sm:items-start"
+                            >
+                              <div className="min-w-0 pt-1">
+                                <p className="truncate text-sm font-medium">
+                                  {email}
+                                </p>
+                                <p className="text-muted-foreground mt-0.5 text-xs">
+                                  Số tiền phải trả
+                                </p>
+                              </div>
+                              <Input
+                                aria-label={`Số tiền của ${email}`}
+                                value={getAllocationAmount(email)}
+                                placeholder="Nhập số tiền"
+                                money={{
+                                  currency: values.currency || "VND",
+                                  suggestionCount: 3,
+                                  onValueChange: (amount) =>
+                                    setAllocationAmount(email, amount),
+                                }}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                        <div
+                          className={cn(
+                            "money rounded-xl border p-3 text-sm transition-colors duration-200",
+                            Math.abs(allocationDifference) < 0.001
+                              ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                              : "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-400",
+                          )}
+                        >
+                          <div className="flex items-center justify-between gap-4">
+                            <span>Đã phân bổ</span>
+                            <strong className="tabular-nums">
+                              {formatCurrency(allocationTotal, values.currency)}{" "}
+                              /{" "}
+                              {formatCurrency(
+                                Number(values.totalAmount),
+                                values.currency,
+                              )}
+                            </strong>
+                          </div>
+                          <p className="mt-1 text-xs font-medium">
+                            {Math.abs(allocationDifference) < 0.001
+                              ? "Đã phân bổ đủ tổng tiền hóa đơn."
+                              : allocationDifference > 0
+                                ? `Còn thiếu ${formatCurrency(allocationDifference, values.currency)}.`
+                                : `Đang vượt ${formatCurrency(Math.abs(allocationDifference), values.currency)}.`}
+                          </p>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
 
-                <label className="border-border hover:border-primary/30 hover:bg-primary/[0.025] flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-[border-color,background-color,transform] duration-150 active:scale-[0.995]">
-                  <input
-                    type="checkbox"
-                    className="accent-primary mt-1 size-4"
-                    {...form.register("publish")}
-                  />
-                  <span>
-                    <span className="block text-sm font-medium">
-                      Công bố ngay sau khi tạo
-                    </span>
-                    <span className="text-muted-foreground text-xs">
-                      Tự động tạo đơn thanh toán PayOS và gửi email kèm mã QR cho từng người tham gia.
-                    </span>
-                  </span>
-                </label>
-              </div>
-            ) : null}
+                {step === 3 ? (
+                  <div className="space-y-5">
+                    <StepSectionHeader
+                      icon={steps[3].icon}
+                      title="Xác nhận & STK Payout"
+                      description="Chọn tài khoản ngân hàng nhận tiền tự động khi các thành viên thanh toán qua PayOS."
+                    />
+                    <div className="rounded-2xl bg-gradient-to-br from-[#16366b] to-[#0b234b] p-6 text-white shadow-[0_18px_40px_rgb(15_42_86/0.2)]">
+                      <p className="text-sm text-blue-100/70">{values.title}</p>
+                      <p className="money mt-2 text-3xl font-bold">
+                        {formatCurrency(
+                          Number(values.totalAmount),
+                          values.currency,
+                        )}
+                      </p>
+                      <div className="mt-6 grid grid-cols-2 gap-4 border-t border-white/15 pt-5 text-sm">
+                        <div>
+                          <p className="text-blue-100/60">Người tham gia</p>
+                          <p className="mt-1 font-semibold">
+                            {participants.length} người
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-blue-100/60">Cách chia</p>
+                          <p className="mt-1 font-semibold">
+                            {values.splitMethod === "Equal"
+                              ? "Chia đều"
+                              : "Tùy chỉnh"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <Label className="text-sm font-semibold">
+                            Tài khoản ngân hàng nhận Payout
+                          </Label>
+                          <p className="text-muted-foreground text-xs">
+                            Chọn tài khoản cá nhân để Splitly giải ngân tiền thu
+                            được từ PayOS.
+                          </p>
+                        </div>
+                        <CreatePayoutAccountModal
+                          allowed={capabilities.canCreatePayoutAccounts}
+                          canReadBanks={capabilities.canReadBanks}
+                          onSuccess={(newId) => {
+                            if (newId) form.setValue("payoutAccountId", newId);
+                          }}
+                          trigger={
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="h-8 shrink-0 gap-1.5 text-xs"
+                              disabled={
+                                !capabilities.canCreatePayoutAccounts ||
+                                !capabilities.canReadBanks
+                              }
+                            >
+                              + Thêm tài khoản mới
+                            </Button>
+                          }
+                        />
+                      </div>
+
+                      {payoutAccounts.length > 0 ? (
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          {payoutAccounts.map((acc) => (
+                            <PayoutAccountCard
+                              key={acc.id}
+                              account={acc}
+                              selected={values.payoutAccountId === acc.id}
+                              onSelect={() =>
+                                acc.id &&
+                                form.setValue("payoutAccountId", acc.id)
+                              }
+                              canUpdate={false}
+                              canReadBanks={capabilities.canReadBanks}
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between gap-2 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-xs text-amber-700 dark:text-amber-400">
+                          <span>
+                            Bạn chưa có tài khoản ngân hàng Payout. Vui lòng
+                            thêm mới để nhận tiền tự động.
+                          </span>
+                          <CreatePayoutAccountModal
+                            allowed={capabilities.canCreatePayoutAccounts}
+                            canReadBanks={capabilities.canReadBanks}
+                            onSuccess={(newId) => {
+                              if (newId)
+                                form.setValue("payoutAccountId", newId);
+                            }}
+                            trigger={
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-8 shrink-0 text-xs font-semibold"
+                                disabled={
+                                  !capabilities.canCreatePayoutAccounts ||
+                                  !capabilities.canReadBanks
+                                }
+                              >
+                                + Thêm ngay
+                              </Button>
+                            }
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    <label className="border-border hover:border-primary/30 hover:bg-primary/[0.025] flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-[border-color,background-color,transform] duration-150 active:scale-[0.995]">
+                      <input
+                        type="checkbox"
+                        className="accent-primary mt-1 size-4"
+                        {...form.register("publish")}
+                        disabled={!capabilities.canPublish}
+                      />
+                      <span>
+                        <span className="block text-sm font-medium">
+                          Công bố ngay sau khi tạo
+                        </span>
+                        <span className="text-muted-foreground text-xs">
+                          Tự động tạo đơn thanh toán PayOS và gửi email kèm mã
+                          QR cho từng người tham gia.
+                        </span>
+                      </span>
+                    </label>
+                  </div>
+                ) : null}
               </div>
             </CardContent>
 
-            <div className="border-border/70 bg-card/95 sticky bottom-0 z-10 flex shrink-0 items-center justify-between gap-3 border-t px-4 py-2.5 backdrop-blur-xl sm:px-5 lg:static lg:bg-card/80 lg:px-6 dark:bg-card/95">
+            <div className="border-border/70 bg-card/95 lg:bg-card/80 dark:bg-card/95 sticky bottom-0 z-10 flex shrink-0 items-center justify-between gap-3 border-t px-4 py-2.5 backdrop-blur-xl sm:px-5 lg:static lg:px-6">
               <Button
                 type="button"
                 variant="ghost"
@@ -970,7 +1041,23 @@ export function CreateBillFlow({
                 <Button
                   type="button"
                   onClick={() => void next()}
-                  disabled={isBusy}
+                  disabled={
+                    isBusy ||
+                    (step === 0 &&
+                      Boolean(billId) &&
+                      !capabilities.canUpdate) ||
+                    (step === 1 && !capabilities.canManageMembers) ||
+                    (step === 2 && !capabilities.canCalculate)
+                  }
+                  title={
+                    step === 0 && billId && !capabilities.canUpdate
+                      ? "Bạn chưa có quyền Bills.Update"
+                      : step === 1 && !capabilities.canManageMembers
+                        ? "Bạn chưa có quyền Bills.ManageMembers"
+                        : step === 2 && !capabilities.canCalculate
+                          ? "Bạn chưa có quyền Bills.Calculate"
+                          : undefined
+                  }
                   isLoading={isBusy}
                   loadingText={
                     pendingAction === "calculate"
@@ -983,7 +1070,15 @@ export function CreateBillFlow({
               ) : (
                 <Button
                   type="submit"
-                  disabled={isBusy}
+                  disabled={
+                    isBusy ||
+                    (Boolean(values.publish) && !capabilities.canPublish)
+                  }
+                  title={
+                    values.publish && !capabilities.canPublish
+                      ? "Bạn chưa có quyền Bills.Publish"
+                      : undefined
+                  }
                   isLoading={form.formState.isSubmitting || isBusy}
                   loadingText={values.publish ? "Đang công bố…" : "Đang lưu…"}
                 >
@@ -1016,7 +1111,7 @@ function StepSectionHeader({
 }) {
   return (
     <div className="border-border/70 flex items-start gap-3 border-b pb-3.5">
-      <span className="bg-primary/10 text-primary grid size-9 shrink-0 place-items-center rounded-xl border border-primary/10">
+      <span className="bg-primary/10 text-primary border-primary/10 grid size-9 shrink-0 place-items-center rounded-xl border">
         <Icon className="size-[18px]" aria-hidden="true" />
       </span>
       <div className="min-w-0">
@@ -1060,11 +1155,11 @@ function LiveBillSummary({
         : "Tùy chỉnh";
 
   return (
-    <aside className="border-border/70 bg-muted/[0.14] hidden min-h-0 border-l xl:block xl:overflow-y-auto xl:overscroll-contain xl:[scrollbar-gutter:stable] dark:bg-muted/[0.055]">
+    <aside className="border-border/70 bg-muted/[0.14] dark:bg-muted/[0.055] hidden min-h-0 border-l xl:block xl:[scrollbar-gutter:stable] xl:overflow-y-auto xl:overscroll-contain">
       <div className="p-4">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <span className="bg-primary/10 text-primary grid size-9 place-items-center rounded-xl border border-primary/10">
+            <span className="bg-primary/10 text-primary border-primary/10 grid size-9 place-items-center rounded-xl border">
               <ReceiptText className="size-[18px]" aria-hidden="true" />
             </span>
             <div>
@@ -1074,7 +1169,7 @@ function LiveBillSummary({
               </p>
             </div>
           </div>
-          <span className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 rounded-full px-2 py-1 text-[10px] font-bold tracking-wide uppercase">
+          <span className="rounded-full bg-emerald-500/10 px-2 py-1 text-[10px] font-bold tracking-wide text-emerald-700 uppercase dark:text-emerald-400">
             Live
           </span>
         </div>
@@ -1095,7 +1190,10 @@ function LiveBillSummary({
         </div>
 
         <dl className="divide-border/60 mt-1 divide-y text-sm">
-          <SummaryRow label="Người tham gia" value={`${participants.length} người`} />
+          <SummaryRow
+            label="Người tham gia"
+            value={`${participants.length} người`}
+          />
           <SummaryRow label="Cách chia" value={splitLabel} />
           <SummaryRow
             label="Hạn thanh toán"
@@ -1126,7 +1224,9 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-start justify-between gap-4 py-2.5">
       <dt className="text-muted-foreground text-xs">{label}</dt>
-      <dd className="max-w-[145px] text-right text-xs font-semibold">{value}</dd>
+      <dd className="max-w-[145px] text-right text-xs font-semibold">
+        {value}
+      </dd>
     </div>
   );
 }
@@ -1160,7 +1260,10 @@ function Field({
           aria-live="polite"
           className="text-destructive flex min-h-5 items-start gap-1.5 text-xs font-semibold"
         >
-          <CircleAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+          <CircleAlert
+            className="mt-0.5 size-3.5 shrink-0"
+            aria-hidden="true"
+          />
           <span className="leading-4">{error}</span>
         </div>
       ) : null}

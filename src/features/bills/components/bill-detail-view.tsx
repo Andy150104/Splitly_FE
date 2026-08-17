@@ -24,9 +24,21 @@ import { bffFetch } from "@/lib/http/browser-http-client";
 export function BillDetailView({
   billId,
   initialData,
+  canPublish,
+  canSendReminders,
+  canDelete,
+  canRecordPayment,
+  canReadPayments,
+  canCreatePayment,
 }: {
   billId: string;
   initialData: BillDetail;
+  canPublish: boolean;
+  canSendReminders: boolean;
+  canDelete: boolean;
+  canRecordPayment: boolean;
+  canReadPayments: boolean;
+  canCreatePayment: boolean;
 }) {
   const { data: bill = initialData } = useQuery({
     queryKey: ["bills", "detail", billId],
@@ -66,6 +78,9 @@ export function BillDetailView({
               billId={billId}
               status={bill.status}
               unpaidMemberIds={unpaidIds}
+              canPublish={canPublish}
+              canSendReminders={canSendReminders}
+              canDelete={canDelete}
             />
           ) : undefined
         }
@@ -76,7 +91,9 @@ export function BillDetailView({
           <div className="border-border/75 flex flex-col gap-4 border-b px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <div className="flex flex-wrap items-center gap-2">
               <BillStatusBadge status={bill.status} />
-              {bill.isOwner ? <Badge variant="default">Chủ hóa đơn</Badge> : null}
+              {bill.isOwner ? (
+                <Badge variant="default">Chủ hóa đơn</Badge>
+              ) : null}
               {(bill.overdueMemberCount ?? 0) > 0 ? (
                 <Badge variant="destructive">
                   {bill.overdueMemberCount} người quá hạn
@@ -90,10 +107,10 @@ export function BillDetailView({
           </div>
 
           <div className="grid lg:grid-cols-[minmax(240px,0.9fr)_minmax(0,1.6fr)]">
-            <div className="border-border/75 border-b px-5 py-5 sm:px-6 lg:border-b-0 lg:border-r lg:py-6">
+            <div className="border-border/75 border-b px-5 py-5 sm:px-6 lg:border-r lg:border-b-0 lg:py-6">
               <p className="text-muted-foreground text-sm">Tổng hóa đơn</p>
               <p
-                className="money mt-2 break-words text-[clamp(1.9rem,3.2vw,2.75rem)] font-bold tracking-[-0.04em]"
+                className="money mt-2 text-[clamp(1.9rem,3.2vw,2.75rem)] font-bold tracking-[-0.04em] break-words"
                 title={totalText}
               >
                 {totalText}
@@ -110,7 +127,11 @@ export function BillDetailView({
                   label="Đã thu"
                   value={collectedText}
                 />
-                <BillMetric icon={Clock3} label="Còn lại" value={remainingText} />
+                <BillMetric
+                  icon={Clock3}
+                  label="Còn lại"
+                  value={remainingText}
+                />
                 <BillMetric
                   icon={UsersRound}
                   label="Đã thanh toán"
@@ -121,7 +142,9 @@ export function BillDetailView({
               <div className="border-border/70 mt-5 border-t pt-4">
                 <div className="mb-2 flex items-center justify-between gap-3 text-sm">
                   <span className="font-medium">Tiến độ thu tiền</span>
-                  <span className="money font-semibold">{Math.round(completion)}%</span>
+                  <span className="money font-semibold">
+                    {Math.round(completion)}%
+                  </span>
                 </div>
                 <Progress value={completion} className="h-2.5" />
                 <div className="text-muted-foreground mt-2 flex flex-col gap-1 text-xs sm:flex-row sm:items-center sm:justify-between">
@@ -138,7 +161,8 @@ export function BillDetailView({
         <CardHeader className="border-border/75 border-b pb-4">
           <CardTitle className="text-lg">Thành viên và thanh toán</CardTitle>
           <CardDescription className="mt-1.5">
-            Mã QR thanh toán PayOS sẽ tự động ẩn đi sau khi thành viên hoàn tất chuyển khoản.
+            Mã QR thanh toán PayOS sẽ tự động ẩn đi sau khi thành viên hoàn tất
+            chuyển khoản.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-4 sm:p-5">
@@ -147,6 +171,9 @@ export function BillDetailView({
             currency={currency}
             members={members}
             canManage={Boolean(bill.isOwner)}
+            canRecordPayment={canRecordPayment}
+            canReadPayments={canReadPayments}
+            canCreatePayment={canCreatePayment}
           />
         </CardContent>
       </Card>
@@ -167,7 +194,7 @@ function BillMetric({
     <div className="min-w-0">
       <div className="flex items-center gap-2">
         <Icon className="text-primary size-4" />
-        <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+        <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
           {label}
         </p>
       </div>

@@ -26,9 +26,10 @@ import type {
   ApiResponseListListGroups,
   ApiResponseListListPaymentAccounts,
   ApiResponseListListPayoutAccounts,
+  ApiResponseListListPermissions,
   ApiResponseListListReviewRequiredPayouts,
+  ApiResponseListListRoles,
   ApiResponseListListUsers,
-  ApiResponseListPermissionDescriptor,
   ApiResponseListVietQrBankInfo,
   ApiResponsePagedGetSupportRequests,
   ApiResponsePublishBill,
@@ -54,7 +55,6 @@ import type {
   BillSplitServiceApiControllersGroupsControllerAddGroupMembersRequest,
   BillSplitServiceApiControllersGroupsControllerCreateGroupRequest,
   BillSplitServiceApiControllersSupportRequestsControllerCreateSupportRequestInput,
-  BillSplitServiceApiResponsesApiResponse1SystemCollectionsGenericList1SystemStringSystemPrivateCoreLibVersion10000CultureNeutralPublicKeyToken7cec85d7bea7798eSystemPrivateCoreLibVersion10000CultureNeutralPublicKeyToken7cec85d7bea7798e,
   BillSplitServiceApiResponsesApiResponse1SystemGuidSystemPrivateCoreLibVersion10000CultureNeutralPublicKeyToken7cec85d7bea7798e,
   BillSplitServiceApplicationFeaturesAdminManualResolvePayoutManualResolvePayoutHandlerRequest,
   BillSplitServiceApplicationFeaturesAdminRetryPayoutRetryPayoutHandlerRequest,
@@ -146,13 +146,25 @@ const getApiAdminUsers = (
     }
 
 /**
- * @summary Lists all system permissions available for custom assignment.
+ * @summary Lists active privileges from the database for the permission editor.
  */
 const getApiAdminUsersPermissions = (
 
- options?: SecondParameter<typeof orvalMutator<ApiResponseListPermissionDescriptor>>,) => {
-      return orvalMutator<ApiResponseListPermissionDescriptor>(
+ options?: SecondParameter<typeof orvalMutator<ApiResponseListListPermissions>>,) => {
+      return orvalMutator<ApiResponseListListPermissions>(
       {url: `/api/admin/users/permissions`, method: 'GET'
+    },
+      options);
+    }
+
+/**
+ * @summary Lists roles and each role's default privileges from the database.
+ */
+const getApiAdminUsersRoles = (
+
+ options?: SecondParameter<typeof orvalMutator<ApiResponseListListRoles>>,) => {
+      return orvalMutator<ApiResponseListListRoles>(
+      {url: `/api/admin/users/roles`, method: 'GET'
     },
       options);
     }
@@ -175,8 +187,8 @@ const getApiAdminUsersMemberIdPermissions = (
 const patchApiAdminUsersMemberIdPermissions = (
     memberId: string,
     billSplitServiceApiControllersAdminUsersControllerUpdatePermissionsRequest?: BillSplitServiceApiControllersAdminUsersControllerUpdatePermissionsRequest,
- options?: SecondParameter<typeof orvalMutator<BillSplitServiceApiResponsesApiResponse1SystemCollectionsGenericList1SystemStringSystemPrivateCoreLibVersion10000CultureNeutralPublicKeyToken7cec85d7bea7798eSystemPrivateCoreLibVersion10000CultureNeutralPublicKeyToken7cec85d7bea7798e>>,) => {
-      return orvalMutator<BillSplitServiceApiResponsesApiResponse1SystemCollectionsGenericList1SystemStringSystemPrivateCoreLibVersion10000CultureNeutralPublicKeyToken7cec85d7bea7798eSystemPrivateCoreLibVersion10000CultureNeutralPublicKeyToken7cec85d7bea7798e>(
+ options?: SecondParameter<typeof orvalMutator<ApiResponseGetMemberPermissions>>,) => {
+      return orvalMutator<ApiResponseGetMemberPermissions>(
       {url: `/api/admin/users/${memberId}/permissions`, method: 'PATCH',
       headers: {'Content-Type': 'application/json', },
       data: billSplitServiceApiControllersAdminUsersControllerUpdatePermissionsRequest
@@ -200,13 +212,13 @@ const putApiAdminUsersMemberIdAccess = (
     }
 
 /**
- * @summary Sets a member's role in the system (Administrator or User).
+ * @summary Sets a member's role and resets user-specific overrides to that role's defaults.
  */
 const patchApiAdminUsersMemberIdRole = (
     memberId: string,
     billSplitServiceApiControllersAdminUsersControllerUpdateRoleRequest?: BillSplitServiceApiControllersAdminUsersControllerUpdateRoleRequest,
- options?: SecondParameter<typeof orvalMutator<ApiResponseBoolean>>,) => {
-      return orvalMutator<ApiResponseBoolean>(
+ options?: SecondParameter<typeof orvalMutator<ApiResponseGetMemberPermissions>>,) => {
+      return orvalMutator<ApiResponseGetMemberPermissions>(
       {url: `/api/admin/users/${memberId}/role`, method: 'PATCH',
       headers: {'Content-Type': 'application/json', },
       data: billSplitServiceApiControllersAdminUsersControllerUpdateRoleRequest
@@ -696,7 +708,7 @@ const getApiVietqrBanks = (
       options);
     }
 
-return {getApiAdminPayoutsReviewRequired,postApiAdminPayoutsIdRetry,postApiAdminPayoutsIdManualResolve,getApiAdminSupportRequests,patchApiAdminSupportRequestsRequestIdStatus,getApiAdminUsers,getApiAdminUsersPermissions,getApiAdminUsersMemberIdPermissions,patchApiAdminUsersMemberIdPermissions,putApiAdminUsersMemberIdAccess,patchApiAdminUsersMemberIdRole,postApiAuthGoogle,postApiAuthSendLoginCode,postApiAuthVerifyLoginCode,getApiAuthMePermissions,postApiAuthDevLogin,postApiAuthRefresh,postApiAuthLogout,postApiBills,getApiBills,putApiBillsBillId,getApiBillsBillId,postApiBillsBillIdMembers,deleteApiBillsBillIdMembersMemberId,postApiBillsBillIdCalculate,putApiBillsBillIdVietqrPayment,postApiBillsBillIdPublish,postApiBillsBillIdCancel,postApiBillsBillIdReminders,postApiBillsBillIdMembersMemberIdManualPayments,postApiGroups,getApiGroups,getApiGroupsGroupId,postApiGroupsGroupIdMembers,deleteApiGroupsGroupIdMembersMemberId,postApiGroupsGroupIdClose,getApiPaymentAccounts,putApiPaymentAccountsPaymentAccountIdDefault,postApiBillSplitsBillSplitIdPaymentOrder,getApiPaymentOrdersId,postApiIntegrationsPayosWebhook,postApiPayoutAccounts,getApiPayoutAccounts,putApiPayoutAccountsIdDefault,postApiSupportRequests,getApiVietqrBanks}};
+return {getApiAdminPayoutsReviewRequired,postApiAdminPayoutsIdRetry,postApiAdminPayoutsIdManualResolve,getApiAdminSupportRequests,patchApiAdminSupportRequestsRequestIdStatus,getApiAdminUsers,getApiAdminUsersPermissions,getApiAdminUsersRoles,getApiAdminUsersMemberIdPermissions,patchApiAdminUsersMemberIdPermissions,putApiAdminUsersMemberIdAccess,patchApiAdminUsersMemberIdRole,postApiAuthGoogle,postApiAuthSendLoginCode,postApiAuthVerifyLoginCode,getApiAuthMePermissions,postApiAuthDevLogin,postApiAuthRefresh,postApiAuthLogout,postApiBills,getApiBills,putApiBillsBillId,getApiBillsBillId,postApiBillsBillIdMembers,deleteApiBillsBillIdMembersMemberId,postApiBillsBillIdCalculate,putApiBillsBillIdVietqrPayment,postApiBillsBillIdPublish,postApiBillsBillIdCancel,postApiBillsBillIdReminders,postApiBillsBillIdMembersMemberIdManualPayments,postApiGroups,getApiGroups,getApiGroupsGroupId,postApiGroupsGroupIdMembers,deleteApiGroupsGroupIdMembersMemberId,postApiGroupsGroupIdClose,getApiPaymentAccounts,putApiPaymentAccountsPaymentAccountIdDefault,postApiBillSplitsBillSplitIdPaymentOrder,getApiPaymentOrdersId,postApiIntegrationsPayosWebhook,postApiPayoutAccounts,getApiPayoutAccounts,putApiPayoutAccountsIdDefault,postApiSupportRequests,getApiVietqrBanks}};
 export type GetApiAdminPayoutsReviewRequiredResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['getApiAdminPayoutsReviewRequired']>>>
 export type PostApiAdminPayoutsIdRetryResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['postApiAdminPayoutsIdRetry']>>>
 export type PostApiAdminPayoutsIdManualResolveResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['postApiAdminPayoutsIdManualResolve']>>>
@@ -704,6 +716,7 @@ export type GetApiAdminSupportRequestsResult = NonNullable<Awaited<ReturnType<Re
 export type PatchApiAdminSupportRequestsRequestIdStatusResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['patchApiAdminSupportRequestsRequestIdStatus']>>>
 export type GetApiAdminUsersResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['getApiAdminUsers']>>>
 export type GetApiAdminUsersPermissionsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['getApiAdminUsersPermissions']>>>
+export type GetApiAdminUsersRolesResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['getApiAdminUsersRoles']>>>
 export type GetApiAdminUsersMemberIdPermissionsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['getApiAdminUsersMemberIdPermissions']>>>
 export type PatchApiAdminUsersMemberIdPermissionsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['patchApiAdminUsersMemberIdPermissions']>>>
 export type PutApiAdminUsersMemberIdAccessResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getBillSplitServiceAPI>['putApiAdminUsersMemberIdAccess']>>>

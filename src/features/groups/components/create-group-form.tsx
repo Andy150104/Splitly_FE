@@ -41,9 +41,14 @@ type CreateGroupValues = z.infer<typeof createGroupSchema>;
 interface CreateGroupModalProps {
   trigger?: React.ReactNode;
   onSuccess?: () => void;
+  allowed?: boolean;
 }
 
-export function CreateGroupModal({ trigger, onSuccess }: CreateGroupModalProps) {
+export function CreateGroupModal({
+  trigger,
+  onSuccess,
+  allowed = true,
+}: CreateGroupModalProps) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
 
@@ -74,10 +79,20 @@ export function CreateGroupModal({ trigger, onSuccess }: CreateGroupModalProps) 
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(next) => allowed && setOpen(next)}>
       <DialogTrigger asChild>
-        {trigger ?? (
-          <Button className="gap-2">
+        {trigger ? (
+          <span
+            title={!allowed ? "Bạn chưa có quyền Groups.Create" : undefined}
+          >
+            {trigger}
+          </span>
+        ) : (
+          <Button
+            className="gap-2"
+            disabled={!allowed}
+            title={!allowed ? "Bạn chưa có quyền Groups.Create" : undefined}
+          >
             <Plus className="size-4" />
             Tạo nhóm mới
           </Button>
@@ -90,7 +105,8 @@ export function CreateGroupModal({ trigger, onSuccess }: CreateGroupModalProps) 
           </div>
           <DialogTitle className="mt-2">Tạo nhóm mới</DialogTitle>
           <DialogDescription>
-            Tạo nhóm để nhanh chóng lưu danh sách thành viên và chia chi phí cho các hóa đơn sau.
+            Tạo nhóm để nhanh chóng lưu danh sách thành viên và chia chi phí cho
+            các hóa đơn sau.
           </DialogDescription>
         </DialogHeader>
 
@@ -134,7 +150,11 @@ export function CreateGroupModal({ trigger, onSuccess }: CreateGroupModalProps) 
             >
               Hủy
             </Button>
-            <Button type="submit" isLoading={form.formState.isSubmitting}>
+            <Button
+              type="submit"
+              isLoading={form.formState.isSubmitting}
+              disabled={!allowed}
+            >
               Tạo nhóm
             </Button>
           </DialogFooter>

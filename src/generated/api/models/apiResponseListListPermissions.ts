@@ -6,14 +6,14 @@
  * OpenAPI spec version: v1
  */
 import type { BillSplitServiceApiResponsesApiError } from './billSplitServiceApiResponsesApiError';
-import type { BillSplitServiceDomainConstantsSystemPermissionsPermissionDescriptor } from './billSplitServiceDomainConstantsSystemPermissionsPermissionDescriptor';
+import type { BillSplitServiceApplicationFeaturesAdminListPermissionsPermissionDto } from './billSplitServiceApplicationFeaturesAdminListPermissionsPermissionDto';
 
-export interface ApiResponseListPermissionDescriptor {
+export interface ApiResponseListListPermissions {
   success?: boolean;
   /** @nullable */
   message?: string | null;
   /** @nullable */
-  data?: BillSplitServiceDomainConstantsSystemPermissionsPermissionDescriptor[] | null;
+  data?: BillSplitServiceApplicationFeaturesAdminListPermissionsPermissionDto[] | null;
   /** @nullable */
   errors?: BillSplitServiceApiResponsesApiError[] | null;
   /** @nullable */

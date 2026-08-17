@@ -28,11 +28,15 @@ import type { VietQrBank } from "@/features/payout-accounts/types";
 interface CreatePayoutAccountModalProps {
   onSuccess?: (newAccountId?: string) => void;
   trigger?: React.ReactNode;
+  allowed?: boolean;
+  canReadBanks?: boolean;
 }
 
 export function CreatePayoutAccountModal({
   onSuccess,
   trigger,
+  allowed = true,
+  canReadBanks = true,
 }: CreatePayoutAccountModalProps) {
   const [open, setOpen] = useState(false);
   const createMutation = useCreatePayoutAccount();
@@ -77,10 +81,22 @@ export function CreatePayoutAccountModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(next) => allowed && setOpen(next)}>
       <DialogTrigger asChild>
         {trigger ?? (
-          <Button variant="outline" size="sm" className="gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            disabled={!allowed || !canReadBanks}
+            title={
+              !allowed
+                ? "Bạn chưa có quyền PayoutAccounts.Create"
+                : !canReadBanks
+                  ? "Bạn chưa có quyền Banks.Read"
+                  : undefined
+            }
+          >
             <Plus className="size-4" />
             Thêm tài khoản ngân hàng
           </Button>
@@ -91,9 +107,12 @@ export function CreatePayoutAccountModal({
           <div className="bg-primary/10 text-primary flex size-10 items-center justify-center rounded-full">
             <Landmark className="size-5" />
           </div>
-          <DialogTitle className="mt-2">Thêm tài khoản ngân hàng Payout</DialogTitle>
+          <DialogTitle className="mt-2">
+            Thêm tài khoản ngân hàng Payout
+          </DialogTitle>
           <DialogDescription>
-            Chọn ngân hàng và nhập thông tin tài khoản để nhận tiền tự động từ Splitly PayOS.
+            Chọn ngân hàng và nhập thông tin tài khoản để nhận tiền tự động từ
+            Splitly PayOS.
           </DialogDescription>
         </DialogHeader>
 
@@ -114,6 +133,7 @@ export function CreatePayoutAccountModal({
                   selectedBankCode={selectedBankCode}
                   onSelectBank={handleSelectBank}
                   invalid={Boolean(form.formState.errors.bankName)}
+                  enabled={canReadBanks}
                 />
               )}
             />
@@ -140,7 +160,9 @@ export function CreatePayoutAccountModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="account-holder">Tên chủ tài khoản (viết hoa không dấu)</Label>
+            <Label htmlFor="account-holder">
+              Tên chủ tài khoản (viết hoa không dấu)
+            </Label>
             <Input
               id="account-holder"
               placeholder="NGUYEN VAN A"
@@ -161,7 +183,9 @@ export function CreatePayoutAccountModal({
               className="accent-primary size-4 rounded"
               {...form.register("isDefault")}
             />
-            <span className="text-sm font-medium">Đặt làm tài khoản mặc định</span>
+            <span className="text-sm font-medium">
+              Đặt làm tài khoản mặc định
+            </span>
           </label>
 
           <DialogFooter className="mt-6">
@@ -173,7 +197,11 @@ export function CreatePayoutAccountModal({
             >
               Hủy
             </Button>
-            <Button type="submit" isLoading={createMutation.isPending}>
+            <Button
+              type="submit"
+              isLoading={createMutation.isPending}
+              disabled={!allowed || !canReadBanks}
+            >
               Lưu tài khoản
             </Button>
           </DialogFooter>

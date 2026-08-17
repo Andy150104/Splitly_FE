@@ -5,10 +5,10 @@
  * API for bill splitting, Google login, payment tracking and administration.
  * OpenAPI spec version: v1
  */
-import type { BillSplitServiceDomainEnumsMemberRole } from './billSplitServiceDomainEnumsMemberRole';
 
 export interface BillSplitServiceApiControllersAdminUsersControllerChangeAccessRequest {
   /** True blocks the account; false keeps or restores active access. */
   blocked?: boolean;
-  role?: BillSplitServiceDomainEnumsMemberRole;
+  /** Role id returned by GET /api/admin/users/roles. */
+  roleId?: string;
 }

@@ -19,21 +19,43 @@ import {
 } from "@/features/groups/components/group-actions";
 import { api } from "@/lib/api/server/api";
 import { formatCurrency } from "@/lib/formatters/currency";
+import { SYSTEM_PERMISSIONS, hasPermission } from "@/lib/auth/permissions";
+import { requirePermission } from "@/lib/auth/server-permissions";
 
 export default async function GroupDetailPage({
   params,
 }: {
   params: Promise<{ groupId: string }>;
 }) {
+  const permissionState = await requirePermission(
+    SYSTEM_PERMISSIONS.GROUPS_READ,
+  );
+  const canReadBills = hasPermission(
+    permissionState,
+    SYSTEM_PERMISSIONS.BILLS_READ,
+  );
+  const canManageMembers = hasPermission(
+    permissionState,
+    SYSTEM_PERMISSIONS.GROUPS_MANAGE_MEMBERS,
+  );
+  const canDeleteGroup = hasPermission(
+    permissionState,
+    SYSTEM_PERMISSIONS.GROUPS_DELETE,
+  );
   const { groupId } = await params;
   const group = await api.groups.getById(groupId);
   if (!group.groupId) notFound();
 
   const members = group.members ?? [];
   const bills = group.bills ?? [];
-  const activeMembers = members.filter((member) => member.status === "Active").length;
+  const activeMembers = members.filter(
+    (member) => member.status === "Active",
+  ).length;
   const publishedBills = bills.filter((bill) => bill.status !== "Draft").length;
-  const totalValue = bills.reduce((sum, bill) => sum + (bill.totalAmount ?? 0), 0);
+  const totalValue = bills.reduce(
+    (sum, bill) => sum + (bill.totalAmount ?? 0),
+    0,
+  );
   const currency = bills[0]?.currency ?? "VND";
   const formattedTotalValue = formatCurrency(totalValue, currency);
 
@@ -47,16 +69,18 @@ export default async function GroupDetailPage({
         }
         actions={
           group.isOwner && group.status === "Active" ? (
-            <CloseGroupButton groupId={groupId} />
+            <CloseGroupButton groupId={groupId} allowed={canDeleteGroup} />
           ) : undefined
         }
       />
 
       <Card className="overflow-hidden">
         <CardContent className="p-0">
-          <div className="flex flex-col gap-4 border-b border-border/75 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <div className="border-border/75 flex flex-col gap-4 border-b px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant={group.status === "Active" ? "success" : "secondary"}>
+              <Badge
+                variant={group.status === "Active" ? "success" : "secondary"}
+              >
                 {group.status}
               </Badge>
               {group.isOwner ? <Badge variant="default">Chủ nhóm</Badge> : null}
@@ -68,7 +92,7 @@ export default async function GroupDetailPage({
             </p>
           </div>
 
-          <div className="grid divide-y divide-border/75 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+          <div className="divide-border/75 grid divide-y sm:grid-cols-3 sm:divide-x sm:divide-y-0">
             <OverviewMetric
               icon={UsersRound}
               label="Thành viên"
@@ -94,7 +118,7 @@ export default async function GroupDetailPage({
 
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(340px,0.75fr)]">
         <Card className="overflow-hidden">
-          <CardHeader className="border-b border-border/75 pb-4">
+          <CardHeader className="border-border/75 border-b pb-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <CardTitle className="text-lg">Thành viên</CardTitle>
@@ -103,18 +127,18 @@ export default async function GroupDetailPage({
                 </CardDescription>
               </div>
               {group.isOwner && group.status === "Active" ? (
-                <AddGroupMembers groupId={groupId} />
+                <AddGroupMembers groupId={groupId} allowed={canManageMembers} />
               ) : null}
             </div>
           </CardHeader>
 
           <CardContent className="p-0">
             {members.length ? (
-              <div className="divide-y divide-border/70">
+              <div className="divide-border/70 divide-y">
                 {members.map((member) => (
                   <div
                     key={member.memberId}
-                    className="flex flex-col gap-3 px-5 py-4 transition-colors hover:bg-muted/25 sm:flex-row sm:items-center sm:px-6"
+                    className="hover:bg-muted/25 flex flex-col gap-3 px-5 py-4 transition-colors sm:flex-row sm:items-center sm:px-6"
                   >
                     <div className="bg-primary/10 text-primary grid size-10 shrink-0 place-items-center rounded-full text-xs font-bold">
                       {(member.name || member.email || "U")
@@ -144,11 +168,14 @@ export default async function GroupDetailPage({
                         {member.role === "Owner" ? "Chủ nhóm" : member.status}
                       </Badge>
 
-                      {group.isOwner && member.role !== "Owner" && member.memberId ? (
+                      {group.isOwner &&
+                      member.role !== "Owner" &&
+                      member.memberId ? (
                         <RemoveGroupMember
                           groupId={groupId}
                           memberId={member.memberId}
                           memberName={member.name || member.email || undefined}
+                          allowed={canManageMembers}
                         />
                       ) : null}
                     </div>
@@ -165,7 +192,7 @@ export default async function GroupDetailPage({
         </Card>
 
         <Card className="overflow-hidden">
-          <CardHeader className="border-b border-border/75 pb-4">
+          <CardHeader className="border-border/75 border-b pb-4">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <CardTitle className="text-lg">Hóa đơn</CardTitle>
@@ -179,19 +206,15 @@ export default async function GroupDetailPage({
 
           <CardContent className="p-0">
             {bills.length ? (
-              <div className="divide-y divide-border/70">
+              <div className="divide-border/70 divide-y">
                 {bills.map((bill) => {
                   const amount = formatCurrency(
                     bill.totalAmount,
                     bill.currency ?? "VND",
                   );
 
-                  return (
-                    <Link
-                      key={bill.billId}
-                      href={`/bills/${bill.billId}`}
-                      className="group flex items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-muted/25 sm:px-6"
-                    >
+                  const content = (
+                    <>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-semibold">
                           {bill.title || "Hóa đơn chưa đặt tên"}
@@ -200,15 +223,37 @@ export default async function GroupDetailPage({
                           <BillStatusBadge status={bill.status} />
                         </div>
                       </div>
-                      <div className="min-w-0 max-w-[45%] text-right">
-                        <p className="money truncate text-sm font-semibold" title={amount}>
+                      <div className="max-w-[45%] min-w-0 text-right">
+                        <p
+                          className="money truncate text-sm font-semibold"
+                          title={amount}
+                        >
                           {amount}
                         </p>
-                        <p className="text-muted-foreground mt-1 text-xs group-hover:text-foreground">
-                          Xem chi tiết
-                        </p>
+                        {canReadBills ? (
+                          <p className="text-muted-foreground group-hover:text-foreground mt-1 text-xs">
+                            Xem chi tiết
+                          </p>
+                        ) : null}
                       </div>
+                    </>
+                  );
+
+                  return canReadBills && bill.billId ? (
+                    <Link
+                      key={bill.billId}
+                      href={`/bills/${bill.billId}`}
+                      className="group hover:bg-muted/25 flex items-center justify-between gap-4 px-5 py-4 transition-colors sm:px-6"
+                    >
+                      {content}
                     </Link>
+                  ) : (
+                    <div
+                      key={bill.billId}
+                      className="flex items-center justify-between gap-4 px-5 py-4 sm:px-6"
+                    >
+                      {content}
+                    </div>
                   );
                 })}
               </div>
@@ -242,7 +287,7 @@ function OverviewMetric({
     <div className="min-w-0 px-5 py-4 sm:px-6 sm:py-5">
       <div className="flex items-center gap-2">
         <Icon className="text-primary size-4" />
-        <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+        <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
           {label}
         </p>
       </div>

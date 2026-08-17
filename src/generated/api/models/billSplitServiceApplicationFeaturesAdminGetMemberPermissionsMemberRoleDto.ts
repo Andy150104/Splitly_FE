@@ -6,11 +6,10 @@
  * OpenAPI spec version: v1
  */
 
-export interface BillSplitServiceApplicationFeaturesAdministrationChangeUserAccessChangeUserAccessHandlerResponse {
-  memberId?: string;
-  /** @nullable */
-  status?: string | null;
+export interface BillSplitServiceApplicationFeaturesAdminGetMemberPermissionsMemberRoleDto {
   roleId?: string;
   /** @nullable */
-  roleCode?: string | null;
+  code?: string | null;
+  /** @nullable */
+  name?: string | null;
 }

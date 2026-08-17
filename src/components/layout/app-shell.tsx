@@ -18,9 +18,20 @@ import {
 } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 
+import {
+  SYSTEM_PERMISSIONS,
+  hasPermission,
+  normalizePermissionState,
+  type PermissionState,
+  type SystemPermission,
+} from "@/lib/auth/permissions";
+import {
+  subscribeAuthSessionExpired,
+  subscribeCurrentAccess,
+} from "@/lib/auth/access-state-events";
 import type { CurrentUser } from "@/lib/auth/session";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -35,26 +46,74 @@ import { LogoutButton } from "@/components/layout/logout-button";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { CreateSupportModal } from "@/features/support/components/create-support-modal";
 
-const nav = [
+const nav: readonly {
+  href: Route;
+  label: string;
+  icon: typeof LayoutDashboard;
+  permission?: SystemPermission;
+}[] = [
   { href: "/dashboard" as Route, label: "Tổng quan", icon: LayoutDashboard },
-  { href: "/bills" as Route, label: "Hóa đơn", icon: FileText },
-  { href: "/groups" as Route, label: "Nhóm", icon: UsersRound },
-  { href: "/payout-accounts" as Route, label: "Tài khoản Payout", icon: Landmark },
-  { href: "/admin/users" as Route, label: "Quản lý người dùng", icon: ShieldCheck },
-  { href: "/admin/support-requests" as Route, label: "Yêu cầu hỗ trợ", icon: LifeBuoy },
-] as const;
+  {
+    href: "/bills" as Route,
+    label: "Hóa đơn",
+    icon: FileText,
+    permission: SYSTEM_PERMISSIONS.BILLS_READ,
+  },
+  {
+    href: "/groups" as Route,
+    label: "Nhóm",
+    icon: UsersRound,
+    permission: SYSTEM_PERMISSIONS.GROUPS_READ,
+  },
+  {
+    href: "/payout-accounts" as Route,
+    label: "Tài khoản Payout",
+    icon: Landmark,
+    permission: SYSTEM_PERMISSIONS.PAYOUT_ACCOUNTS_READ,
+  },
+  {
+    href: "/admin/users" as Route,
+    label: "Quản lý người dùng",
+    icon: ShieldCheck,
+    permission: SYSTEM_PERMISSIONS.USERS_READ,
+  },
+  {
+    href: "/admin/support-requests" as Route,
+    label: "Yêu cầu hỗ trợ",
+    icon: LifeBuoy,
+    permission: SYSTEM_PERMISSIONS.SUPPORT_REQUESTS_READ,
+  },
+];
 
 export function AppShell({
   user,
+  permissions,
   children,
 }: {
   user: CurrentUser;
+  permissions: PermissionState;
   children: ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [avatarOpen, setAvatarOpen] = useState(false);
+  const [syncedPermissions, setSyncedPermissions] =
+    useState<PermissionState | null>(null);
+  const currentPermissions = syncedPermissions ?? permissions;
+  const visibleNav = nav.filter(
+    (item) =>
+      !item.permission || hasPermission(currentPermissions, item.permission),
+  );
+  const canReadBills = hasPermission(
+    currentPermissions,
+    SYSTEM_PERMISSIONS.BILLS_READ,
+  );
+  const canCreateBill = hasPermission(
+    currentPermissions,
+    SYSTEM_PERMISSIONS.BILLS_CREATE,
+  );
   const initials = user.displayName
     .split(" ")
     .slice(-2)
@@ -71,6 +130,22 @@ export function AppShell({
     return () => window.cancelAnimationFrame(frame);
   }, []);
 
+  useEffect(() => {
+    const unsubscribeAccess = subscribeCurrentAccess((currentAccess) => {
+      setSyncedPermissions(normalizePermissionState(currentAccess));
+      router.refresh();
+    });
+    const unsubscribeExpired = subscribeAuthSessionExpired(() => {
+      router.replace("/login");
+      router.refresh();
+    });
+
+    return () => {
+      unsubscribeAccess();
+      unsubscribeExpired();
+    };
+  }, [router]);
+
   function toggleCollapsed() {
     setCollapsed((current) => {
       const next = !current;
@@ -81,29 +156,67 @@ export function AppShell({
 
   const breadcrumb: { parent: string; href: Route; current: string } =
     pathname.startsWith("/bills/new")
-      ? { parent: "Hóa đơn", href: "/bills" as Route, current: "Tạo hóa đơn" }
+      ? canReadBills
+        ? { parent: "Hóa đơn", href: "/bills" as Route, current: "Tạo hóa đơn" }
+        : {
+            parent: "Splitly",
+            href: "/dashboard" as Route,
+            current: "Tạo hóa đơn",
+          }
       : pathname.startsWith("/bills/")
-        ? { parent: "Hóa đơn", href: "/bills" as Route, current: "Chi tiết hóa đơn" }
+        ? {
+            parent: "Hóa đơn",
+            href: "/bills" as Route,
+            current: "Chi tiết hóa đơn",
+          }
         : pathname.startsWith("/bills")
-          ? { parent: "Splitly", href: "/dashboard" as Route, current: "Hóa đơn" }
+          ? {
+              parent: "Splitly",
+              href: "/dashboard" as Route,
+              current: "Hóa đơn",
+            }
           : pathname.startsWith("/groups/")
-            ? { parent: "Nhóm", href: "/groups" as Route, current: "Chi tiết nhóm" }
+            ? {
+                parent: "Nhóm",
+                href: "/groups" as Route,
+                current: "Chi tiết nhóm",
+              }
             : pathname.startsWith("/groups")
-              ? { parent: "Splitly", href: "/dashboard" as Route, current: "Nhóm" }
+              ? {
+                  parent: "Splitly",
+                  href: "/dashboard" as Route,
+                  current: "Nhóm",
+                }
               : pathname.startsWith("/payout-accounts")
-                ? { parent: "Splitly", href: "/dashboard" as Route, current: "Tài khoản Payout" }
+                ? {
+                    parent: "Splitly",
+                    href: "/dashboard" as Route,
+                    current: "Tài khoản Payout",
+                  }
                 : pathname.startsWith("/admin/users")
-                  ? { parent: "Quản trị", href: "/dashboard" as Route, current: "Quản lý người dùng" }
+                  ? {
+                      parent: "Quản trị",
+                      href: "/dashboard" as Route,
+                      current: "Quản lý người dùng",
+                    }
                   : pathname.startsWith("/admin/support-requests")
-                    ? { parent: "Quản trị", href: "/dashboard" as Route, current: "Yêu cầu hỗ trợ" }
-                    : { parent: "Splitly", href: "/dashboard" as Route, current: "Tổng quan" };
+                    ? {
+                        parent: "Quản trị",
+                        href: "/dashboard" as Route,
+                        current: "Yêu cầu hỗ trợ",
+                      }
+                    : {
+                        parent: "Splitly",
+                        href: "/dashboard" as Route,
+                        current: "Tổng quan",
+                      };
 
   function sidebar(compact: boolean, mobile = false) {
     return (
       <>
         <div
           className={cn(
-            "border-border/70 flex h-14 shrink-0 items-center border-b bg-card/70",
+            "border-border/70 bg-card/70 flex h-14 shrink-0 items-center border-b",
             compact ? "justify-center px-3" : "gap-2 px-4",
           )}
         >
@@ -117,7 +230,9 @@ export function AppShell({
               <WalletCards className="size-[18px]" />
             </div>
             {!compact ? (
-              <span className="text-[17px] font-bold tracking-[-0.02em]">Splitly</span>
+              <span className="text-[17px] font-bold tracking-[-0.02em]">
+                Splitly
+              </span>
             ) : null}
           </Link>
           {!mobile ? (
@@ -149,7 +264,7 @@ export function AppShell({
           className="flex-1 space-y-1 px-3 py-4"
           aria-label="Điều hướng chính"
         >
-          {nav.map((item) => {
+          {visibleNav.map((item) => {
             const active =
               pathname === item.href || pathname.startsWith(`${item.href}/`);
             return (
@@ -229,7 +344,7 @@ export function AppShell({
           collapsed ? "lg:pl-[72px]" : "lg:pl-[252px]",
         )}
       >
-        <header className="border-border/80 bg-card/95 sticky top-0 z-20 flex h-14 items-center border-b px-4 shadow-[0_1px_0_rgb(15_23_42/0.025),0_6px_18px_rgb(15_23_42/0.025)] backdrop-blur-xl sm:px-5 lg:px-7 dark:bg-card/90 dark:shadow-[0_1px_0_rgb(255_255_255/0.02),0_8px_22px_rgb(0_0_0/0.12)]">
+        <header className="border-border/80 bg-card/95 dark:bg-card/90 sticky top-0 z-20 flex h-14 items-center border-b px-4 shadow-[0_1px_0_rgb(15_23_42/0.025),0_6px_18px_rgb(15_23_42/0.025)] backdrop-blur-xl sm:px-5 lg:px-7 dark:shadow-[0_1px_0_rgb(255_255_255/0.02),0_8px_22px_rgb(0_0_0/0.12)]">
           <Button
             variant="ghost"
             size="icon"
@@ -256,12 +371,24 @@ export function AppShell({
           </nav>
           <div className="ml-auto flex items-center gap-2">
             {!pathname.startsWith("/bills/new") ? (
-              <Button asChild size="sm" className="hidden sm:inline-flex">
-                <Link href="/bills/new">
+              canCreateBill ? (
+                <Button asChild size="sm" className="hidden sm:inline-flex">
+                  <Link href="/bills/new">
+                    <Plus className="size-4" />
+                    Tạo hóa đơn
+                  </Link>
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  disabled
+                  title="Bạn chưa có quyền Bills.Create"
+                  className="hidden sm:inline-flex"
+                >
                   <Plus className="size-4" />
                   Tạo hóa đơn
-                </Link>
-              </Button>
+                </Button>
+              )
             ) : null}
             <ThemeToggle />
             <CreateSupportModal defaultEmail={user.email} />
@@ -269,17 +396,17 @@ export function AppShell({
               type="button"
               onClick={() => setAvatarOpen(true)}
               title="Bấm để xem ảnh đại diện"
-              className="group cursor-pointer flex items-center gap-2.5 rounded-xl p-1 transition-all duration-150 hover:bg-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+              className="group hover:bg-muted/70 focus-visible:ring-primary/20 flex cursor-pointer items-center gap-2.5 rounded-xl p-1 transition-all duration-150 focus-visible:ring-2 focus-visible:outline-none"
             >
               <div className="border-border/70 hidden border-l pl-3 text-right sm:block">
-                <p className="text-sm leading-tight font-medium group-hover:text-primary transition-colors">
+                <p className="group-hover:text-primary text-sm leading-tight font-medium transition-colors">
                   {user.displayName}
                 </p>
                 <p className="text-muted-foreground max-w-44 truncate text-xs">
                   {user.email}
                 </p>
               </div>
-              <Avatar className="border-primary/20 bg-primary/10 text-primary inline-flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full border text-xs font-bold shadow-sm transition-transform duration-150 group-hover:scale-105 group-hover:border-primary/40">
+              <Avatar className="border-primary/20 bg-primary/10 text-primary group-hover:border-primary/40 inline-flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full border text-xs font-bold shadow-sm transition-transform duration-150 group-hover:scale-105">
                 {user.avatarUrl ? (
                   <AvatarImage src={user.avatarUrl} alt={user.displayName} />
                 ) : null}
@@ -289,18 +416,18 @@ export function AppShell({
 
             {/* Avatar Preview Lightbox Modal */}
             <Dialog open={avatarOpen} onOpenChange={setAvatarOpen}>
-              <DialogContent className="sm:max-w-md text-center p-6 sm:p-8">
+              <DialogContent className="p-6 text-center sm:max-w-md sm:p-8">
                 <DialogHeader className="items-center text-center">
                   <DialogTitle className="text-xl font-bold">
                     {user.displayName}
                   </DialogTitle>
-                  <DialogDescription className="text-sm text-muted-foreground mt-0.5">
+                  <DialogDescription className="text-muted-foreground mt-0.5 text-sm">
                     {user.email}
                   </DialogDescription>
                 </DialogHeader>
 
                 <div className="my-6 flex justify-center">
-                  <div className="relative flex size-48 sm:size-56 shrink-0 items-center justify-center rounded-full border-4 border-primary/20 bg-gradient-to-br from-primary/15 to-primary/5 p-1 shadow-xl ring-8 ring-primary/5">
+                  <div className="border-primary/20 from-primary/15 to-primary/5 ring-primary/5 relative flex size-48 shrink-0 items-center justify-center rounded-full border-4 bg-gradient-to-br p-1 shadow-xl ring-8 sm:size-56">
                     {user.avatarUrl ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img
@@ -309,7 +436,7 @@ export function AppShell({
                         className="size-full rounded-full object-cover shadow-inner"
                       />
                     ) : (
-                      <div className="flex size-full items-center justify-center rounded-full bg-primary/15 font-bold text-4xl sm:text-5xl text-primary tracking-wider">
+                      <div className="bg-primary/15 text-primary flex size-full items-center justify-center rounded-full text-4xl font-bold tracking-wider sm:text-5xl">
                         {initials || "U"}
                       </div>
                     )}
@@ -322,7 +449,7 @@ export function AppShell({
                     variant="outline"
                     size="sm"
                     onClick={() => setAvatarOpen(false)}
-                    className="w-full sm:w-auto px-6"
+                    className="w-full px-6 sm:w-auto"
                   >
                     Đóng
                   </Button>

@@ -6,7 +6,7 @@ import { LoaderCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "group relative inline-flex cursor-pointer select-none items-center justify-center gap-2 overflow-hidden rounded-xl border border-transparent text-sm font-semibold whitespace-nowrap transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-150 ease-out outline-none focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background active:translate-y-px active:scale-[0.985] disabled:pointer-events-none disabled:cursor-not-allowed disabled:translate-y-0 disabled:scale-100 disabled:opacity-55 disabled:shadow-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:transition-transform [&_svg]:duration-150 active:[&_svg]:scale-95",
+  "group relative inline-flex cursor-pointer select-none items-center justify-center gap-2 overflow-hidden rounded-xl border border-transparent text-sm font-semibold whitespace-nowrap transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-150 ease-out outline-none focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background active:translate-y-px active:scale-[0.985] disabled:cursor-not-allowed disabled:translate-y-0 disabled:scale-100 disabled:opacity-55 disabled:shadow-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:transition-transform [&_svg]:duration-150 active:[&_svg]:scale-95",
   {
     variants: {
       variant: {

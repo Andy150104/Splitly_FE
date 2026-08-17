@@ -3,10 +3,20 @@ import { PageHeader } from "@/components/common/page-header";
 import { SupportRequestManagementView } from "@/features/admin/components/support-request-management-view";
 import { adminApi } from "@/lib/api/server/admin.api";
 import { toResult } from "@/lib/async-result";
+import { SYSTEM_PERMISSIONS, hasPermission } from "@/lib/auth/permissions";
+import { requirePermission } from "@/lib/auth/server-permissions";
 
 export const metadata = { title: "Quản lý Yêu cầu Hỗ trợ & Báo lỗi" };
 
 export default async function AdminSupportRequestsPage() {
+  const permissions = await requirePermission(
+    SYSTEM_PERMISSIONS.SUPPORT_REQUESTS_READ,
+  );
+  const canUpdate = hasPermission(
+    permissions,
+    SYSTEM_PERMISSIONS.SUPPORT_REQUESTS_UPDATE,
+  );
+
   const loaded = await toResult(
     adminApi.getSupportRequests({ page: 1, pageSize: 100 }),
   );
@@ -42,7 +52,7 @@ export default async function AdminSupportRequestsPage() {
         description="Kiểm tra đối soát các báo lỗi thanh toán, sự cố giải ngân Payout và cập nhật trạng thái xử lý."
       />
 
-      <SupportRequestManagementView requests={requests} />
+      <SupportRequestManagementView requests={requests} canUpdate={canUpdate} />
     </div>
   );
 }

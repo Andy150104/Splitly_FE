@@ -8,10 +8,18 @@ import { CreateGroupModal } from "@/features/groups/components/create-group-form
 import { GroupCard } from "@/features/groups/components/group-card";
 import { api } from "@/lib/api/server/api";
 import { toResult } from "@/lib/async-result";
+import { SYSTEM_PERMISSIONS, hasPermission } from "@/lib/auth/permissions";
+import { requirePermission } from "@/lib/auth/server-permissions";
 
 export const metadata = { title: "Nhóm" };
 
 export default async function GroupsPage() {
+  const permissions = await requirePermission(SYSTEM_PERMISSIONS.GROUPS_READ);
+  const canCreate = hasPermission(
+    permissions,
+    SYSTEM_PERMISSIONS.GROUPS_CREATE,
+  );
+
   const loaded = await toResult(
     api.groups.getAll({ pageNumber: 1, pageSize: 100 }),
   );
@@ -36,7 +44,7 @@ export default async function GroupsPage() {
       <PageHeader
         title="Nhóm"
         description="Lưu các nhóm người thường xuyên chia chi phí cùng nhau."
-        actions={<CreateGroupModal />}
+        actions={<CreateGroupModal allowed={canCreate} />}
       />
 
       {groups.length ? (
@@ -51,8 +59,15 @@ export default async function GroupsPage() {
           description="Tạo nhóm để nhanh chóng lưu danh sách thành viên và chia chi phí cho các hóa đơn sau."
           action={
             <CreateGroupModal
+              allowed={canCreate}
               trigger={
-                <Button className="gap-2">
+                <Button
+                  className="gap-2"
+                  disabled={!canCreate}
+                  title={
+                    !canCreate ? "Bạn chưa có quyền Groups.Create" : undefined
+                  }
+                >
                   <Plus className="size-4" />
                   Tạo nhóm đầu tiên
                 </Button>

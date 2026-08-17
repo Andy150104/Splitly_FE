@@ -1,6 +1,12 @@
 "use client";
 
-import { Check, ChevronDown, ChevronUp, LoaderCircle, Search } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  ChevronUp,
+  LoaderCircle,
+  Search,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -32,14 +38,16 @@ interface BankSelectGridProps {
   selectedBankCode?: string | null;
   onSelectBank: (bank: VietQrBank) => void;
   invalid?: boolean;
+  enabled?: boolean;
 }
 
 export function BankSelectGrid({
   selectedBankCode,
   onSelectBank,
   invalid = false,
+  enabled = true,
 }: BankSelectGridProps) {
-  const { data: banks = [], isLoading } = useVietQrBanks();
+  const { data: banks = [], isLoading } = useVietQrBanks(enabled);
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState(false);
   const [failedLogos, setFailedLogos] = useState<Record<string, boolean>>({});
@@ -87,8 +95,8 @@ export function BankSelectGrid({
 
   if (isLoading) {
     return (
-      <div className="flex h-44 items-center justify-center gap-2 rounded-2xl border border-dashed border-border p-6 text-xs text-muted-foreground">
-        <LoaderCircle className="size-5 animate-spin text-primary" />
+      <div className="border-border text-muted-foreground flex h-44 items-center justify-center gap-2 rounded-2xl border border-dashed p-6 text-xs">
+        <LoaderCircle className="text-primary size-5 animate-spin" />
         <span className="font-medium">Đang tải danh sách ngân hàng…</span>
       </div>
     );
@@ -98,7 +106,7 @@ export function BankSelectGrid({
     <div className="space-y-3.5">
       {/* Search Input */}
       <div className="relative">
-        <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="text-muted-foreground absolute top-1/2 left-3.5 size-4 -translate-y-1/2" />
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -109,13 +117,15 @@ export function BankSelectGrid({
 
       {/* Bank Logos Grid */}
       {displayedBanks.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-2.5 sm:gap-3">
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 md:grid-cols-4 lg:grid-cols-4">
           {displayedBanks.map((bank) => {
             const code = bank.code || bank.shortName || "";
             const isSelected =
               selectedBankCode &&
               (code.toLowerCase() === selectedBankCode.toLowerCase() ||
-                (bank.shortName && bank.shortName.toLowerCase() === selectedBankCode.toLowerCase()));
+                (bank.shortName &&
+                  bank.shortName.toLowerCase() ===
+                    selectedBankCode.toLowerCase()));
             const hasFailedLogo = failedLogos[code];
             const logoUrl =
               bank.logo || `https://img.vietqr.io/image/${code}-logo.png`;
@@ -126,22 +136,22 @@ export function BankSelectGrid({
                 type="button"
                 onClick={() => onSelectBank(bank)}
                 className={cn(
-                  "group relative flex h-20 sm:h-24 flex-col items-center justify-center rounded-xl border p-2.5 text-center transition-all duration-150 active:scale-[0.98]",
+                  "group relative flex h-20 flex-col items-center justify-center rounded-xl border p-2.5 text-center transition-all duration-150 active:scale-[0.98] sm:h-24",
                   isSelected
-                    ? "border-primary bg-primary/[0.06] ring-2 ring-primary/30 shadow-xs dark:bg-primary/15"
+                    ? "border-primary bg-primary/[0.06] ring-primary/30 dark:bg-primary/15 shadow-xs ring-2"
                     : "border-border/80 bg-card hover:border-primary/50 hover:bg-card/80 hover:shadow-xs",
                 )}
               >
                 {/* Active Checkmark Badge */}
                 {isSelected ? (
-                  <div className="absolute right-1.5 top-1.5 flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xs">
+                  <div className="bg-primary text-primary-foreground absolute top-1.5 right-1.5 flex size-5 items-center justify-center rounded-full shadow-xs">
                     <Check className="size-3 stroke-[3]" />
                   </div>
                 ) : null}
 
                 {/* Logo Image or Fallback */}
                 {logoUrl && !hasFailedLogo ? (
-                  <div className="flex h-9 sm:h-11 w-full items-center justify-center px-1">
+                  <div className="flex h-9 w-full items-center justify-center px-1 sm:h-11">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={logoUrl}
@@ -152,17 +162,17 @@ export function BankSelectGrid({
                           [code]: true,
                         }))
                       }
-                      className="h-full max-h-9 sm:max-h-11 w-auto max-w-[110px] sm:max-w-[130px] object-contain"
+                      className="h-full max-h-9 w-auto max-w-[110px] object-contain sm:max-h-11 sm:max-w-[130px]"
                     />
                   </div>
                 ) : (
-                  <div className="flex h-9 sm:h-11 w-full items-center justify-center rounded bg-primary/10 font-bold text-xs text-primary">
+                  <div className="bg-primary/10 text-primary flex h-9 w-full items-center justify-center rounded text-xs font-bold sm:h-11">
                     {code}
                   </div>
                 )}
 
                 {/* Bank Short Name */}
-                <span className="mt-1 sm:mt-1.5 text-xs sm:text-xs font-bold leading-tight truncate max-w-full text-foreground">
+                <span className="text-foreground mt-1 max-w-full truncate text-xs leading-tight font-bold sm:mt-1.5 sm:text-xs">
                   {bank.shortName || code}
                 </span>
               </button>
@@ -170,7 +180,7 @@ export function BankSelectGrid({
           })}
         </div>
       ) : (
-        <div className="rounded-xl border border-dashed border-border/70 p-6 text-center text-xs text-muted-foreground">
+        <div className="border-border/70 text-muted-foreground rounded-xl border border-dashed p-6 text-center text-xs">
           Không tìm thấy ngân hàng nào khớp với &quot;{search}&quot;.
         </div>
       )}
@@ -183,7 +193,7 @@ export function BankSelectGrid({
             variant="ghost"
             size="sm"
             onClick={() => setExpanded((prev) => !prev)}
-            className="text-xs font-semibold text-primary hover:text-primary/80 gap-1.5 h-8 px-3"
+            className="text-primary hover:text-primary/80 h-8 gap-1.5 px-3 text-xs font-semibold"
           >
             {expanded ? (
               <>
@@ -191,7 +201,8 @@ export function BankSelectGrid({
               </>
             ) : (
               <>
-                Xem tất cả ({filteredBanks.length} ngân hàng) <ChevronDown className="size-4" />
+                Xem tất cả ({filteredBanks.length} ngân hàng){" "}
+                <ChevronDown className="size-4" />
               </>
             )}
           </Button>
