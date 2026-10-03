@@ -94,8 +94,14 @@ function getDeduplicatedRefresh(refreshToken: string) {
 }
 
 export async function middleware(request: NextRequest) {
+  // Always propagate the current path so downstream Server Components
+  // (e.g. workspace layout) can build "return-to" URLs after login.
+  const xMoPath = request.nextUrl.pathname + request.nextUrl.search;
+
   if (!needsRefresh(request)) {
-    return NextResponse.next();
+    const headers = new Headers(request.headers);
+    headers.set("x-mo-path", xMoPath);
+    return NextResponse.next({ request: { headers } });
   }
 
   const refreshToken = request.cookies.get(REFRESH_COOKIE)!.value;
@@ -106,6 +112,7 @@ export async function middleware(request: NextRequest) {
     if (!session) {
       // Refresh failed — clear all auth cookies and let the protected layout redirect to login
       const requestHeaders = new Headers(request.headers);
+      requestHeaders.set("x-mo-path", xMoPath);
       request.cookies.delete(AUTH_COOKIE);
       request.cookies.delete(REFRESH_COOKIE);
       request.cookies.delete(ACCESS_EXP_COOKIE);
@@ -130,11 +137,14 @@ export async function middleware(request: NextRequest) {
       !session.refreshTokenExpiresAtUtc
     ) {
       // Incomplete response — let it pass through, authenticatedCall can retry
-      return NextResponse.next();
+      const incHeaders = new Headers(request.headers);
+      incHeaders.set("x-mo-path", xMoPath);
+      return NextResponse.next({ request: { headers: incHeaders } });
     }
 
     // Propagation: Set updated cookies on the request headers so downstream Server Components/Route Handlers see them
     const requestHeaders = new Headers(request.headers);
+    requestHeaders.set("x-mo-path", xMoPath);
     request.cookies.set(AUTH_COOKIE, session.accessToken);
     request.cookies.set(REFRESH_COOKIE, session.refreshToken);
     if (session.accessTokenExpiresAtUtc) {
@@ -181,7 +191,9 @@ export async function middleware(request: NextRequest) {
     console.error("[Middleware] Token refresh failed:", error);
     // Network error calling backend — let the request continue;
     // authenticatedCall in Server Components will handle the 401.
-    return NextResponse.next();
+    const errHeaders = new Headers(request.headers);
+    errHeaders.set("x-mo-path", xMoPath);
+    return NextResponse.next({ request: { headers: errHeaders } });
   }
 }
 
