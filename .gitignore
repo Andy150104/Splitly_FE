@@ -2,34 +2,45 @@
 node_modules/
 .pnpm-store/
 
-# Next.js
+# Build output and generated files
 .next/
+dist/
 out/
+next-env.d.ts
+*.tsbuildinfo
 
-# Environment
+# Local configuration and credentials
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+*.local
+*.pem
+*.key
+*.pfx
+*.p12
+.npmrc
 
-# Logs
+# Test reports and visual review captures (keep scripts/ and tests/)
+QA/
+coverage/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# Tool caches and deployment state
+.reference/
+.cache/
+.turbo/
+.vercel/
+.eslintcache
 *.log
 
-# TypeScript generated files
-*.tsbuildinfo
-next-env.d.ts
-
-# Testing
-coverage/
-
-# Vercel
-.vercel/
-
-# Cache
-.turbo/
-.cache/
-.eslintcache
-
-# OS
+# Editor and OS files
+.idea/
+.vscode/
+*.swp
+*.swo
 .DS_Store
 Thumbs.db
 Desktop.ini

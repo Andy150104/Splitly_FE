@@ -1,0 +1,141 @@
+/* Only the landing's product atmosphere replaces the old flat decoration. */
+.splitly-landing .hero-universe .narrative-backdrop {
+  display: none;
+}
+.splitly-landing .hero-universe .art-orbit,
+.splitly-landing .hero-universe .flight-stage {
+  display: none;
+}
+.splitly-landing .hero-universe .hero-art::before,
+.splitly-landing .hero-universe .hero-art::after {
+  opacity: 0;
+}
+
+@media (min-width: 1025px) {
+  .splitly-landing .hero-universe.hero-shell-pinned .hero-art .label-income {
+    top: -12px;
+    right: 3.5%;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .splitly-landing .hero-universe .hero {
+    padding-inline: 28px;
+  }
+  .splitly-landing .hero-universe .hero-copy-motion {
+    position: absolute;
+    inset: 24px 0 auto;
+    width: 100%;
+    translate: none;
+    align-self: start;
+  }
+  .splitly-landing .hero-universe .hero-copy {
+    padding-left: 0;
+  }
+  .splitly-landing .hero-universe h1 {
+    font-size: clamp(42px, 7.2vw, 64px);
+    line-height: 0.98;
+  }
+  .splitly-landing .hero-universe .hero-copy > p {
+    font-size: 12px;
+    max-width: 540px;
+    margin-top: 16px;
+  }
+  .splitly-landing .hero-universe .hero-cta {
+    margin-top: 18px;
+    min-height: 44px;
+  }
+  .splitly-landing .hero-universe .hero-note,
+  .splitly-landing .hero-universe .hero-art-annotations,
+  .splitly-landing .hero-universe .scene-gesture-hint {
+    display: none;
+  }
+  .splitly-landing .hero-universe.hero-shell-pinned .hero-art {
+    top: 350px;
+    bottom: 48px;
+    left: 0;
+    right: 0;
+    height: auto;
+    width: auto;
+    transform: none;
+  }
+  .splitly-landing .hero-universe .scene-interact {
+    right: 8px;
+    bottom: 0;
+  }
+  .splitly-landing .hero-universe .narrative-copy {
+    top: 12px;
+    left: 0;
+    width: 100%;
+    transform: none;
+  }
+  .splitly-landing .hero-universe .narrative-copy h2 {
+    font-size: 46px;
+    max-width: 580px;
+  }
+  .splitly-landing .hero-universe .narrative-copy p {
+    max-width: 550px;
+  }
+  .splitly-landing .hero-universe .story-experiment {
+    margin-top: 16px;
+    max-width: 380px;
+  }
+  .splitly-landing .hero-universe .narrative-aside {
+    display: none;
+  }
+  .splitly-landing .hero-universe:not(.hero-shell-pinned) .hero-main {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    height: auto;
+    min-height: 0;
+  }
+  .splitly-landing .hero-universe:not(.hero-shell-pinned) .hero-copy-motion {
+    position: relative;
+    inset: auto;
+  }
+  .splitly-landing .hero-universe:not(.hero-shell-pinned) .hero-art {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: 360px;
+    transform: none;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) and (max-height: 800px) {
+  .splitly-landing .hero-universe.hero-shell-pinned .hero-copy-motion {
+    inset: 70px auto auto 0;
+    width: 46%;
+  }
+  .splitly-landing .hero-universe.hero-shell-pinned h1 {
+    font-size: clamp(34px, 4.8vw, 48px);
+  }
+  .splitly-landing .hero-universe.hero-shell-pinned .hero-art {
+    top: 60px;
+    bottom: 48px;
+    left: 45%;
+    right: -8px;
+  }
+  .splitly-landing .hero-universe.hero-shell-pinned .narrative-copy {
+    top: 48px;
+    width: 44%;
+  }
+  .splitly-landing .hero-universe.hero-shell-pinned .narrative-copy h2 {
+    font-size: clamp(30px, 4.4vw, 44px);
+  }
+  .splitly-landing .hero-universe.hero-shell-pinned .story-experiment {
+    padding: 12px;
+    margin-top: 12px;
+  }
+}
+
+@media (max-width: 640px) and (max-height: 740px) {
+  .splitly-landing .hero-universe .story-experiment {
+    margin-top: 7px;
+    padding-block: 10px;
+  }
+  .splitly-landing .hero-universe.hero-shell-pinned .hero:not([data-chapter='0']) .hero-art {
+    top: 278px;
+  }
+}

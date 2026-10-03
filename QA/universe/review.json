@@ -1,0 +1,61 @@
+{
+  "results": [
+    {
+      "name": "phone",
+      "width": 360,
+      "height": 780,
+      "overflow": false,
+      "ctaBottom": 360.015625
+    },
+    {
+      "name": "mobile-low",
+      "width": 390,
+      "height": 664,
+      "overflow": false,
+      "ctaBottom": 350.046875
+    },
+    {
+      "name": "tablet",
+      "width": 768,
+      "height": 1024,
+      "overflow": false,
+      "ctaBottom": 476.328125
+    },
+    {
+      "name": "tablet-low",
+      "width": 768,
+      "height": 700,
+      "overflow": false,
+      "ctaBottom": 490.28125
+    },
+    {
+      "name": "compact",
+      "width": 1100,
+      "height": 760,
+      "overflow": false,
+      "ctaBottom": 584.3515625
+    },
+    {
+      "name": "desktop-standard",
+      "width": 1440,
+      "height": 1000,
+      "overflow": false,
+      "ctaBottom": 714.8359375
+    },
+    {
+      "name": "full-hd",
+      "width": 1920,
+      "height": 1080,
+      "overflow": false,
+      "ctaBottom": 815.09375
+    },
+    {
+      "name": "wide",
+      "width": 2432,
+      "height": 1440,
+      "overflow": false,
+      "ctaBottom": 1014.0625
+    }
+  ],
+  "errors": []
+}

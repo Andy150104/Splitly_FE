@@ -1,40 +1,26 @@
-import type { NextConfig } from "next";
-
-// Suppress the TLS rejection warning in development
-if (process.env.NODE_TLS_REJECT_UNAUTHORIZED === "0") {
-  const originalEmit = process.emit;
-  process.emit = function (
-    name: string | symbol,
-    data: unknown,
-    ...args: unknown[]
-  ) {
-    if (
-      name === "warning" &&
-      typeof data === "object" &&
-      data !== null &&
-      "message" in data &&
-      typeof (data as Record<string, unknown>).message === "string" &&
-      ((data as Record<string, unknown>).message as string).includes(
-        "NODE_TLS_REJECT_UNAUTHORIZED",
-      )
-    ) {
-      return false;
-    }
-    return originalEmit.apply(process, [
-      name,
-      data,
-      ...args,
-    ] as unknown as Parameters<typeof originalEmit>);
-  } as unknown as typeof process.emit;
-}
+import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
+  devIndicators: false,
   poweredByHeader: false,
-  reactStrictMode: true,
-  typedRoutes: true,
-  turbopack: {
-    root: process.cwd(),
+  turbopack: { root: process.cwd() },
+  headers() {
+    return [
+      {
+        source: '/login',
+        headers: [
+          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin-allow-popups' },
+          {
+            key: 'Referrer-Policy',
+            value:
+              process.env.NODE_ENV === 'development'
+                ? 'no-referrer-when-downgrade'
+                : 'strict-origin-when-cross-origin',
+          },
+        ],
+      },
+    ]
   },
-};
+}
 
-export default nextConfig;
+export default nextConfig
