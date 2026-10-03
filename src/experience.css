@@ -1,0 +1,544 @@
+/* The story has two reading zones: editorial copy and a breathing 3D stage. */
+.hero-shell-pinned {
+  height: calc(100svh + 3500px);
+}
+.hero-shell-pinned .hero-main {
+  display: block;
+  padding: 0;
+  min-height: 0;
+}
+.hero-shell-pinned .hero-copy-motion {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 45%;
+  translate: 0 -50%;
+}
+.hero-shell-pinned .hero-copy {
+  padding: 0;
+}
+.hero-shell-pinned h1 {
+  font-size: clamp(54px, 5.25vw, 112px);
+  line-height: 1.01;
+  letter-spacing: -1.6px;
+  max-width: 100%;
+}
+.hero-shell-pinned .hero-copy .eyebrow {
+  font-size: 9px;
+  letter-spacing: 1.3px;
+  margin-bottom: 22px;
+}
+.hero-shell-pinned .hero-copy > p {
+  font-size: clamp(12px, 0.95vw, 16px);
+  line-height: 1.85;
+  margin-top: 24px;
+  max-width: 420px;
+  color: var(--muted);
+}
+.hero-shell-pinned .hero-note {
+  margin-top: 24px;
+}
+.hero-shell-pinned .hero-art {
+  inset: 2% -10px 7%;
+  width: auto;
+  height: auto;
+  transform: none;
+}
+.hero-shell-pinned .hero-art::before {
+  left: 72%;
+  width: 48%;
+}
+.hero-shell-pinned .hero-main::before,
+.hero-shell-pinned .flight-coordinate,
+.hero-shell-pinned .flight-line,
+.hero-shell-pinned .label-bill,
+.hero-shell-pinned .round-stamp,
+.hero-shell-pinned .art-caption,
+.hero-shell-pinned .orbit-two,
+.hero-shell-pinned .narrative-aside {
+  display: none;
+}
+.hero-shell-pinned .art-orbit,
+.hero-shell-pinned .flight-orbit {
+  left: 72%;
+  top: 50%;
+  width: min(40vw, 720px);
+  height: min(40vw, 720px);
+  opacity: 0.32;
+}
+.hero-shell-pinned .label-income {
+  top: 9%;
+  right: 5%;
+  box-shadow: 0 10px 30px #163b5b06;
+  transform: rotate(3deg);
+}
+.hero-shell-pinned .hero-narrative .narrative-copy {
+  left: 0;
+  right: auto;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 43%;
+  max-width: 680px;
+  text-align: left;
+  pointer-events: auto;
+}
+.hero-shell-pinned .narrative-copy .eyebrow {
+  font-size: 9px;
+  justify-content: flex-start;
+  color: #356489;
+}
+.hero-shell-pinned .narrative-copy h2 {
+  font-size: clamp(44px, 4.35vw, 96px);
+  line-height: 1.01;
+  letter-spacing: -1px;
+  margin-top: 18px;
+  text-wrap: balance;
+}
+.hero-shell-pinned .narrative-copy > p {
+  position: static;
+  max-width: 410px;
+  font-size: clamp(12px, 0.9vw, 15px);
+  line-height: 1.85;
+  margin: 20px 0 0;
+  color: var(--muted);
+}
+.hero-shell-pinned .hero-narrative .narrative-backdrop {
+  left: 73%;
+  top: 23%;
+  font-size: clamp(160px, 19vw, 380px);
+  opacity: 0.38;
+  letter-spacing: -6px;
+}
+.hero-shell-pinned .scene-gesture-hint {
+  left: 72%;
+  bottom: 2%;
+  font-size: 7px;
+}
+.hero-shell-pinned .scene-interact {
+  bottom: 1%;
+  right: 1%;
+  min-height: 42px;
+  background: #f7fbffb3;
+}
+.hero-shell-pinned .hero-bottom {
+  height: 78px;
+  gap: 24px;
+}
+.hero-bottom .scroll-hint {
+  font-size: 10px;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+.scroll-hint b {
+  font-weight: 600;
+}
+.hero-bottom .story-chapter-nav {
+  display: flex;
+  width: auto;
+  gap: 12px;
+  min-height: 44px;
+  overflow: visible;
+}
+.hero-bottom .story-chapter-nav::before,
+.hero-bottom .story-chapter-nav button::after {
+  display: none;
+}
+.hero-bottom .story-chapter-nav button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  font-size: 10px;
+  min-height: 44px;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid transparent;
+}
+.hero-bottom .story-chapter-nav button > span {
+  background: transparent;
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  border-radius: 0;
+  color: inherit;
+  font: inherit;
+}
+.hero-bottom .story-chapter-nav .chapter-number {
+  font-size: 9px;
+  opacity: 0.7;
+}
+.hero-bottom .story-chapter-nav .is-active {
+  background: #ffffffa6;
+  color: var(--olive);
+  border-color: #c8ddec;
+  box-shadow: 0 3px 12px #163b5b05;
+}
+
+/* Small, real interactions complete each chapter without opening another screen. */
+.story-experiment {
+  width: min(100%, 370px);
+  margin-top: 26px;
+  padding: 18px 20px;
+  border: 1px solid #ffffff;
+  border-radius: 16px;
+  background: #ffffff9c;
+  box-shadow: 0 8px 32px #163b5b06;
+  backdrop-filter: blur(12px);
+  text-align: left;
+}
+.experiment-label {
+  display: block;
+  font-size: 8px;
+  letter-spacing: 1.5px;
+  color: #466982;
+  margin-bottom: 12px;
+}
+.experiment-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.experiment-heading svg + span {
+  margin-right: auto;
+}
+.experiment-heading strong {
+  white-space: nowrap;
+  font-weight: 600;
+}
+.split-options {
+  display: flex;
+  gap: 6px;
+  margin-top: 13px;
+}
+.split-options button {
+  flex: 1;
+  border-radius: 9px;
+  min-height: 40px;
+  font-size: 11px;
+  border: 1px solid #d1e3ef;
+  transition:
+    background 180ms,
+    color 180ms;
+}
+.split-options button[aria-pressed='true'] {
+  background: var(--olive);
+  border-color: var(--olive);
+  color: white;
+}
+.experiment-result {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 9px;
+  margin-top: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.experiment-result strong {
+  font-size: 23px;
+  letter-spacing: -0.7px;
+  font-weight: 600;
+}
+.experiment-result > span {
+  font-size: 10px;
+  color: var(--muted);
+}
+.experiment-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 13px;
+  padding: 10px;
+  border-radius: 9px;
+  background: var(--olive);
+  color: white;
+  font-size: 11px;
+  transition:
+    background 180ms,
+    transform 180ms;
+}
+.experiment-action:hover {
+  background: #245578;
+  transform: translateY(-1px);
+}
+.experiment-action.is-complete {
+  background: #d5ebfa;
+  color: #163b5b;
+}
+.experiment-footnote,
+.experiment-demo-note {
+  display: block;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.6;
+  margin-top: 10px;
+}
+.experiment-demo-note {
+  font-size: 8px;
+  color: #547086;
+}
+.experiment-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 40px;
+  font-size: 11px;
+  margin-top: 6px;
+}
+.experiment-progress {
+  margin-top: 14px;
+  height: 5px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #d8e8f4;
+}
+.experiment-progress span {
+  display: block;
+  height: 100%;
+  background: #357db4;
+  border-radius: inherit;
+  transition: width 300ms ease;
+}
+
+/* The existing capsule keeps its behavior with a quieter material. */
+.site-header,
+.site-header.is-scrolled,
+.site-header.is-auto-compact {
+  background: linear-gradient(115deg, #214c6be8, #163b5bf2);
+  border-color: #ffffff40;
+  box-shadow:
+    0 8px 26px #163b5b1a,
+    inset 0 1px 0 #ffffff18;
+}
+.site-header::after {
+  opacity: 0.12;
+}
+.story-resolution-rail {
+  overflow: visible;
+}
+.story-resolution-word {
+  color: #4a7b9d;
+}
+
+@media (min-width: 761px) and (max-height: 850px) {
+  .hero-shell-pinned .narrative-copy h2 {
+    font-size: clamp(40px, 6.8svh, 64px);
+  }
+  .hero-shell-pinned .narrative-copy > p {
+    margin-top: 14px;
+    font-size: 12px;
+  }
+  .story-experiment {
+    margin-top: 18px;
+    padding: 14px 18px;
+  }
+  .experiment-label {
+    margin-bottom: 8px;
+  }
+}
+
+/* A vertical composition gives touch screens their own reading and model space. */
+@media (max-width: 760px) {
+  .hero-shell-pinned {
+    height: calc(100svh + 2500px);
+  }
+  .hero-shell-pinned .hero {
+    padding-inline: 22px;
+  }
+  .hero-shell-pinned .hero-topline {
+    display: none;
+  }
+  .hero-shell-pinned .hero-copy-motion {
+    top: 20px;
+    left: 0;
+    width: 100%;
+    translate: none;
+  }
+  .hero-shell-pinned h1 {
+    max-width: 100%;
+    font-size: clamp(34px, 9.7vw, 58px);
+    line-height: 1;
+    letter-spacing: -0.8px;
+  }
+  .hero-shell-pinned .hero-copy .eyebrow {
+    font-size: 7px;
+    margin-bottom: 14px;
+    letter-spacing: 0.8px;
+  }
+  .hero-shell-pinned .hero-copy > p {
+    margin-top: 14px;
+    font-size: 11px;
+    max-width: 100%;
+    line-height: 1.7;
+  }
+  .hero-shell-pinned .hero-cta {
+    margin-top: 17px;
+    min-height: 44px;
+    padding: 12px 17px;
+  }
+  .hero-shell-pinned .hero-note,
+  .hero-shell-pinned .hero-art-annotations,
+  .hero-shell-pinned .scene-gesture-hint,
+  .hero-shell-pinned .flight-stage,
+  .hero-shell-pinned .narrative-backdrop {
+    display: none;
+  }
+  .hero-shell-pinned .hero-art {
+    inset: 290px -12px 12px;
+    width: auto;
+    height: auto;
+    min-height: 0;
+    margin: 0;
+    transform: none;
+  }
+  .hero-shell-pinned .hero-art::before {
+    left: 50%;
+    width: 100%;
+  }
+  .hero-shell-pinned .hero:not([data-chapter='0']) .hero-art {
+    top: 340px;
+  }
+  .hero-shell-pinned .hero-art::after {
+    display: none;
+  }
+  .hero-shell-pinned .scene-container {
+    inset: 0;
+  }
+  .hero-shell-pinned .hero-narrative .narrative-copy {
+    top: 14px;
+    left: 0;
+    right: auto;
+    width: 100%;
+    transform: none;
+  }
+  .hero-shell-pinned .narrative-copy .eyebrow {
+    font-size: 7px;
+    letter-spacing: 1px;
+  }
+  .hero-shell-pinned .narrative-copy h2 {
+    font-size: clamp(29px, 8.1vw, 44px);
+    line-height: 1.01;
+    margin-top: 10px;
+    max-width: 100%;
+    letter-spacing: -0.6px;
+    text-wrap: initial;
+  }
+  .hero-shell-pinned .narrative-copy > p {
+    margin-top: 10px;
+    font-size: 11px;
+    line-height: 1.65;
+    max-width: 100%;
+  }
+  .story-experiment {
+    margin-top: 13px;
+    padding: 12px 14px;
+    width: 100%;
+    border-radius: 12px;
+  }
+  .experiment-label,
+  .experiment-footnote {
+    display: none;
+  }
+  .experiment-heading,
+  .experiment-action,
+  .split-options button {
+    font-size: 10px;
+  }
+  .split-options {
+    margin-top: 8px;
+  }
+  .split-options button {
+    min-height: 36px;
+  }
+  .experiment-result {
+    margin-top: 8px;
+  }
+  .experiment-result strong {
+    font-size: 19px;
+  }
+  .experiment-demo-note {
+    margin-top: 5px;
+    font-size: 7px;
+  }
+  .experiment-action {
+    margin-top: 9px;
+    min-height: 40px;
+  }
+  .hero-shell-pinned .scene-interact {
+    right: 8px;
+    bottom: 0;
+    min-height: 36px;
+    padding: 8px 10px;
+  }
+  .hero-shell-pinned .scene-interact span {
+    display: none;
+  }
+  .hero-shell-pinned .hero-bottom {
+    height: 88px;
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: center;
+    gap: 2px;
+  }
+  .hero-bottom .story-chapter-nav {
+    width: 100%;
+    justify-content: space-between;
+    gap: 0;
+  }
+  .hero-bottom .story-chapter-nav button {
+    min-height: 40px;
+    padding: 8px 10px;
+    font-size: 9px;
+  }
+  .hero-bottom .story-chapter-nav .chapter-number {
+    display: none;
+  }
+  .hero-bottom .scroll-hint {
+    min-height: 32px;
+    font-size: 9px;
+    gap: 8px;
+  }
+  .hero-bottom .scroll-circle {
+    display: none;
+  }
+  .story-resolution-rail {
+    gap: 8px;
+    justify-content: space-between;
+    padding-inline: 20px;
+  }
+  .story-resolution-rail > span {
+    gap: 5px;
+    font-size: 8px;
+  }
+  .story-resolution-rail i {
+    display: none;
+  }
+}
+@media (max-width: 760px) and (max-height: 740px) {
+  .hero-shell-pinned .hero-art {
+    top: 290px;
+    bottom: 0;
+  }
+  .hero-shell-pinned .narrative-copy > p {
+    font-size: 10px;
+  }
+  .hero-shell-pinned .narrative-copy h2 {
+    font-size: 29px;
+  }
+  .hero-shell-pinned .hero-bottom {
+    height: 72px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .experiment-action,
+  .experiment-progress span,
+  .split-options button {
+    transition: none;
+  }
+}

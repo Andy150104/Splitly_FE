@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="stylesheet" href="../../src/styles.css" />
+    <link rel="stylesheet" href="../../src/navbar.css" />
+    <style>
+      html {
+        scroll-behavior: auto;
+      }
+      body {
+        margin: 0;
+        background: #f5f3e9;
+        color: #344027;
+        font-family: Arial, sans-serif;
+      }
+      .qa-stage {
+        height: 1500px;
+        background: radial-gradient(circle at 50% 30%, #f3f2cf, #f5f3e9 42%);
+      }
+      .qa-title {
+        padding: 180px 6vw 0;
+        font-size: clamp(48px, 8vw, 120px);
+        font-weight: 800;
+        max-width: 900px;
+        line-height: 0.9;
+      }
+      .qa-features {
+        min-height: 900px;
+        background: #334027;
+        padding: 80px 4vw;
+      }
+      .qa-features .feature-grid {
+        max-width: 1200px;
+        margin: auto;
+      }
+      .qa-features .feature-card h3 {
+        font-size: clamp(28px, 3vw, 44px);
+      }
+      .qa-features .feature-item > p {
+        color: #e6e7d7;
+      }
+      .compact-only {
+        display: none;
+      }
+      .site-header:not(.is-scrolled) .nav-context {
+        display: none !important;
+      }
+      .site-header.is-scrolled .desktop-nav,
+      .site-header.is-scrolled .nav-story-teaser {
+        display: none !important;
+      }
+      .site-header.is-collapsed .full-only {
+        display: none;
+      }
+      .site-header.is-collapsed .compact-only {
+        display: flex;
+      }
+      .site-header:not(.is-collapsed) .compact-only {
+        display: none;
+      }
+      .site-header:not(.is-scrolled) .nav-context {
+        display: none !important;
+      }
+      .site-header.is-scrolled .desktop-nav,
+      .site-header.is-scrolled .nav-story-teaser {
+        display: none !important;
+      }
+      .site-header:not(.is-collapsed) .full-only {
+        display: flex;
+      }
+      .qa-spacer {
+        height: 900px;
+      }
+      .feature-card {
+        border: 0;
+      }
+      .feature-card-shell {
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="site-header-shell">
+      <header id="nav" class="site-header section-home is-settled">
+        <a class="brand" href="#" id="homeBtn"
+          >mơ<span>.</span><span class="brand-star">✳</span></a
+        >
+        <div class="desktop-nav full-only">
+          <a aria-current="page">Trang đầu</a><a>Khám phá</a><a>Điều đang mơ</a
+          ><button>Câu chuyện</button>
+        </div>
+        <button class="nav-story-teaser full-only"><span>01</span><i></i><span>05</span></button>
+        <div class="nav-context full-only" style="--nav-progress: 42%">
+          <button class="nav-context-trigger">
+            <span class="nav-context-copy"
+              ><span class="nav-context-eyebrow">03 — HÓA ĐƠN</span
+              ><strong>BỚT ĐIỀU PHẢI NHỚ</strong></span
+            ><span class="nav-context-chevron"></span>
+          </button>
+          <div class="nav-progress-block">
+            <div class="nav-progress-track"><span class="nav-progress-fill"></span></div>
+            <div class="nav-story-steps">
+              <button><span></span></button><button><span></span></button
+              ><button class="is-active"><span></span></button><button><span></span></button
+              ><button><span></span></button>
+            </div>
+          </div>
+          <span class="nav-context-count">03 / 05</span>
+        </div>
+        <button class="nav-collapsed-context compact-only">
+          <span>03 / 05</span><strong>03 · Hóa đơn</strong>
+        </button>
+        <button class="nav-cta full-only"><span>MỞ VÍ</span><span>↗</span></button
+        ><button class="nav-collapse-toggle">⌃</button>
+      </header>
+    </div>
+    <section class="qa-stage">
+      <div class="qa-title">TIỀN BẠC,<br />NHẸ ĐẦU HƠN.</div>
+    </section>
+    <section class="qa-features">
+      <div class="feature-grid">
+        <div class="feature-item">
+          <div class="feature-card-shell">
+            <button class="feature-card feature-balance">
+              <span class="feature-index">01 — THU CHI</span>
+              <div class="feature-card-bottom">
+                <h3>TIỀN ĐI ĐÂU,<br />BẠN BIẾT ĐÓ.</h3>
+                <span class="round-arrow">↗</span>
+              </div>
+            </button>
+          </div>
+          <p>Từng khoản thu, mỗi khoản chi. Nhìn rõ hôm nay.</p>
+        </div>
+        <div class="feature-item">
+          <div class="feature-card-shell">
+            <button class="feature-card feature-bills">
+              <span class="feature-index">02 — HÓA ĐƠN</span>
+              <div class="feature-card-bottom">
+                <h3>HÓA ĐƠN NHẸ.<br />ĐẦU CŨNG NHẸ.</h3>
+                <span class="round-arrow">↗</span>
+              </div>
+            </button>
+          </div>
+          <p>Điện, nước, internet, những khoản định kỳ.</p>
+        </div>
+        <div class="feature-item">
+          <div class="feature-card-shell">
+            <a class="feature-card feature-saving"
+              ><span class="feature-index">03 — DÀNH DỤM</span>
+              <div class="feature-card-bottom">
+                <h3>MƠ MỘT CHÚT.<br />GẦN HƠN MỘT CHÚT.</h3>
+                <span class="round-arrow">↗</span>
+              </div></a
+            >
+          </div>
+          <p>Một chuyến đi, một góc nhà, một khoảng an tâm.</p>
+        </div>
+      </div>
+    </section>
+    <div class="qa-spacer"></div>
+    <script>
+      const nav = document.querySelector('#nav')
+      let timer
+      let manual = false
+      function render() {
+        const sc = scrollY > 34
+        nav.classList.toggle('is-scrolled', sc)
+        if (!sc) {
+          nav.className = 'site-header section-home is-settled'
+          return
+        }
+      }
+      window.addEventListener(
+        'scroll',
+        () => {
+          render()
+          if (scrollY <= 34) return
+          clearTimeout(timer)
+          nav.classList.add('is-scrolling', 'is-auto-compact', 'is-collapsed')
+          nav.classList.remove('is-settled')
+          timer = setTimeout(() => {
+            nav.classList.remove('is-scrolling', 'is-auto-compact')
+            nav.classList.add('is-settled')
+            if (!manual) nav.classList.remove('is-collapsed')
+          }, 240)
+        },
+        { passive: true },
+      )
+      document.querySelector('#homeBtn').onclick = (e) => {
+        e.preventDefault()
+        scrollTo({ top: 0, behavior: 'smooth' })
+      }
+      for (const shell of document.querySelectorAll('.feature-card-shell')) {
+        shell.onpointermove = (e) => {
+          const b = shell.getBoundingClientRect(),
+            x = (e.clientX - b.left) / b.width - 0.5,
+            y = (e.clientY - b.top) / b.height - 0.5
+          shell.style.setProperty('--tilt-x', `${-y * 3.8}deg`)
+          shell.style.setProperty('--tilt-y', `${x * 5.2}deg`)
+          shell.style.setProperty('--glow-x', `${(x + 0.5) * 100}%`)
+          shell.style.setProperty('--glow-y', `${(y + 0.5) * 100}%`)
+        }
+        shell.onpointerleave = () => {
+          shell.style.setProperty('--tilt-x', '0deg')
+          shell.style.setProperty('--tilt-y', '0deg')
+        }
+      }
+    </script>
+  </body>
+</html>

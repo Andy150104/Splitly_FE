@@ -1,0 +1,2010 @@
+/* V7 — contextual Story Navigation
+   The capsule is a normal navigation at the top, then becomes a compact story HUD
+   while scrolling: chapter title + live progress + direct chapter steps + CTA. */
+:root {
+  --header-space: 102px;
+  --nav-cream: #f4faff;
+  --nav-ink: #153b5d;
+  --nav-lime: #b6e2ff;
+  --nav-olive: 23, 63, 97;
+}
+
+.site-header-shell {
+  height: var(--header-space);
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  pointer-events: none;
+  background: transparent;
+}
+
+.site-header {
+  width: clamp(790px, 52vw, 960px);
+  max-width: calc(100vw - 40px);
+  height: 72px;
+  padding: 8px 9px 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  overflow: visible;
+  border: 1px solid rgba(251, 253, 254, 0.24);
+  border-radius: 999px;
+  color: var(--nav-cream);
+  background:
+    linear-gradient(112deg, rgba(255, 255, 255, 0.1), transparent 31%), rgba(var(--nav-olive), 0.84);
+  box-shadow:
+    0 20px 54px rgba(25, 47, 65, 0.18),
+    0 5px 16px rgba(25, 47, 65, 0.11),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(24px) saturate(148%);
+  -webkit-backdrop-filter: blur(24px) saturate(148%);
+  isolation: isolate;
+  pointer-events: auto;
+  animation: nav-arrive 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition:
+    width 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    height 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    top 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    padding 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    gap 260ms ease,
+    background 260ms ease,
+    border-color 260ms ease,
+    box-shadow 260ms ease,
+    transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.site-header::before {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at 17% -10%, rgba(255, 255, 255, 0.15), transparent 31%),
+    linear-gradient(
+      100deg,
+      rgba(255, 255, 255, 0.05),
+      transparent 33%,
+      transparent 72%,
+      rgba(255, 255, 255, 0.045)
+    );
+  pointer-events: none;
+  z-index: -1;
+}
+
+.site-header::after {
+  content: '';
+  position: absolute;
+  left: 15%;
+  right: 15%;
+  bottom: -15px;
+  height: 19px;
+  border-radius: 50%;
+  background: rgba(25, 46, 64, 0.16);
+  filter: blur(15px);
+  z-index: -2;
+  pointer-events: none;
+  opacity: 0.82;
+  transition:
+    opacity 220ms ease,
+    filter 220ms ease,
+    left 260ms ease,
+    right 260ms ease;
+}
+
+/* After the opening frame the nav stops being an oversized menu and becomes a useful
+   story HUD. This removes the empty middle area and gives scrolling a visible purpose. */
+.site-header.is-scrolled {
+  width: clamp(700px, 47vw, 850px);
+  height: 66px;
+  top: 9px;
+  padding: 7px 8px;
+  gap: 7px;
+  transform: translateX(-50%);
+  background:
+    linear-gradient(112deg, rgba(255, 255, 255, 0.075), transparent 32%), rgba(33, 61, 84, 0.93);
+  border-color: rgba(251, 253, 254, 0.28);
+  box-shadow:
+    0 18px 48px rgba(23, 42, 58, 0.24),
+    0 4px 16px rgba(23, 42, 58, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.site-header.is-scrolled.is-scrolling {
+  top: 7px;
+  transform: translateX(-50%) translateY(-1px) scale(0.992);
+  box-shadow:
+    0 14px 40px rgba(23, 42, 58, 0.22),
+    0 3px 13px rgba(23, 42, 58, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.site-header.is-scrolled::after {
+  left: 18%;
+  right: 18%;
+  opacity: 0.95;
+  filter: blur(17px);
+}
+
+.site-header.section-discover.is-scrolled {
+  --nav-olive: 49, 61, 38;
+  background:
+    linear-gradient(112deg, rgba(255, 255, 255, 0.075), transparent 32%), rgba(32, 60, 82, 0.94);
+}
+
+.site-header.section-dreams.is-scrolled {
+  --nav-olive: 58, 66, 43;
+  background:
+    linear-gradient(112deg, rgba(255, 255, 255, 0.09), transparent 32%), rgba(35, 66, 91, 0.94);
+}
+
+/* Brand capsule */
+.site-header .brand {
+  min-width: 82px;
+  height: 54px;
+  padding: 0 17px 2px 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex: 0 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  color: #f8fbfe;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.065);
+  font-family: Georgia, serif;
+  font-weight: 700;
+  font-size: 31px;
+  line-height: 1;
+  letter-spacing: -2.8px;
+  text-shadow: 0 1px 12px rgba(10, 32, 51, 0.08);
+  transition:
+    min-width 240ms ease,
+    height 240ms ease,
+    padding 240ms ease,
+    font-size 240ms ease,
+    transform 180ms ease,
+    background 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.site-header.is-scrolled .brand {
+  min-width: 72px;
+  height: 50px;
+  padding-inline: 12px 15px;
+  font-size: 29px;
+}
+
+.site-header .brand:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    0 6px 16px rgba(12, 40, 63, 0.09);
+}
+
+.site-header .brand > span:first-child {
+  color: #cce3f5;
+}
+
+.site-header .brand-star {
+  font-family: sans-serif;
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  font-size: 12px;
+  line-height: 1;
+  letter-spacing: 0;
+  color: #e5f1fa;
+  opacity: 0.95;
+}
+
+.site-header.is-scrolled .brand-star {
+  top: 8px;
+  right: 8px;
+  font-size: 10px;
+}
+
+/* Full navigation: only visible before the story starts moving. */
+.site-header .desktop-nav {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(1px, 0.3vw, 5px);
+  margin: 0;
+  padding: 0 2px;
+}
+
+.site-header .desktop-nav a,
+.site-header .desktop-nav button {
+  min-height: 48px;
+  padding: 0 clamp(11px, 0.72vw, 16px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: rgba(251, 253, 254, 0.92);
+  font-size: clamp(13px, 0.74vw, 15px);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.05px;
+  white-space: nowrap;
+  text-shadow: 0 1px 9px rgba(16, 30, 42, 0.1);
+  transition:
+    color 170ms ease,
+    background 170ms ease,
+    border-color 170ms ease,
+    transform 170ms ease,
+    box-shadow 170ms ease;
+}
+
+.site-header .desktop-nav a::after,
+.site-header .desktop-nav button::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 6px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--nav-lime);
+  box-shadow: 0 0 0 3px rgba(211, 230, 247, 0.08);
+  opacity: 0;
+  transform: translate(-50%, 3px) scale(0.5);
+  transition:
+    opacity 170ms ease,
+    transform 170ms ease;
+}
+
+.site-header .desktop-nav a:hover,
+.site-header .desktop-nav button:hover {
+  color: #fcfeff;
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.05);
+  transform: translateY(-1px);
+}
+
+.site-header .desktop-nav a[aria-current='page'] {
+  color: #fcfeff;
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  font-weight: 600;
+}
+
+.site-header .desktop-nav a[aria-current='page']::after {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+}
+
+/* Tiny 01—05 marker fills the old dead gap while hinting that the home is a story. */
+.nav-story-teaser {
+  width: 58px;
+  height: 36px;
+  padding: 0 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(251, 253, 254, 0.66);
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: 0.6px;
+}
+
+.nav-story-teaser i {
+  width: 12px;
+  height: 1px;
+  display: block;
+  background: rgba(211, 230, 247, 0.58);
+}
+
+/* Scroll context / Story HUD */
+.nav-context {
+  min-width: 0;
+  height: 50px;
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: minmax(160px, 1.35fr) minmax(140px, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 0 8px 0 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.018));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.035);
+  overflow: hidden;
+  animation: nav-context-in 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.nav-context-copy {
+  min-width: 0;
+  padding-left: 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  animation: nav-context-swap 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.nav-context-eyebrow {
+  overflow: hidden;
+  color: rgba(228, 240, 250, 0.78);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 1.05px;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-context-copy strong {
+  overflow: hidden;
+  color: rgba(251, 253, 254, 0.96);
+  font-size: 11px;
+  font-weight: 620;
+  line-height: 1.15;
+  letter-spacing: 0.05px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-progress-block {
+  min-width: 0;
+  height: 38px;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.nav-progress-track {
+  width: 100%;
+  height: 3px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 1px 2px rgba(16, 30, 42, 0.16);
+}
+
+.nav-progress-fill {
+  width: var(--nav-progress, 0%);
+  height: 100%;
+  display: block;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #c8e1f5, #dfedf9);
+  box-shadow: 0 0 8px rgba(211, 230, 247, 0.28);
+  transition: width 120ms linear;
+}
+
+.nav-progress-glow {
+  position: absolute;
+  left: var(--nav-progress, 0%);
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(225, 239, 249, 0.44);
+  filter: blur(5px);
+  transform: translate(-50%, -50%);
+  transition: left 120ms linear;
+}
+
+.nav-story-steps {
+  position: absolute;
+  inset: 0 -3px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.nav-story-steps button {
+  width: 24px;
+  height: 38px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.nav-story-steps button span {
+  width: 5px;
+  height: 5px;
+  display: block;
+  border: 1px solid rgba(251, 253, 254, 0.38);
+  border-radius: 50%;
+  background: #336084;
+  box-shadow: 0 0 0 2px rgba(32, 60, 83, 0.7);
+  transition:
+    width 180ms ease,
+    height 180ms ease,
+    background 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.nav-story-steps button:hover span,
+.nav-story-steps button.is-passed span {
+  background: #c8e1f5;
+  border-color: #d9eaf8;
+}
+
+.nav-story-steps button:hover span {
+  transform: scale(1.35);
+}
+
+.nav-story-steps button.is-active span {
+  width: 8px;
+  height: 8px;
+  background: #dfedf9;
+  border-color: #f6fafd;
+  box-shadow:
+    0 0 0 3px rgba(211, 230, 247, 0.12),
+    0 0 10px rgba(211, 230, 247, 0.28);
+}
+
+.nav-context-count {
+  min-width: 48px;
+  height: 28px;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  color: rgba(251, 253, 254, 0.77);
+  background: rgba(255, 255, 255, 0.055);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.55px;
+  white-space: nowrap;
+}
+
+/* CTA */
+.site-header .nav-cta {
+  min-width: 108px;
+  min-height: 54px;
+  margin: 0;
+  padding: 0 18px 0 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  gap: 13px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 999px;
+  background: rgba(241, 247, 252, 0.98);
+  color: var(--nav-ink);
+  box-shadow:
+    0 8px 19px rgba(18, 33, 46, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.84);
+  font-size: clamp(12px, 0.66vw, 13px);
+  font-weight: 750;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  transition:
+    min-height 240ms ease,
+    transform 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease,
+    color 180ms ease;
+}
+
+.site-header.is-scrolled .nav-cta {
+  min-height: 50px;
+  min-width: 102px;
+}
+
+.site-header .nav-cta svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.8;
+  transition: transform 180ms ease;
+}
+
+.site-header .nav-cta:hover:not(:disabled) {
+  transform: translateY(-1px) scale(1.01);
+  background: #fafcfe;
+  color: #1e384d;
+  box-shadow:
+    0 11px 24px rgba(18, 33, 46, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92);
+}
+
+.site-header .nav-cta:hover:not(:disabled) svg {
+  transform: translate(2px, -2px);
+}
+
+.site-header .nav-cta:disabled {
+  opacity: 0.62;
+}
+
+.site-header a:focus-visible,
+.site-header button:focus-visible {
+  outline: 2px solid #e5f1fa;
+  outline-offset: 3px;
+}
+
+.site-header .menu-toggle,
+.site-header .mobile-menu,
+.nav-mobile-step {
+  display: none;
+}
+
+/* Large desktop: increase typography, but keep the capsule content-dense rather than
+   stretching it into an empty 1200px bar. */
+@media (min-width: 1800px) {
+  :root {
+    --header-space: 108px;
+  }
+
+  .site-header {
+    width: min(1040px, calc(100vw - 64px));
+    height: 76px;
+    top: 17px;
+    padding: 9px 10px;
+    gap: 9px;
+  }
+
+  .site-header.is-scrolled {
+    width: min(950px, calc(100vw - 64px));
+    height: 68px;
+    top: 10px;
+    padding: 8px 9px;
+  }
+
+  .site-header.is-scrolled.is-scrolling {
+    top: 8px;
+  }
+
+  .site-header .brand {
+    min-width: 88px;
+    height: 58px;
+    font-size: 33px;
+  }
+
+  .site-header.is-scrolled .brand {
+    min-width: 76px;
+    height: 52px;
+    font-size: 30px;
+  }
+
+  .site-header .desktop-nav a,
+  .site-header .desktop-nav button {
+    min-height: 52px;
+    padding-inline: 16px;
+    font-size: 15px;
+  }
+
+  .site-header .nav-cta {
+    min-width: 116px;
+    min-height: 58px;
+    padding-inline: 20px 18px;
+    font-size: 13px;
+  }
+
+  .site-header.is-scrolled .nav-cta {
+    min-width: 110px;
+    min-height: 52px;
+  }
+
+  .nav-context {
+    height: 52px;
+    grid-template-columns: minmax(200px, 1.4fr) minmax(170px, 1fr) auto;
+    gap: 17px;
+  }
+
+  .nav-context-eyebrow {
+    font-size: 9px;
+  }
+
+  .nav-context-copy strong {
+    font-size: 13px;
+  }
+
+  .nav-context-count {
+    min-width: 52px;
+    height: 30px;
+    font-size: 10px;
+  }
+}
+
+@media (min-width: 2200px) {
+  :root {
+    --header-space: 112px;
+  }
+
+  .site-header {
+    width: min(1180px, calc(100vw - 80px));
+    height: 80px;
+  }
+
+  .site-header.is-scrolled {
+    width: min(1080px, calc(100vw - 80px));
+    height: 70px;
+  }
+
+  .site-header .brand {
+    min-width: 94px;
+    height: 60px;
+    font-size: 35px;
+  }
+
+  .site-header.is-scrolled .brand {
+    min-width: 80px;
+    height: 54px;
+    font-size: 31px;
+  }
+
+  .site-header .desktop-nav a,
+  .site-header .desktop-nav button {
+    min-height: 54px;
+    padding-inline: 19px;
+    font-size: 16px;
+  }
+
+  .site-header .nav-cta {
+    min-width: 124px;
+    min-height: 60px;
+    padding-inline: 22px 20px;
+    font-size: 14px;
+  }
+
+  .site-header.is-scrolled .nav-cta {
+    min-width: 116px;
+    min-height: 54px;
+    font-size: 13px;
+  }
+
+  .nav-context {
+    height: 54px;
+    grid-template-columns: minmax(230px, 1.45fr) minmax(190px, 1fr) auto;
+    gap: 20px;
+  }
+
+  .nav-context-eyebrow {
+    font-size: 10px;
+  }
+
+  .nav-context-copy strong {
+    font-size: 14px;
+  }
+
+  .nav-context-count {
+    min-width: 58px;
+    height: 32px;
+    font-size: 11px;
+  }
+}
+
+/* Compact laptop */
+@media (max-width: 1180px) {
+  :root {
+    --header-space: 94px;
+  }
+
+  .site-header {
+    width: min(760px, calc(100vw - 32px));
+    height: 66px;
+    top: 13px;
+    padding: 7px 8px;
+  }
+
+  .site-header.is-scrolled {
+    width: min(700px, calc(100vw - 32px));
+    height: 62px;
+    top: 8px;
+    padding: 6px 7px;
+  }
+
+  .site-header .brand {
+    min-width: 72px;
+    height: 50px;
+    font-size: 29px;
+  }
+
+  .site-header.is-scrolled .brand {
+    min-width: 66px;
+    height: 48px;
+    font-size: 27px;
+  }
+
+  .site-header .desktop-nav {
+    gap: 0;
+    padding-inline: 0;
+  }
+
+  .site-header .desktop-nav a,
+  .site-header .desktop-nav button {
+    min-height: 46px;
+    padding-inline: 10px;
+    font-size: 12px;
+  }
+
+  .nav-story-teaser {
+    width: 52px;
+    padding-inline: 7px;
+    gap: 4px;
+  }
+
+  .site-header .nav-cta {
+    min-width: 96px;
+    min-height: 50px;
+    padding-inline: 15px 14px;
+    font-size: 10px;
+    gap: 9px;
+  }
+
+  .site-header.is-scrolled .nav-cta {
+    min-width: 92px;
+    min-height: 48px;
+  }
+
+  .nav-context {
+    height: 48px;
+    grid-template-columns: minmax(145px, 1.2fr) minmax(118px, 0.9fr) auto;
+    gap: 10px;
+    padding-inline: 4px 6px;
+  }
+
+  .nav-context-copy {
+    padding-left: 6px;
+  }
+
+  .nav-context-copy strong {
+    font-size: 10px;
+  }
+
+  .nav-context-count {
+    min-width: 44px;
+    padding-inline: 6px;
+    font-size: 8px;
+  }
+}
+
+/* Mobile keeps the capsule simple. The current story step becomes a tiny useful badge,
+   while the full chapter HUD is hidden to avoid squeezing text. */
+@media (max-width: 860px) {
+  :root {
+    --header-space: 82px;
+  }
+
+  .site-header,
+  .site-header.is-scrolled {
+    width: calc(100vw - 28px);
+    max-width: 620px;
+    height: 58px;
+    top: 11px;
+    padding: 6px;
+    gap: 6px;
+  }
+
+  .site-header.is-scrolled {
+    top: 8px;
+    transform: translateX(-50%);
+  }
+
+  .site-header.is-scrolled.is-scrolling {
+    top: 7px;
+    transform: translateX(-50%) translateY(-1px) scale(0.992);
+  }
+
+  .site-header .brand,
+  .site-header.is-scrolled .brand {
+    min-width: 64px;
+    height: 46px;
+    padding-inline: 11px 13px;
+    font-size: 27px;
+    order: 1;
+  }
+
+  .site-header .brand-star,
+  .site-header.is-scrolled .brand-star {
+    top: 7px;
+    right: 7px;
+    font-size: 10px;
+  }
+
+  .site-header .desktop-nav,
+  .site-header .nav-context,
+  .nav-story-teaser {
+    display: none;
+  }
+
+  .nav-mobile-step {
+    min-width: 48px;
+    height: 34px;
+    padding: 0 8px;
+    align-items: center;
+    justify-content: center;
+    order: 2;
+    border: 1px solid rgba(255, 255, 255, 0.085);
+    border-radius: 999px;
+    color: rgba(239, 246, 252, 0.75);
+    background: rgba(255, 255, 255, 0.055);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+
+  .site-header.is-story-mode .nav-mobile-step {
+    display: inline-flex;
+  }
+
+  .site-header .nav-cta,
+  .site-header.is-scrolled .nav-cta {
+    min-width: 94px;
+    min-height: 46px;
+    margin-left: auto;
+    margin-right: 0;
+    padding: 0 15px 0 16px;
+    gap: 9px;
+    font-size: 10px;
+    order: 3;
+  }
+
+  .site-header .nav-cta svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .site-header .menu-toggle {
+    width: 46px;
+    height: 46px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    order: 4;
+    border: 1px solid rgba(255, 255, 255, 0.13);
+    border-radius: 50%;
+    color: #fbfdfe;
+    background: rgba(255, 255, 255, 0.075);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    transition:
+      background 180ms ease,
+      transform 180ms ease,
+      border-color 180ms ease;
+  }
+
+  .site-header .menu-toggle:hover {
+    background: rgba(255, 255, 255, 0.115);
+    border-color: rgba(255, 255, 255, 0.18);
+    transform: translateY(-1px);
+  }
+
+  .site-header .menu-toggle svg {
+    width: 19px;
+    height: 19px;
+  }
+
+  .site-header .mobile-menu {
+    position: absolute;
+    top: calc(100% + 11px);
+    left: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    overflow: hidden;
+    border: 1px solid rgba(244, 249, 253, 0.2);
+    border-radius: 25px;
+    color: #eef5fc;
+    background:
+      linear-gradient(125deg, rgba(255, 255, 255, 0.07), transparent 38%), rgba(31, 58, 80, 0.96);
+    box-shadow:
+      0 24px 54px rgba(19, 35, 48, 0.24),
+      inset 0 1px 0 rgba(255, 255, 255, 0.14);
+    backdrop-filter: blur(26px) saturate(145%);
+    -webkit-backdrop-filter: blur(26px) saturate(145%);
+    transform-origin: top center;
+    animation: menu-open 190ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .site-header .mobile-menu a,
+  .site-header .mobile-menu button {
+    min-height: 50px;
+    padding: 0 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border: 1px solid transparent;
+    border-radius: 16px;
+    color: rgba(251, 253, 254, 0.9);
+    font-size: 13px;
+    font-weight: 500;
+    text-align: left;
+    transition:
+      background 160ms ease,
+      color 160ms ease,
+      border-color 160ms ease;
+  }
+
+  .site-header .mobile-menu a + a,
+  .site-header .mobile-menu a + button,
+  .site-header .mobile-menu button + button {
+    margin-top: 2px;
+  }
+
+  .site-header .mobile-menu a:hover,
+  .site-header .mobile-menu button:hover,
+  .site-header .mobile-menu a[aria-current='page'] {
+    color: #fcfeff;
+    background: rgba(255, 255, 255, 0.09);
+    border-color: rgba(255, 255, 255, 0.045);
+  }
+
+  .site-header .mobile-menu svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .site-header .mobile-menu .mobile-wallet-cta {
+    margin-top: 8px;
+    min-height: 50px;
+    padding-inline: 15px;
+    color: #1f394f;
+    background: #ecf4fb;
+    font-weight: 700;
+  }
+}
+
+@media (max-width: 440px) {
+  :root {
+    --header-space: 78px;
+  }
+
+  .site-header,
+  .site-header.is-scrolled {
+    width: calc(100vw - 20px);
+    height: 56px;
+    top: 9px;
+    padding: 5px;
+  }
+
+  .site-header.is-scrolled {
+    top: 7px;
+  }
+
+  .site-header .brand,
+  .site-header.is-scrolled .brand {
+    min-width: 60px;
+    height: 44px;
+    font-size: 26px;
+  }
+
+  .nav-mobile-step {
+    min-width: 42px;
+    height: 30px;
+    padding-inline: 6px;
+    font-size: 8px;
+  }
+
+  .site-header .nav-cta,
+  .site-header.is-scrolled .nav-cta {
+    min-width: 84px;
+    min-height: 44px;
+    padding-inline: 12px 11px;
+    gap: 7px;
+    font-size: 9px;
+  }
+
+  .site-header .menu-toggle {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .site-header {
+    background: rgba(35, 66, 91, 0.97);
+  }
+
+  .site-header .mobile-menu {
+    background: rgba(31, 58, 80, 0.98);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-header,
+  .site-header *,
+  .site-header *::before,
+  .site-header *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+@keyframes nav-arrive {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+@keyframes nav-context-in {
+  from {
+    opacity: 0;
+    transform: translateY(-3px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes nav-context-swap {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes menu-open {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   V8 — interactive story navigator + manual compact mode
+   - The chapter copy is now an obvious, clickable control after scrolling.
+   - A quick-navigation tray exposes all sections and all five story chapters.
+   - The capsule can be manually collapsed to a compact status pill and reopened.
+   -------------------------------------------------------------------------- */
+
+.nav-story-teaser {
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    color 170ms ease,
+    background 170ms ease,
+    border-color 170ms ease;
+}
+
+.nav-story-teaser:hover,
+.nav-story-teaser[aria-expanded='true'] {
+  color: rgba(251, 253, 254, 0.94);
+  background: rgba(255, 255, 255, 0.055);
+  border-radius: 999px;
+}
+
+.nav-context-trigger {
+  min-width: 0;
+  height: 42px;
+  padding: 0 6px 0 2px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 24px;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid transparent;
+  border-radius: 18px;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background 180ms ease,
+    border-color 180ms ease,
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.site-header.is-settled .nav-context-trigger {
+  background: rgba(255, 255, 255, 0.035);
+  border-color: rgba(255, 255, 255, 0.025);
+}
+
+.nav-context-trigger:hover,
+.nav-context-trigger[aria-expanded='true'] {
+  background: rgba(255, 255, 255, 0.085);
+  border-color: rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045);
+}
+
+.nav-context-trigger:hover {
+  transform: translateY(-1px);
+}
+
+.nav-context-trigger .nav-context-copy {
+  padding-left: 6px;
+}
+
+.nav-context-chevron {
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.045);
+  opacity: 0.72;
+  transition:
+    opacity 180ms ease,
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    background 180ms ease;
+}
+
+.nav-context-chevron::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-right: 1.5px solid rgba(244, 249, 253, 0.92);
+  border-bottom: 1.5px solid rgba(244, 249, 253, 0.92);
+  transform: translateY(-1px) rotate(45deg);
+}
+
+.site-header.is-settled .nav-context-chevron {
+  opacity: 1;
+}
+
+.nav-context-trigger[aria-expanded='true'] .nav-context-chevron {
+  transform: rotate(180deg);
+  background: rgba(211, 230, 247, 0.11);
+}
+
+/* Story dots remain direct controls. The larger invisible hit-area makes them
+   comfortable to click, and the tooltip explains where every dot goes. */
+.nav-story-steps {
+  inset: 0 -7px;
+}
+
+.nav-story-steps button {
+  width: 34px;
+  height: 42px;
+  position: relative;
+}
+
+.nav-story-steps button::after {
+  content: attr(data-label);
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 8px);
+  z-index: 6;
+  padding: 6px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 999px;
+  color: #f4faff;
+  background: rgba(27, 51, 71, 0.96);
+  box-shadow: 0 8px 22px rgba(18, 33, 46, 0.2);
+  font-size: 8px;
+  font-weight: 650;
+  letter-spacing: 0.35px;
+  line-height: 1;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -5px) scale(0.97);
+  transition:
+    opacity 150ms ease,
+    transform 150ms ease;
+}
+
+.nav-story-steps button:hover::after,
+.nav-story-steps button:focus-visible::after {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+}
+
+/* Manual collapse / expand control */
+.nav-collapse-toggle {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+  color: rgba(251, 253, 254, 0.86);
+  background: rgba(255, 255, 255, 0.055);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045);
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    background 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.nav-collapse-toggle svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.65;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.nav-collapse-toggle:hover {
+  color: #fbfdfe;
+  background: rgba(255, 255, 255, 0.11);
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.065),
+    0 7px 18px rgba(18, 34, 47, 0.1);
+  transform: translateY(-1px);
+}
+
+/* Compact state deliberately keeps the current position visible, so collapsing
+   does not make the user lose their place in the story. */
+.site-header.is-collapsed,
+.site-header.is-collapsed.is-scrolled,
+.site-header.is-collapsed.is-scrolling {
+  width: 320px;
+  height: 62px;
+  top: 10px;
+  padding: 6px;
+  gap: 6px;
+  transform: translateX(-50%);
+  background:
+    linear-gradient(112deg, rgba(255, 255, 255, 0.08), transparent 34%), rgba(33, 61, 84, 0.94);
+  box-shadow:
+    0 16px 42px rgba(23, 42, 58, 0.21),
+    0 4px 14px rgba(23, 42, 58, 0.11),
+    inset 0 1px 0 rgba(255, 255, 255, 0.17);
+}
+
+.site-header.is-collapsed .brand,
+.site-header.is-collapsed.is-scrolled .brand {
+  min-width: 68px;
+  width: 68px;
+  height: 50px;
+  padding-inline: 11px 13px;
+  font-size: 28px;
+}
+
+.site-header.is-collapsed .brand-star,
+.site-header.is-collapsed.is-scrolled .brand-star {
+  top: 8px;
+  right: 8px;
+  font-size: 9px;
+}
+
+.nav-collapsed-context {
+  min-width: 0;
+  height: 48px;
+  padding: 0 11px;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 3px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.045);
+  border-radius: 18px;
+  color: inherit;
+  background: rgba(255, 255, 255, 0.04);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background 170ms ease,
+    border-color 170ms ease,
+    transform 170ms ease;
+}
+
+.nav-collapsed-context:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.075);
+  transform: translateY(-1px);
+}
+
+.nav-collapsed-context span {
+  color: rgba(223, 237, 249, 0.72);
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.9px;
+  line-height: 1;
+}
+
+.nav-collapsed-context strong {
+  max-width: 100%;
+  overflow: hidden;
+  color: rgba(251, 253, 254, 0.96);
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.site-header.is-collapsed .nav-collapse-toggle {
+  width: 48px;
+  height: 48px;
+  background: rgba(238, 245, 252, 0.1);
+}
+
+/* Quick navigation tray. It appears only on deliberate click, so stopping the
+   scroll leaves the HUD fully interactive instead of auto-hiding anything. */
+.nav-quick-panel {
+  width: min(820px, calc(100vw - 40px));
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+  position: absolute;
+  top: calc(100% + 11px);
+  left: 50%;
+  z-index: 15;
+  overflow: hidden;
+  border: 1px solid rgba(244, 249, 253, 0.18);
+  border-radius: 26px;
+  color: #eef5fc;
+  background:
+    linear-gradient(125deg, rgba(255, 255, 255, 0.07), transparent 38%), rgba(28, 52, 72, 0.965);
+  box-shadow:
+    0 28px 64px rgba(19, 35, 48, 0.26),
+    0 6px 20px rgba(19, 35, 48, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.13);
+  backdrop-filter: blur(28px) saturate(145%);
+  -webkit-backdrop-filter: blur(28px) saturate(145%);
+  transform: translateX(-50%);
+  transform-origin: top center;
+  animation: nav-panel-open 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.nav-quick-head {
+  padding: 3px 4px 1px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.nav-quick-head span {
+  color: rgba(218, 234, 248, 0.68);
+  font-size: 8px;
+  font-weight: 750;
+  letter-spacing: 1.2px;
+}
+
+.nav-quick-head strong {
+  color: rgba(251, 253, 254, 0.78);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.05px;
+}
+
+.nav-quick-sections {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.nav-quick-sections button {
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.055);
+  border-radius: 14px;
+  color: rgba(251, 253, 254, 0.8);
+  background: rgba(255, 255, 255, 0.035);
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 550;
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.nav-quick-sections button:hover,
+.nav-quick-sections button.is-active {
+  color: #fcfdfe;
+  background: rgba(255, 255, 255, 0.085);
+  border-color: rgba(255, 255, 255, 0.08);
+  transform: translateY(-1px);
+}
+
+.nav-quick-sections button.is-active {
+  box-shadow: inset 0 -2px 0 rgba(206, 228, 246, 0.55);
+}
+
+.nav-quick-divider {
+  height: 1px;
+  margin-inline: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+}
+
+.nav-quick-chapters {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.nav-quick-chapters button {
+  min-width: 0;
+  min-height: 92px;
+  padding: 11px 10px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 5px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.055);
+  border-radius: 17px;
+  color: rgba(251, 253, 254, 0.8);
+  background: rgba(255, 255, 255, 0.035);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background 170ms ease,
+    border-color 170ms ease,
+    transform 170ms ease,
+    box-shadow 170ms ease;
+}
+
+.nav-quick-chapters button::before {
+  content: '';
+  width: 46px;
+  height: 46px;
+  position: absolute;
+  right: -15px;
+  bottom: -17px;
+  border-radius: 50%;
+  background: rgba(206, 228, 246, 0.065);
+  transition:
+    transform 220ms ease,
+    background 220ms ease;
+}
+
+.nav-quick-chapters button:hover,
+.nav-quick-chapters button.is-active {
+  background: rgba(255, 255, 255, 0.075);
+  border-color: rgba(220, 236, 248, 0.13);
+  transform: translateY(-2px);
+  box-shadow: 0 9px 18px rgba(18, 33, 46, 0.08);
+}
+
+.nav-quick-chapters button:hover::before,
+.nav-quick-chapters button.is-active::before {
+  background: rgba(206, 228, 246, 0.12);
+  transform: scale(1.2);
+}
+
+.nav-quick-chapters button > span {
+  color: rgba(212, 231, 247, 0.72);
+  font-size: 8px;
+  font-weight: 750;
+  letter-spacing: 0.8px;
+}
+
+.nav-quick-chapters button > strong {
+  max-width: 100%;
+  overflow: hidden;
+  color: rgba(251, 253, 254, 0.96);
+  font-size: 11px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-quick-chapters button > small {
+  max-width: 100%;
+  color: rgba(251, 253, 254, 0.52);
+  font-size: 7px;
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: 0.25px;
+}
+
+.nav-quick-chapters button.is-active {
+  box-shadow:
+    inset 0 -2px 0 rgba(206, 228, 246, 0.62),
+    0 9px 18px rgba(18, 33, 46, 0.08);
+}
+
+.mobile-story-chapters {
+  display: none;
+}
+
+@media (min-width: 1800px) {
+  .nav-collapse-toggle {
+    width: 46px;
+    height: 46px;
+  }
+
+  .site-header.is-collapsed,
+  .site-header.is-collapsed.is-scrolled,
+  .site-header.is-collapsed.is-scrolling {
+    width: 350px;
+    height: 66px;
+  }
+
+  .nav-collapsed-context {
+    height: 52px;
+  }
+
+  .nav-collapsed-context span {
+    font-size: 8px;
+  }
+
+  .nav-collapsed-context strong {
+    font-size: 11px;
+  }
+}
+
+@media (min-width: 2200px) {
+  .site-header.is-collapsed,
+  .site-header.is-collapsed.is-scrolled,
+  .site-header.is-collapsed.is-scrolling {
+    width: 380px;
+    height: 68px;
+  }
+
+  .nav-collapsed-context strong {
+    font-size: 12px;
+  }
+
+  .nav-quick-panel {
+    width: 900px;
+    padding: 16px;
+    gap: 14px;
+  }
+
+  .nav-quick-chapters button {
+    min-height: 100px;
+  }
+
+  .nav-quick-chapters button > strong {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 1180px) and (min-width: 861px) {
+  .nav-collapse-toggle {
+    width: 40px;
+    height: 40px;
+  }
+
+  .nav-context-trigger {
+    grid-template-columns: minmax(0, 1fr) 20px;
+    padding-right: 3px;
+  }
+
+  .nav-context-chevron {
+    width: 20px;
+    height: 20px;
+  }
+
+  .nav-quick-panel {
+    width: min(720px, calc(100vw - 32px));
+  }
+
+  .nav-quick-chapters button {
+    min-height: 84px;
+    padding-inline: 8px;
+  }
+
+  .nav-quick-chapters button > small {
+    font-size: 6.5px;
+  }
+}
+
+@media (max-width: 860px) {
+  /* Keep mobile readable: chapter selection lives inside the menu, while the
+     collapse control replaces the tiny story badge that previously consumed space. */
+  .nav-mobile-step {
+    display: none !important;
+  }
+
+  .site-header .nav-collapse-toggle {
+    width: 42px;
+    height: 42px;
+    order: 5;
+  }
+
+  .site-header .nav-collapse-toggle svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .site-header.is-collapsed,
+  .site-header.is-collapsed.is-scrolled,
+  .site-header.is-collapsed.is-scrolling {
+    width: min(240px, calc(100vw - 28px));
+    height: 58px;
+    top: 8px;
+    padding: 6px;
+  }
+
+  .site-header.is-collapsed .brand,
+  .site-header.is-collapsed.is-scrolled .brand {
+    min-width: 62px;
+    width: 62px;
+    height: 46px;
+    font-size: 26px;
+    order: 1;
+  }
+
+  .site-header.is-collapsed .nav-collapsed-context {
+    height: 44px;
+    padding-inline: 9px;
+    order: 2;
+  }
+
+  .site-header.is-collapsed .nav-collapse-toggle {
+    width: 44px;
+    height: 44px;
+    order: 3;
+  }
+
+  .nav-quick-panel {
+    display: none;
+  }
+
+  .mobile-story-chapters {
+    margin: 7px 2px 2px;
+    padding: 10px;
+    display: grid;
+    gap: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.055);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.035);
+  }
+
+  .mobile-story-chapters > span {
+    color: rgba(218, 234, 248, 0.62);
+    font-size: 7px;
+    font-weight: 750;
+    letter-spacing: 1px;
+  }
+
+  .mobile-story-chapters > div {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 5px;
+  }
+
+  .site-header .mobile-menu .mobile-story-chapters button {
+    min-height: 34px;
+    margin: 0;
+    padding: 0;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.055);
+    border-radius: 11px;
+    background: rgba(255, 255, 255, 0.035);
+    color: rgba(251, 253, 254, 0.66);
+    font-size: 8px;
+    font-weight: 700;
+  }
+
+  .site-header .mobile-menu .mobile-story-chapters button.is-active {
+    color: #24435d;
+    background: #e0eef9;
+    border-color: #eaf3fb;
+  }
+}
+
+@media (max-width: 440px) {
+  .site-header .nav-collapse-toggle {
+    width: 40px;
+    height: 40px;
+  }
+
+  .site-header .nav-cta,
+  .site-header.is-scrolled .nav-cta {
+    min-width: 78px;
+    padding-inline: 10px 9px;
+  }
+
+  .site-header .menu-toggle {
+    width: 40px;
+    height: 40px;
+  }
+
+  .site-header.is-collapsed,
+  .site-header.is-collapsed.is-scrolled,
+  .site-header.is-collapsed.is-scrolling {
+    width: min(224px, calc(100vw - 20px));
+    height: 56px;
+  }
+
+  .site-header.is-collapsed .brand,
+  .site-header.is-collapsed.is-scrolled .brand {
+    min-width: 58px;
+    width: 58px;
+    height: 44px;
+    font-size: 25px;
+  }
+
+  .site-header.is-collapsed .nav-collapse-toggle {
+    width: 42px;
+    height: 42px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-quick-panel,
+  .nav-context-trigger,
+  .nav-collapse-toggle,
+  .nav-collapsed-context,
+  .nav-story-steps button::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+@keyframes nav-panel-open {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-7px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+/* Final V8 density tuning after multi-viewport QA. */
+@media (min-width: 1181px) and (max-width: 1799px) {
+  .site-header.is-scrolled:not(.is-collapsed) {
+    width: clamp(760px, 51vw, 900px);
+    height: 68px;
+  }
+}
+
+@media (min-width: 2200px) {
+  .site-header:not(.is-collapsed) {
+    width: min(1240px, calc(100vw - 88px));
+    height: 82px;
+  }
+
+  .site-header.is-scrolled:not(.is-collapsed),
+  .site-header.is-scrolled.is-scrolling:not(.is-collapsed) {
+    width: min(1160px, calc(100vw - 88px));
+    height: 76px;
+  }
+
+  .site-header:not(.is-collapsed) .brand {
+    min-width: 96px;
+    height: 62px;
+    font-size: 35px;
+  }
+
+  .site-header.is-scrolled:not(.is-collapsed) .brand {
+    min-width: 84px;
+    height: 58px;
+    font-size: 32px;
+  }
+
+  .site-header.is-scrolled:not(.is-collapsed) .nav-context {
+    height: 58px;
+    grid-template-columns: minmax(245px, 1.45fr) minmax(215px, 1fr) auto;
+    gap: 22px;
+  }
+
+  .site-header.is-scrolled:not(.is-collapsed) .nav-context-trigger {
+    height: 48px;
+  }
+
+  .site-header.is-scrolled:not(.is-collapsed) .nav-context-eyebrow {
+    font-size: 10px;
+  }
+
+  .site-header.is-scrolled:not(.is-collapsed) .nav-context-copy strong {
+    font-size: 15px;
+  }
+
+  .site-header.is-scrolled:not(.is-collapsed) .nav-context-count {
+    min-width: 62px;
+    height: 34px;
+    font-size: 11px;
+  }
+
+  .site-header.is-scrolled:not(.is-collapsed) .nav-cta {
+    min-width: 124px;
+    min-height: 58px;
+    font-size: 14px;
+  }
+
+  .site-header:not(.is-collapsed) .nav-collapse-toggle {
+    width: 50px;
+    height: 50px;
+  }
+
+  .nav-quick-panel {
+    width: 1020px;
+  }
+
+  .nav-quick-head span {
+    font-size: 9px;
+  }
+
+  .nav-quick-head strong,
+  .nav-quick-sections button {
+    font-size: 11px;
+  }
+
+  .nav-quick-chapters button {
+    min-height: 108px;
+    padding: 13px 12px 11px;
+  }
+
+  .nav-quick-chapters button > span,
+  .nav-quick-chapters button > small {
+    font-size: 8px;
+  }
+
+  .nav-quick-chapters button > strong {
+    font-size: 13px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   V9 — reversible section state + auto-compact motion language
+
+   Scrolling should get out of the way. The navigator therefore compresses into
+   a small context pill only while the page is actively moving, then restores the
+   full interactive HUD shortly after the scroll settles. Manual compact mode is
+   still persistent and is intentionally kept separate via .is-manual-collapsed.
+   -------------------------------------------------------------------------- */
+.site-header.is-auto-compact {
+  width: clamp(300px, 24vw, 344px);
+  height: 60px;
+  top: 8px;
+  padding: 5px;
+  gap: 5px;
+  background:
+    linear-gradient(112deg, rgba(255, 255, 255, 0.07), transparent 36%), rgba(31, 57, 79, 0.94);
+  border-color: rgba(251, 253, 254, 0.22);
+  box-shadow:
+    0 13px 34px rgba(23, 42, 58, 0.19),
+    0 3px 11px rgba(23, 42, 58, 0.09),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  transition-duration: 190ms;
+}
+
+.site-header.is-auto-compact::after {
+  left: 24%;
+  right: 24%;
+  bottom: -11px;
+  opacity: 0.68;
+  filter: blur(13px);
+}
+
+.site-header.is-auto-compact .brand,
+.site-header.is-auto-compact.is-scrolled .brand {
+  min-width: 64px;
+  width: 64px;
+  height: 48px;
+  padding-inline: 10px 12px;
+  font-size: 27px;
+}
+
+.site-header.is-auto-compact .nav-collapsed-context {
+  height: 46px;
+  padding-inline: 10px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.site-header.is-auto-compact .nav-collapse-toggle {
+  width: 46px;
+  height: 46px;
+}
+
+/* A manually compacted navigator is calmer than the transient auto state. */
+.site-header.is-manual-collapsed {
+  transition-duration: 260ms;
+}
+
+/* When the HUD returns after scrolling, settle it with a tiny opacity/vertical
+   recovery instead of a scale pop. This keeps text crisp on large screens. */
+.site-header.is-scrolled.is-settled:not(.is-collapsed) .nav-context,
+.site-header.is-scrolled.is-settled:not(.is-collapsed) .nav-cta,
+.site-header.is-scrolled.is-settled:not(.is-collapsed) .nav-collapse-toggle {
+  animation: nav-v9-settle-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes nav-v9-settle-in {
+  from {
+    opacity: 0.72;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (min-width: 1800px) {
+  .site-header.is-auto-compact {
+    width: 360px;
+    height: 64px;
+  }
+}
+
+@media (min-width: 2200px) {
+  .site-header.is-auto-compact {
+    width: 392px;
+    height: 66px;
+  }
+
+  .site-header.is-auto-compact .nav-collapsed-context strong {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 860px) {
+  .site-header.is-auto-compact {
+    width: min(232px, calc(100vw - 24px));
+    height: 56px;
+    top: 7px;
+  }
+
+  .site-header.is-auto-compact .brand,
+  .site-header.is-auto-compact.is-scrolled .brand {
+    min-width: 58px;
+    width: 58px;
+    height: 44px;
+    font-size: 25px;
+  }
+
+  .site-header.is-auto-compact .nav-collapsed-context {
+    height: 42px;
+    padding-inline: 8px;
+  }
+
+  .site-header.is-auto-compact .nav-collapse-toggle {
+    width: 42px;
+    height: 42px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-header.is-auto-compact,
+  .site-header.is-scrolled.is-settled:not(.is-collapsed) .nav-context,
+  .site-header.is-scrolled.is-settled:not(.is-collapsed) .nav-cta,
+  .site-header.is-scrolled.is-settled:not(.is-collapsed) .nav-collapse-toggle {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+}

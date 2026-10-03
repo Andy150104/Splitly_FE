@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output and generated files
+.next/
+dist/
+out/
+next-env.d.ts
+*.tsbuildinfo
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+*.local
+*.pem
+*.key
+*.pfx
+*.p12
+.npmrc
+
+# Test reports and visual review captures (keep scripts/ and tests/)
+QA/
+coverage/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# Tool caches and deployment state
+.reference/
+.cache/
+.turbo/
+.vercel/
+.eslintcache
+*.log
+
+# Editor and OS files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+Desktop.ini
