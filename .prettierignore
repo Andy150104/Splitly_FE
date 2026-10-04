@@ -8,3 +8,6 @@ playwright-report
 .reference
 .cache
 package-lock.json
+QA
+coverage
+*.tsbuildinfo

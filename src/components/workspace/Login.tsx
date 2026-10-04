@@ -12,16 +12,20 @@ import { Notice } from '../ui/Feedback'
 import { Reveal } from '../ui/Motion'
 import Brand from '../ui/Brand'
 import Atmosphere from '../ui/Atmosphere'
+import { useDeferredScene } from '../../hooks/useDeferredScene'
 
-const LoginScene = dynamic(() => import('./LoginScene'), {
-  ssr: false,
-  loading: () => (
+function ScenePlaceholder() {
+  return (
     <div className="login-sculpture login-spatial-scene login-scene-loading" aria-hidden="true">
       <div className="login-sculpture-fallback">
         <Brand compact />
       </div>
     </div>
-  ),
+  )
+}
+const LoginScene = dynamic(() => import('./LoginScene'), {
+  ssr: false,
+  loading: ScenePlaceholder,
 })
 
 type GoogleWindow = Window & {
@@ -59,6 +63,7 @@ export default function Login({
   const googleRef = useRef<HTMLDivElement>(null)
   const sceneFrame = useRef<HTMLDivElement>(null)
   const lock = useRef(false)
+  const sceneReady = useDeferredScene(true, '(min-width: 901px)')
   async function act(path: string, body: unknown, finish = true) {
     if (lock.current) return
     lock.current = true
@@ -118,7 +123,7 @@ export default function Login({
           <Link href="/" className="ws-brand" aria-label="Splitly — Trang chủ">
             <Brand />
           </Link>
-          <Reveal className="ws-login-intro" delay={0.08}>
+          <Reveal className="ws-login-intro" initiallyVisible>
             <span className="ws-eyebrow">KHOẢN CHUNG, CÙNG NHAU.</span>
             <h1>
               Tiền chung.
@@ -131,7 +136,7 @@ export default function Login({
               Splitly giữ mọi khoản chung thật rõ ràng.
             </p>
             <div className="ws-login-spatial-space">
-              <LoginScene frameRef={sceneFrame} />
+              {sceneReady ? <LoginScene frameRef={sceneFrame} /> : <ScenePlaceholder />}
             </div>
             <div className="ws-login-ledger">
               <div>
@@ -154,7 +159,7 @@ export default function Login({
           <Link href="/" className="ws-back">
             ← Về trang chủ
           </Link>
-          <Reveal className="ws-auth-card">
+          <Reveal className="ws-auth-card" initiallyVisible>
             <span className="ws-eyebrow">KHÔNG GIAN CỦA BẠN</span>
             <h2>Đăng nhập.</h2>
             <p>Tiếp tục với Google hoặc nhận mã qua email.</p>

@@ -2,7 +2,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { ContactShadows, RoundedBox } from '@react-three/drei'
 import * as THREE from 'three'
-import { flightY, storyRange } from '../lib/story'
+import { flightY, storyRange, storyChapters } from '../lib/story'
 import type { StoryDemo } from '../lib/story'
 import SplitToken from './three/SplitToken'
 import LandingLighting from './three/LandingLighting'
@@ -781,6 +781,39 @@ function SceneRig({
   return <group ref={rig}>{children}</group>
 }
 
+// Mount upcoming chapters near their scroll boundary, then retain visited scenes.
+// The opening wallet avoids compiling the glass shader and building every label at once.
+function SecondaryScenes({
+  progress,
+  demo,
+}: {
+  progress: React.RefObject<number>
+  demo: StoryDemo
+}) {
+  const visited = useRef(0)
+  const [mounted, setMounted] = useState(0)
+  useFrame(() => {
+    let next = visited.current
+    storyChapters.slice(1).forEach((chapter, index) => {
+      if (progress.current >= chapter.from - 0.035 && progress.current <= chapter.to) {
+        next |= 1 << index
+      }
+    })
+    if (next !== visited.current) {
+      visited.current = next
+      setMounted(next)
+    }
+  })
+  return (
+    <>
+      {!!(mounted & 1) && <SharingScene progress={progress} people={demo.people} />}
+      {!!(mounted & 2) && <BillScene progress={progress} paid={demo.paid} />}
+      {!!(mounted & 4) && <InsightsScene progress={progress} />}
+      {!!(mounted & 8) && <SavingsScene progress={progress} saved={demo.saved} />}
+    </>
+  )
+}
+
 export default function WalletScene({
   reducedMotion,
   progress,
@@ -841,14 +874,7 @@ export default function WalletScene({
               progress={progress}
               inspectionTurn={inspectionTurn}
             />
-            {!reducedMotion && (
-              <>
-                <SharingScene progress={progress} people={demo.people} />
-                <BillScene progress={progress} paid={demo.paid} />
-                <InsightsScene progress={progress} />
-                <SavingsScene progress={progress} saved={demo.saved} />
-              </>
-            )}
+            {!reducedMotion && <SecondaryScenes progress={progress} demo={demo} />}
           </SceneRig>
           <ContactShadows
             position={[0, -1.8, 0]}

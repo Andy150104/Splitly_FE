@@ -2,6 +2,8 @@
 
 Shared procedural geometry for the login and landing scenes. Import directly from each file.
 
+Renderers stay behind `next/dynamic` in client components. `useDeferredScene` lets content paint first and skips the login renderer below 901px. Landing mounts secondary scenes near their chapter boundary and retains visited scenes for reverse scrolling. Do not import this folder through a shared UI/layout barrel or mount all chapters on first load. See `scripts/audit-initial-load.mjs` for production measurements.
+
 - `materials.ts`: common indigo/lavender palette, satin polymer and soft metal parameters.
 - `StudioLighting.tsx`: neutral key, lavender rim and restrained studio reflections.
 - `LinkedLoop.tsx`: capped loop geometry used by the signature sculpture and token stamp.

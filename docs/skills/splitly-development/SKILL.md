@@ -13,6 +13,7 @@ Source gốc: `C:/Users/ADMIN/Downloads/3D_UI_story_nav_v9_scrollfix/3D`. Nếu 
 
 - Đọc `AGENTS.md`. Trước khi viết code Next.js, đọc guide liên quan trong `node_modules/next/dist/docs/`; phiên bản cài đặt là nguồn chuẩn cho API và file convention. Giữ nguyên block do Next.js tự sinh trong `AGENTS.md`.
 - Đọc [source-conventions.md](references/source-conventions.md) cho vị trí sửa, quy tắc TypeScript/CSS, component dùng chung và invariants của API.
+- Khi cài thư viện, cleanup, sửa build hoặc tốc độ tải landing/login, đọc [build-and-loading.md](references/build-and-loading.md). Dùng npm cùng package-lock, cài có devDependencies và kiểm tra bản production; không trộn package manager hoặc build pipeline.
 - Khi tiếp tục công việc từ hội thoại này, đọc [context-summary.md](references/context-summary.md). Đây là snapshot ngày 02/10/2026, không phải trạng thái backend trực tiếp.
 - Khi sửa nghiệp vụ, đọc `docs/api-flow-coverage.md` trong repo và phần tương ứng của source tham khảo `C:/Users/ADMIN/OneDrive/Desktop/FE_Personal`. Swagger và cấu hình backend có thể thay đổi; xác minh contract đang dùng trước khi thay payload.
 

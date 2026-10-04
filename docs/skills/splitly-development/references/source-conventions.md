@@ -4,19 +4,19 @@ Các quy tắc dưới đây được rút từ config và implementation hiện
 
 ## Stack và cách viết
 
-| Mục        | Convention quan sát được                                                                                    |
-| ---------- | ----------------------------------------------------------------------------------------------------------- |
-| Runtime    | Next.js 16.3.4 App Router, React 19, TypeScript 5.9; version thực tế xem `package.json`/lockfile.           |
-| Component  | `.tsx`, functional component; PascalCase tên file component. File UI tương tác có `'use client'`.           |
-| TypeScript | Strict, `noUnusedLocals`, `noUnusedParameters`, `verbatimModuleSyntax`; dùng `import type` cho type.        |
-| Import     | Đường dẫn tương đối trong source; chưa có alias `@/` trong `tsconfig.json`.                                 |
-| Formatting | Không semicolon, single quote, trailing comma `all`, print width 100 theo `.prettierrc.json`.               |
-| Lint       | ESLint flat config với TypeScript và `react-hooks`; giữ dependency/cleanup của effect đúng.                 |
-| Styling    | CSS thường, class theo màn và component; `ws-` là workspace, `splitly-` cho brand/hiệu ứng chung.           |
-| Motion     | `motion/react`, `AnimatePresence`, `useReducedMotion`; helper ở `ui/Motion.tsx`.                            |
-| 3D         | React Three Fiber, Drei, Three.js; ưu tiên cảnh procedural và ánh sáng local đang có.                       |
-| Font       | Be Vietnam Pro cho UI, Barlow Condensed cho heading editorial của landing; font import local ở root layout. |
-| Ngôn ngữ   | Copy UI tiếng Việt; tiền dùng helper `money`, ngày local dùng `Asia/Ho_Chi_Minh`.                           |
+| Mục        | Convention quan sát được                                                                                       |
+| ---------- | -------------------------------------------------------------------------------------------------------------- |
+| Runtime    | Next.js 16.3.8 App Router, React 19, TypeScript 5.9; Node 24 LTS/npm, phiên bản thực tế xem manifest/lockfile. |
+| Component  | `.tsx`, functional component; PascalCase tên file component. File UI tương tác có `'use client'`.              |
+| TypeScript | Strict, `noUnusedLocals`, `noUnusedParameters`, `verbatimModuleSyntax`; dùng `import type` cho type.           |
+| Import     | Đường dẫn tương đối trong source; chưa có alias `@/` trong `tsconfig.json`.                                    |
+| Formatting | Không semicolon, single quote, trailing comma `all`, print width 100 theo `.prettierrc.json`.                  |
+| Lint       | ESLint flat config với TypeScript và `react-hooks`; giữ dependency/cleanup của effect đúng.                    |
+| Styling    | CSS thường, class theo màn và component; `ws-` là workspace, `splitly-` cho brand/hiệu ứng chung.              |
+| Motion     | `motion/react`, `AnimatePresence`, `useReducedMotion`; helper ở `ui/Motion.tsx`.                               |
+| 3D         | React Three Fiber, Drei, Three.js; ưu tiên cảnh procedural và ánh sáng local đang có.                          |
+| Font       | Be Vietnam Pro cho UI, Barlow Condensed cho heading editorial của landing; font import local ở root layout.    |
+| Ngôn ngữ   | Copy UI tiếng Việt; tiền dùng helper `money`, ngày local dùng `Asia/Ho_Chi_Minh`.                              |
 
 ## Chọn nơi sửa
 
@@ -43,7 +43,7 @@ Route page thường là wrapper mỏng; giữ form, state và action trong comp
 
 ## CSS, layout và motion
 
-Thứ tự import trong root layout: `styles.css` → `story.css` → `navbar.css` → `experience.css` → `workspace.css` → `splitly.css` → `refinement.css`. Các file cũ có selector/nền sáng còn tồn tại; đọc cascade thay vì chỉ thay một token rồi giả định mọi màn đã đổi màu.
+Thứ tự import trong root layout: `styles.css` → `story.css` → `navbar.css` → `experience.css` → `workspace.css` → `splitly.css` → `refinement.css` → `universe.css`. Các file cũ có selector/nền sáng còn tồn tại; đọc cascade thay vì chỉ thay một token rồi giả định mọi màn đã đổi màu.
 
 Theme hiện tại: nền khoảng `#0b0b12`, surfaces tối, accent lavender/tím; workspace dùng biến `--ws-*`. Tái sử dụng token/component phù hợp. Typography landing có style global; workspace cần scope để tránh heading khổng lồ hoặc `white-space: nowrap` tràn màn.
 
@@ -55,11 +55,11 @@ Workspace có chiều cao `100dvh`; `.ws-main-shell` là flex column, `.ws-main`
 
 `RouteTransition` được mount một lần trong root layout. Hook `useSplitlyNavigation()` trả về hàm gọi theo dạng `navigate(href, { replace, refresh })`; dùng cho điều hướng toàn trang lập trình. Link nội bộ được bắt qua event, cùng pathname/hash không mở hiệu ứng; navigation/back có cleanup và giới hạn 7 giây. Không tạo transition provider thứ hai trong từng page.
 
-`LoginScene` dynamic import với `ssr: false` từ client component; có fallback, DPR giới hạn, ánh sáng local, IntersectionObserver/visibility và demand rendering khi giảm chuyển động hoặc không hiển thị. Không khiến auth form phải đợi WebGL thành công mới sử dụng được.
+`LoginScene` dynamic import với `ssr: false` từ client component; `useDeferredScene` chỉ mount sau paint/idle và viewport >900px. Có fallback, DPR giới hạn, ánh sáng local, IntersectionObserver/visibility và demand rendering khi giảm chuyển động hoặc không hiển thị. Form dùng `Reveal initiallyVisible`, không phải đợi hydration/WebGL để nhìn thấy. Workflow cài/build và kiểm tra tải lần đầu nằm trong [build-and-loading.md](build-and-loading.md).
 
 Cảnh login dùng portal vào `.ws-login-scene-backdrop` trong layout để vòng quỹ đạo chạy sau cả hai cột. `ResizeObserver` ánh xạ tâm `.ws-login-spatial-space` sang tọa độ 3D; ví, quỹ đạo chính và nét vòng kéo dài cùng một group có chung tâm. Vùng kéo/chạm vẫn nằm trong cột trái, form ở lớp phía trước. Chỉ backdrop cắt phần trang trí vượt khung; không khóa cuộn nội dung form khi mã email hoặc lỗi làm form dài hơn. Nhịp chuyển động tự động có khoảng nghỉ; chạm kích hoạt cùng chuỗi tách ba lớp thẻ, xoay hai phần logo rồi ghép lại. Giữ chi tiết mặt thẻ trong group của mặt thẻ khi tách lớp. Tắt chuyển động tự động khi giảm chuyển động. Visual QA riêng: `node scripts/capture-login-interaction.mjs`, ảnh lưu ở `QA/login-assembled-scene`.
 
-Các model login và landing dùng chung `src/components/three/`: `materials.ts` định nghĩa màu và vật liệu satin/soft metal; `StudioLighting` cung cấp ánh sáng studio; `LinkedLoop` có đầu bo kín; `SplitToken` có viền bevel và dấu Splitly hai mặt. Import trực tiếp từng file. Choreography, camera và pointer state vẫn thuộc scene tương ứng. Props CSS nhỏ dùng cùng palette, không thêm canvas riêng. Hũ tiết kiệm kết hợp lớp thân paper satin với phần đáy trong nhẹ; tránh nền/chữ vàng cũ và chrome bóng gương.
+Các model login và landing dùng chung `src/components/three/`: `materials.ts`/`StudioLighting` cho login; `landingMaterials.ts`/`LandingLighting` cho landing. `LinkedLoop` có đầu bo kín; `SplitToken` có viền bevel và dấu Splitly hai mặt. `PaperReceipt` là một mặt giấy cong có răng cưa; `SavingsVessel` có kính rỗng và nhãn giấy; `ScrollParticles` dùng GSAP theo progress cuộn, không tự đổi chương. Import trực tiếp từng file. Choreography, camera và pointer state vẫn thuộc scene tương ứng. Landing dựng các chương gần mốc cuộn bằng `SecondaryScenes` để tránh chi phí khởi tạo toàn bộ cảnh ngay màn đầu. Props CSS nhỏ dùng cùng palette, không thêm canvas riêng.
 
 ## API và state invariants
 

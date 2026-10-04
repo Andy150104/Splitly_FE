@@ -14,6 +14,9 @@ export default tseslint.config(
       '.reference',
       'playwright-report',
       'test-results',
+      'QA',
+      'coverage',
+      '.cache',
     ],
   },
   {

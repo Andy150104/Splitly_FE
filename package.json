@@ -3,11 +3,17 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "packageManager": "npm@11.8.0",
+  "engines": {
+    "node": "^22.13.0 || ^24.0.0",
+    "npm": ">=10"
+  },
   "scripts": {
     "dev": "cross-env NODE_ENV=development next dev --hostname 0.0.0.0 --port 3000",
     "build": "cross-env NODE_ENV=production next build",
     "start": "cross-env NODE_ENV=production next start --hostname 0.0.0.0 --port 3000",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "cross-env NODE_ENV=production next typegen && tsc --noEmit",
+    "clean": "node scripts/clean.mjs",
     "lint": "eslint .",
     "test": "vitest run src",
     "test:e2e": "playwright test",
@@ -25,7 +31,7 @@
     "gsap": "3.15.0",
     "lucide-react": "^0.468.0",
     "motion": "^12.23.12",
-    "next": "^16.3.4",
+    "next": "16.3.8",
     "react": "^19.1.1",
     "react-day-picker": "^10.0.2",
     "react-dom": "^19.1.1",

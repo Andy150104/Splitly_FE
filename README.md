@@ -1,17 +1,23 @@
 # Splitly — Tiền gọn gàng. Đời thảnh thơi.
 
-Next.js 16 App Router, React 19 và TypeScript. Trang `/` là landing page với cảnh 3D, logo Splitly và bảng màu charcoal/violet. Khu quản lý dùng API Bill Split Service, tham khảo luồng trong `FE_Personal` và đối chiếu Swagger thực tế. Landing, login và khu quản lý dùng chung nền tối, ánh tím/xanh chuyển động nhẹ, chữ rõ và bề mặt có chiều sâu. Sidebar có nút thu/mở trên topbar và ở cuối thanh bên, vùng menu cuộn riêng; dashboard có các khối đóng/mở. Chuyển động gồm vào trang, thẻ xuất hiện lần lượt, số liệu đếm tăng, thanh tiến độ, chuyển bước wizard, modal bay lên và lưới ngân hàng mở/thu; hỗ trợ tùy chọn giảm chuyển động của thiết bị.
+Next.js 16 App Router, React 19 và TypeScript. Trang `/` là landing page với cảnh 3D, logo Splitly và bảng màu charcoal/violet. Khu quản lý dùng API Bill Split Service, tham khảo luồng trong `FE_Personal` và đối chiếu Swagger thực tế. Landing, login và khu quản lý dùng chung nền tối, ánh tím/xanh chuyển động nhẹ, chữ rõ và bề mặt có chiều sâu. Sidebar có một nút thu/mở trên topbar, vùng menu chỉ cuộn khi cần; dashboard có các khối đóng/mở. Chuyển động gồm vào trang, thẻ xuất hiện lần lượt, số liệu đếm tăng, thanh tiến độ, chuyển bước wizard, modal bay lên và lưới ngân hàng mở/thu; hỗ trợ tùy chọn giảm chuyển động của thiết bị.
 
 ## Chạy dự án
 
+Dùng Node 24 LTS (`.node-version`) và npm; Node 22 từ 22.13.0 cũng tương thích. Chỉ dùng `package-lock.json`, không trộn pnpm/yarn vào cùng `node_modules`.
+
 ```powershell
-npm ci
+npm ci --include=dev
 # Nếu chưa có .env.local, sao chép .env.example và điền SESSION_SECRET.
 Copy-Item .env.example .env.local
 npm run dev
 ```
 
-Mở http://localhost:3000. Không ghi đè `.env.local` đang có: phiên triển khai này đã tạo cấu hình local cùng khóa phiên riêng. Bản local hiện bật nút **Vào bằng tài khoản phát triển** ở `/login`, dùng `admin@example.com` trên backend để xem flow. Google và mã email vẫn hoạt động qua cùng gateway; nút phát triển luôn bị tắt trong production.
+Mở http://localhost:3000. Giữ `.env.local` đang có. Nếu cần nút **Vào bằng tài khoản phát triển** ở `/login`, đặt `ENABLE_DEV_LOGIN=true` và dùng seed `admin@example.com` trên backend. Google và mã email hoạt động qua cùng gateway; nút phát triển luôn bị tắt trong production.
+
+Chi tiết cài thêm thư viện, cleanup và đo tốc độ: [hướng dẫn build và tải trang](docs/skills/splitly-development/references/build-and-loading.md). `npm run typecheck` tự sinh route types; không cần commit `next-env.d.ts` hoặc output `.next`. `npm run clean` dọn output khi server đã dừng.
+
+Form login hiển thị từ HTML server. Cảnh 3D tải sau khi trang paint; mobile login không tải renderer bị ẩn. Landing chỉ dựng các chương tiếp theo khi cuộn đến gần, giữ các cảnh đã xem để cuộn ngược ổn định. Script `node scripts/audit-initial-load.mjs` đo bản production ở :3001 và lưu ảnh/số đo tại `QA/initial-load`.
 
 | Biến môi trường                | Ý nghĩa                                                                                                                                                   |
 | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |

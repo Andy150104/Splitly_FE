@@ -20,6 +20,7 @@ import type { MotionValue } from 'motion/react'
 import { storyChapter, storyChapters, storyRange, storyOpacity, storyTarget } from '../lib/story'
 import type { StoryDemo } from '../lib/story'
 import StoryInteraction from './StoryInteraction'
+import { useDeferredScene } from '../hooks/useDeferredScene'
 
 const WalletScene = dynamic(() => import('./WalletScene'), { ssr: false, loading: StaticWallet })
 
@@ -125,6 +126,7 @@ export default function Hero({
   const section = useRef<HTMLElement>(null)
   const progress = useRef(0)
   const [visible, setVisible] = useState(true)
+  const sceneReady = useDeferredScene(visible)
   const [tallEnough, setTallEnough] = useState(true)
   const [chapter, setChapter] = useState(0)
   const [inspectionTurn, setInspectionTurn] = useState(0)
@@ -341,7 +343,7 @@ export default function Hero({
               aria-label={`Cảnh 3D ${storyChapters[chapter].label.toLocaleLowerCase('vi')} — chuyển động theo thao tác cuộn`}
             >
               <SceneBoundary>
-                {visible && (
+                {sceneReady ? (
                   <WalletScene
                     reducedMotion={reducedMotion || !pinned}
                     progress={progress}
@@ -349,6 +351,8 @@ export default function Hero({
                     manualOrbit={manualOrbit}
                     demo={demo}
                   />
+                ) : (
+                  <StaticWallet />
                 )}
               </SceneBoundary>
             </div>
