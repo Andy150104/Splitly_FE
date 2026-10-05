@@ -9,20 +9,21 @@ import { ArrowLeft, ArrowUpRight, Bell, Check, Copy, RefreshCw } from 'lucide-re
 import { money, safeExternalUrl, send } from '../../lib/api/client'
 import { Disclosure, Reveal } from '../ui/Motion'
 import WorkspaceModal, { ConfirmDialog } from '../ui/WorkspaceModal'
-import type { Bill, BillMember } from '../../lib/api/types'
+import type { BillMember } from '../../lib/api/types'
+import type { BillView } from '../../lib/api/views'
 import { Empty, ErrorState, Loading, Notice } from '../ui/Feedback'
 import { Field } from '../ui/Field'
 import { PageHeading } from '../ui/PageHeading'
 import { Status } from '../ui/Status'
 import { useApi, useWorkspace } from './hooks'
 
-const needsPolling = (bill: Bill) =>
+const needsPolling = (bill: BillView) =>
   bill.status !== 'Draft' &&
   bill.status !== 'Cancelled' &&
   (bill.members?.some((m) => m.remainingAmount > 0) ?? false)
 export default function BillDetail({ billId }: { billId: string }) {
   const { user, can } = useWorkspace()
-  const query = useApi<Bill>(`bills/${billId}`, needsPolling)
+  const query = useApi<BillView>(`bills/${billId}`, needsPolling)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [pending, setPending] = useState(false)

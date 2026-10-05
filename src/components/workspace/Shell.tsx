@@ -22,7 +22,7 @@ import {
 } from 'lucide-react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import type { User } from '../../lib/api/session'
-import type { Permissions } from '../../lib/api/types'
+import type { PermissionView } from '../../lib/api/views'
 import { send } from '../../lib/api/client'
 import { Reveal } from '../ui/Motion'
 import Brand from '../ui/Brand'
@@ -161,7 +161,7 @@ export default function Shell({ user, children }: { user: User; children: ReactN
   const navigate = useSplitlyNavigation()
   const reduced = useReducedMotion()
   const notify = useNotify()
-  const permissions = useApi<Permissions>('auth/me/permissions')
+  const permissions = useApi<PermissionView>('auth/me/permissions')
   const [menu, setMenu] = useState(false)
   const [mobileViewport, setMobileViewport] = useState(false)
   const menuTrigger = useRef<HTMLButtonElement>(null)

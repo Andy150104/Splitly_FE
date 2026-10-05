@@ -13,6 +13,8 @@ npm ls --include=dev --depth=0
 
 `--include=dev` cần thiết trên máy có `NODE_ENV=production` hoặc cấu hình npm omit dev: TypeScript, ESLint, Playwright và cross-env vẫn cần khi build/test. `npm ci` tái lập lockfile; không xóa lockfile để thử sửa dependency. Nếu trước đó cài bằng pnpm, dừng server thuộc repo trước khi cài lại bằng npm.
 
+Lỗi editor `Cannot find module react/@radix-ui/react-popover` cần phân biệt với lỗi compiler. Kiểm tra `npm ls --include=dev react @types/react @radix-ui/react-popover typescript --depth=0` và `npm run typecheck` từ đúng root. Nếu module thực sự thiếu, `npm ci --include=dev` rồi kiểm tra lại. Nếu compiler qua nhưng VS Code còn báo lỗi, dùng TypeScript của workspace (`.vscode/settings.json`) và Restart TS Server; không thêm ambient declaration giả, bỏ strict hoặc cài React/types toàn cục.
+
 Trên Windows, `npm.ps1` có thể gọi `node.exe` trong thư mục npm cũ dù PATH đang ưu tiên một Node khác. Đọc giá trị `current.node` của EBADENGINE và dùng cặp Node/npm cùng installation; chỉ đổi PATH của node.exe chưa đủ. `.prettierrc.json` dùng `endOfLine: auto` để checkout CRLF không làm format check báo lỗi toàn bộ source; giữ quy tắc format còn lại.
 
 Khi thêm thư viện: đọc import và dependency hiện có trước, kiểm tra peerDependencies với React/Fiber/Three/Next trong source. Chọn phiên bản cụ thể và dùng:
@@ -43,6 +45,8 @@ npm run start
 
 `dev`, `build`, `start` dùng cross-env để đặt NODE_ENV đúng theo lệnh trên Windows/Linux. Chỉ có **một** `next.config.ts` và `eslint.config.js`; Next sinh type vào `.next/types` hoặc `.next/dev/types`, không thêm đường dẫn `.next/dev/dev/types`. Đọc `node_modules/next/dist/docs/01-app/03-api-reference/06-cli/next.md` khi thay workflow typegen/build.
 
+Trước khi mở preview, kiểm tra server đang có. `EADDRINUSE :3000` thường là phiên dev cũ: chỉ dừng server do agent mở đã được xác minh, không kill tất cả Node hoặc tắt tiến trình của người dùng. Dùng :3001 cho preview riêng khi cần. Kết thúc kiểm tra phải dừng server do agent mở, trừ khi người dùng muốn giữ chạy; xác nhận cổng preview đã được giải phóng. Nếu :3000 đang là phiên do người dùng mở, giữ nguyên và giải thích rằng chạy thêm một phiên cùng cổng sẽ báo EADDRINUSE. Việc chọn port khác không sửa một process của agent còn bị bỏ quên.
+
 Giữ `.env.example` với placeholder, `.env.local` và secret nằm ngoài Git. QA, screenshot/video/trace, node_modules, .next, next-env.d.ts, báo cáo test và tsbuildinfo đều bị ignore. Nếu đã tracked, cập nhật `.gitignore` chưa đủ: bỏ khỏi index trong commit cleanup. Chỉ push khi người dùng đã yêu cầu, không suy ra quyền publish từ việc sửa source.
 
 ## Landing và login tải lần đầu
@@ -52,6 +56,8 @@ Giữ `.env.example` với placeholder, `.env.local` và secret nằm ngoài Git
 - `useDeferredScene` cho phép trình duyệt paint/hydrate trước rồi tải cảnh bằng idle callback có timeout 800ms. Login chỉ tải cảnh khi viewport **>900px**, đúng breakpoint CSS; mobile không tải Three chỉ để vẽ một cảnh display:none. Resize desktop phải vẫn khởi tạo lại đúng vị trí. Nội dung không đợi WebGL, font canvas hoặc Google GIS tải xong.
 - Landing dựng ví trước; `SecondaryScenes` dựng chương gần mốc cuộn rồi giữ những chương đã xem. Không biên dịch vật liệu kính và tạo toàn bộ texture/hình học của năm chương ngay lúc vào trang. Giữ tư thế theo progress khi nhảy chương/cuộn ngược, và giảm chuyển động/fallback WebGL.
 - Scene vẫn cần cleanup idle callback, timer, observer và tài nguyên GPU. Không preload toàn bộ scene trên mobile hoặc khóa pointer/scroll trong khi tải. Không giảm chất lượng model tùy tiện để che lỗi bundle.
+- Landing dùng `ui/WalletPlaceholder` từ HTML đầu tiên và giữ nó qua cả dynamic import lẫn khởi tạo WebGL. `three/SceneReady` báo sau một frame thực sự; chỉ khi đó mới ẩn placeholder. Desktop pinned đặt hình dự phòng ở tâm 72% giống StageComposition, tablet/mobile/non-pinned đặt ở giữa vùng art. Không đặt ví 2D ở giữa toàn Canvas desktop hoặc coi `onCreated` là model đã hiển thị. WebGL thiếu/lost/error vẫn giữ artwork và CTA, khóa tương tác model khi chưa sẵn sàng. Test `initial-loading.spec.ts` giữ chunk renderer chậm rồi mở, cùng trường hợp WebGL tắt, để bắt khoảng trống lúc tải lần đầu.
+- Login cũng giữ một fallback duy nhất đến frame đầu và khi mất WebGL; reset trạng thái sẵn sàng khi chuyển về mobile để resize lên desktop không bỏ qua fallback. Không render đồng thời fallback từ Canvas/error boundary và từ overlay. Lỗi renderer không được làm mất form hoặc mã email đang nhập.
 
 Đọc guide `lazy-loading.md` và `package-bundling.md` trong Next cài đặt khi thay import graph. Đo bản production sau build, không gọi lần biên dịch route đầu của `next dev` là tốc độ production.
 

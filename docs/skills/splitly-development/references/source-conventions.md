@@ -72,6 +72,7 @@ Các model login và landing dùng chung `src/components/three/`: `materials.ts`
 - Origin của request ghi được so với Host; giữ xử lý dev bind `0.0.0.0`. Refresh upstream khi 401 một lần, gom concurrent refresh bằng hash/token và grace window. Logout clear session ngay cả khi upstream lỗi.
 - `auth/dev-login` chỉ dùng khi bật `ENABLE_DEV_LOGIN` và không ở production. Không dùng shortcut này để che lỗi Google/email thật.
 - Types được sinh từ Swagger qua `node scripts/generate-api-types.mjs <swagger.json>`. Khi schema đổi, xem generator/schema trước khi sửa thủ công file sinh. Không dùng `any` để bỏ qua contract.
+- Browser DTO rút gọn nằm trong `src/lib/api/views.ts`, projection/error sanitization ở `responses.ts`; đọc [api-privacy.md](api-privacy.md) khi sửa response. Server kiểm tra quyền admin bằng mã hiệu lực từ backend, không cache quyền đã hoàn thành.
 
 ### Các contract dễ sửa nhầm
 

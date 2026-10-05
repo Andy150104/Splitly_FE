@@ -916,7 +916,7 @@
   background: #bd718d16;
 }
 .ws-modal-wide:has(.ws-user-profile) {
-  width: min(860px, calc(100% - 32px));
+  width: min(1080px, calc(100% - 32px));
 }
 .ws-user-profile {
   padding: 0;
@@ -1019,7 +1019,7 @@
   }
 }
 .ws-modal:has(#user-panel-permissions:not([hidden])) .ws-modal-surface {
-  height: min(920px, calc(100dvh - 32px));
+  height: min(960px, calc(100dvh - 32px));
 }
 .ws-modal:has(#user-panel-permissions:not([hidden])) .ws-modal-body {
   display: flex;
@@ -1043,14 +1043,14 @@
 }
 .ws-permission-toolbar {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 220px;
   align-items: center;
   gap: 12px;
 }
 .ws-permissions-form {
   display: grid;
   gap: 14px;
-  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
   width: 100%;
   min-height: 0;
 }
@@ -1059,47 +1059,19 @@
   align-items: center;
   gap: 8px;
   color: #d8c8ea;
-  font-size: 12px;
+  font-size: 14px;
 }
 .ws-permission-count {
   color: #c4b0da;
-  font-size: 11px;
+  font-size: 13px;
   margin-left: auto;
 }
 .ws-permission-count strong {
   color: #e0c9ff;
   font-size: 15px;
 }
-.ws-permission-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-}
 .ws-permission-group-select {
-  display: none;
-}
-.ws-permission-filters button {
-  border: 1px solid #bda0df1c;
-  border-radius: 8px;
-  padding: 7px 10px;
-  background: #ffffff03;
-  color: #bbaacd;
-  font: inherit;
-  font-size: 11px;
-  cursor: pointer;
-  transition:
-    background 160ms,
-    border-color 160ms,
-    color 160ms;
-}
-.ws-permission-filters button:hover {
-  color: #eadcf9;
-  border-color: #bfa1e74d;
-}
-.ws-permission-filters button[aria-pressed='true'] {
-  background: #b79ae324;
-  border-color: #b79ae350;
-  color: #ecdfff;
+  width: 100%;
 }
 .ws-permission-catalog {
   min-height: 0;
@@ -1128,12 +1100,12 @@
 .ws-permission-catalog legend {
   padding: 0 6px;
   color: #d9c6ef;
-  font-size: 12px;
+  font-size: 14px;
 }
 .ws-permission-catalog legend span {
   padding-left: 10px;
   color: #b09ebf;
-  font-size: 10px;
+  font-size: 12px;
 }
 .ws-permission-catalog .ws-permission-option {
   padding: 10px 4px;
@@ -1149,12 +1121,56 @@
   overflow-wrap: anywhere;
 }
 .ws-permission-catalog .ws-permission-option strong {
-  font-size: 12px;
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 600;
 }
 .ws-permission-catalog .ws-permission-option small {
-  font-size: 10px;
-  color: #b4a4c6;
+  font-size: 12px;
+  color: #c7bbd8;
+  line-height: 1.6;
+}
+.ws-permission-catalog .ws-permission-option small:last-child:not(:first-child) {
+  font-size: 13px;
+}
+.ws-permission-catalog .ws-permission-option input {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+.ws-modal:has(.ws-user-profile[data-tab='permissions']) .ws-modal-header {
+  padding: 16px 24px;
+}
+.ws-modal:has(.ws-user-profile[data-tab='permissions']) .ws-modal-body {
+  padding: 18px 24px 20px;
+}
+.ws-user-profile[data-tab='permissions'] .ws-user-profile-heading > .ws-avatar {
+  width: 44px;
+  height: 44px;
+  font-size: 18px;
+}
+.ws-user-profile[data-tab='permissions'] .ws-user-profile-heading h3 {
+  font-size: 20px;
+}
+.ws-user-profile[data-tab='permissions'] .ws-user-profile-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  margin: 14px 0;
+}
+.ws-user-profile[data-tab='permissions'] .ws-user-profile-facts > div {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+.ws-user-profile[data-tab='permissions'] .ws-user-profile-facts span {
+  font-size: 12px;
+}
+.ws-user-profile[data-tab='permissions'] .ws-user-profile-facts strong {
+  font-size: 14px;
 }
 .ws-permission-empty {
   grid-column: 1 / -1;
@@ -1233,28 +1249,55 @@
     grid-template-columns: minmax(0, 1fr);
   }
   .ws-permission-toolbar {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 10px;
+    grid-template-columns: minmax(0, 1fr) 140px;
+    gap: 8px;
   }
-  .ws-permission-filters {
-    display: none;
-  }
-  .ws-permission-group-select {
-    display: block;
+  .ws-select-trigger.ws-permission-group-select {
+    display: flex;
+    min-width: 0;
     width: 100%;
     margin: 0;
+  }
+  .ws-modal:has(.ws-user-profile[data-tab='permissions']) .ws-modal-header {
+    padding: 12px 18px;
+    align-items: center;
+  }
+  .ws-modal:has(.ws-user-profile[data-tab='permissions']) .ws-modal-header .ws-eyebrow {
+    display: none;
+  }
+  .ws-modal:has(.ws-user-profile[data-tab='permissions']) .ws-modal-header h2 {
+    font-size: 20px;
+    margin: 0;
+  }
+  .ws-modal:has(.ws-user-profile[data-tab='permissions']) .ws-modal-body {
+    padding: 14px 16px 16px;
+  }
+  .ws-user-profile[data-tab='permissions'] .ws-user-profile-heading {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .ws-user-profile[data-tab='permissions'] .ws-user-profile-heading h3 {
+    font-size: 18px;
+  }
+  .ws-user-profile[data-tab='permissions'] .ws-user-profile-heading > .ws-status {
+    display: none;
+  }
+  .ws-user-profile[data-tab='permissions'] .ws-user-profile-tabs {
+    margin-bottom: 14px;
+  }
+  .ws-user-profile[data-tab='permissions'] .ws-user-profile-tabs button {
+    padding: 9px 6px;
+    font-size: 12px;
   }
   .ws-user-profile:has(#user-panel-permissions:not([hidden])) .ws-user-profile-facts {
     display: none;
   }
-  .ws-user-profile:has(#user-panel-permissions:not([hidden])) .ws-user-profile-heading {
-    margin-bottom: 18px;
-  }
   .ws-permission-heading {
-    font-size: 11px;
+    font-size: 13px;
   }
   .ws-permission-count {
-    font-size: 10px;
+    font-size: 12px;
   }
   .ws-permission-actions {
     flex-wrap: nowrap;
@@ -1262,13 +1305,13 @@
   }
   .ws-permission-actions > span {
     min-width: 0;
-    font-size: 10px;
+    font-size: 12px;
     line-height: 1.6;
   }
   .ws-permission-actions > .ws-button {
     flex-shrink: 0;
     padding-inline: 12px;
-    font-size: 11px;
+    font-size: 12px;
   }
   .ws-group-bill-tools {
     grid-template-columns: minmax(0, 1fr);
@@ -1297,6 +1340,38 @@
   }
   .ws-user-profile:has(#user-panel-permissions:not([hidden])) .ws-user-profile-tabs {
     margin-bottom: 12px;
+  }
+}
+@media (max-height: 800px) {
+  .ws-modal:has(.ws-user-profile[data-tab='permissions']) .ws-modal-header .ws-eyebrow {
+    display: none;
+  }
+  .ws-modal:has(.ws-user-profile[data-tab='permissions']) .ws-modal-header h2 {
+    margin-top: 0;
+  }
+  .ws-user-profile:has(#user-panel-permissions:not([hidden])) .ws-user-profile-facts {
+    display: none;
+  }
+  .ws-user-profile[data-tab='permissions'] .ws-user-profile-heading {
+    margin-bottom: 12px;
+  }
+  .ws-user-profile[data-tab='permissions'] .ws-user-profile-tabs {
+    margin-bottom: 12px;
+  }
+  .ws-user-profile[data-tab='permissions'] .ws-user-profile-tabs button {
+    padding: 9px 6px;
+  }
+  .ws-permissions-form {
+    gap: 10px;
+  }
+}
+@media (max-height: 620px) {
+  .ws-modal:has(#user-panel-permissions:not([hidden])) .ws-modal-body {
+    display: block;
+    overflow-y: auto;
+  }
+  .ws-user-profile[data-tab='permissions'] .ws-permission-catalog {
+    max-height: 320px;
   }
 }
 /* Floating, grouped navigation: restrained light and clear tree branches. */
@@ -1683,6 +1758,10 @@
   z-index: 0;
   overflow: clip;
   pointer-events: none;
+  mask-image:
+    linear-gradient(to right, transparent, #000 32px, #000 calc(100% - 32px), transparent),
+    linear-gradient(to bottom, transparent, #000 24px, #000 calc(100% - 24px), transparent);
+  mask-composite: intersect;
 }
 .ws-login .ws-login-form {
   position: relative;

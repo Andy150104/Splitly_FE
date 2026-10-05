@@ -12,6 +12,8 @@ Các màn hình import trực tiếp từ folder này. Giữ component chỉ nh�
 
 `Feedback.tsx` export `Notice`, `Loading`, `ErrorState` và `Empty`. `Motion.tsx` export `Reveal`, `Disclosure` và `Count`. `WorkspaceModal.tsx` export modal mặc định và `ConfirmDialog`.
 
+`WalletPlaceholder.tsx` là hình SVG nhẹ cho lúc landing đang tải hoặc không có WebGL. Component không import Three/Fiber; vị trí responsive nằm trong `universe.css`. Chỉ ẩn hình dự phòng khi `three/SceneReady.tsx` báo khung hình đầu đã được render, không dùng việc mount Canvas làm tín hiệu sẵn sàng.
+
 `Brand`, `Atmosphere`, `Field`, `PageHeading`, `Status` và `Skeleton` không tự yêu cầu client boundary. Component tương tác khai báo `'use client'` trong file của nó. Không tạo một barrel client cho toàn bộ folder, để các trang server có thể import những component tĩnh riêng.
 
 CSS hiện tại nằm trong `src/refinement.css` và các lớp nền ở `src/splitly.css`/`src/workspace.css`; giữ prefix `ws-` hoặc `splitly-` và kiểm tra cascade khi sửa. Dropdown và lịch dùng Radix/DayPicker; overlay trong modal phải thuộc native dialog đang mở. Giữ focus, Escape, restore focus và reduced motion khi thêm tương tác.

@@ -8,7 +8,8 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { api, localDate, money, parseEmails, send } from '../../lib/api/client'
-import type { Bill, Group, GroupItem, PageResult, PayoutAccount } from '../../lib/api/types'
+import type { Group, GroupItem, PageResult, PayoutAccount } from '../../lib/api/types'
+import type { BillView } from '../../lib/api/views'
 import { AccountForm } from './Accounts'
 import WorkspaceModal from '../ui/WorkspaceModal'
 import { motion, useReducedMotion } from 'motion/react'
@@ -44,7 +45,7 @@ export default function CreateBill({
   const [groupMembers, setGroupMembers] = useState<string[]>([])
   const [emails, setEmails] = useState('')
   const [includeOwner, setIncludeOwner] = useState(true)
-  const [bill, setBill] = useState<Bill | null>(null)
+  const [bill, setBill] = useState<BillView | null>(null)
   const [method, setMethod] = useState('Equal')
   const [allocations, setAllocations] = useState<Record<string, string>>({})
   const [accountId, setAccountId] = useState('')
@@ -61,7 +62,7 @@ export default function CreateBill({
   useEffect(() => {
     if (!draftId) return
     let active = true
-    api<Bill>(`bills/${draftId}`)
+    api<BillView>(`bills/${draftId}`)
       .then((b) => {
         if (!active) return
         if (b.status !== 'Draft' || !b.isOwner) {
@@ -141,7 +142,7 @@ export default function CreateBill({
         setStep(1)
       } else if (step === 1) {
         const list = parseEmails(emails)
-        const current = await api<Bill>(`bills/${billId}`)
+        const current = await api<BillView>(`bills/${billId}`)
         const existing = new Set(current.members?.map((m) => m.email?.toLowerCase()))
         const newEmails = list.filter((e) => !existing.has(e))
         const ownerMember = current.members?.find(
@@ -162,7 +163,7 @@ export default function CreateBill({
             groupMemberIds: newGroupMembers,
             includeOwner: addOwner,
           })
-        const updated = await api<Bill>(`bills/${billId}`)
+        const updated = await api<BillView>(`bills/${billId}`)
         if (!updated.members?.length) throw new Error('Hóa đơn cần ít nhất một người tham gia.')
         setBill(updated)
         setAllocations(
@@ -189,7 +190,7 @@ export default function CreateBill({
           method,
           allocations: method === 'Equal' ? [] : values,
         })
-        setBill(await api<Bill>(`bills/${billId}`))
+        setBill(await api<BillView>(`bills/${billId}`))
         setStep(3)
       } else {
         if (!selectedAccount)

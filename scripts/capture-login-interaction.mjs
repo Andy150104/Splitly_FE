@@ -2,6 +2,7 @@ import { chromium, expect } from '@playwright/test'
 import { mkdir } from 'node:fs/promises'
 
 const output = 'QA/login-assembled-scene'
+const previewUrl = process.env.PREVIEW_URL || 'http://localhost:3000'
 await mkdir(output, { recursive: true })
 const browser = await chromium.launch({
   channel: 'chrome',
@@ -23,7 +24,7 @@ try {
   ]) {
     await page.setViewportSize({ width, height })
     await page.emulateMedia({ reducedMotion: 'reduce' })
-    await page.goto('http://localhost:3000/login')
+    await page.goto(`${previewUrl}/login`)
     await page.getByRole('heading', { name: /Đăng nhập/ }).waitFor()
     if (width > 900) await page.locator('canvas').waitFor()
     await page.waitForTimeout(1500)
@@ -48,7 +49,7 @@ try {
   }
   await page.setViewportSize({ width: 1550, height: 826 })
   await page.emulateMedia({ reducedMotion: 'no-preference' })
-  await page.goto('http://localhost:3000/login')
+  await page.goto(`${previewUrl}/login`)
   const control = page.getByRole('button', { name: 'Tương tác với ví Splitly' })
   await control.waitFor()
   await page.locator('canvas').waitFor()
@@ -58,6 +59,8 @@ try {
   await page.screenshot({ path: `${output}/idle-flourish.png` })
   await page.waitForTimeout(4000)
   await page.screenshot({ path: `${output}/idle-return.png` })
+  await page.waitForTimeout(10_000)
+  await page.screenshot({ path: `${output}/orbit-late.png` })
   const bounds = await control.boundingBox()
   await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2)
   await page.mouse.down()

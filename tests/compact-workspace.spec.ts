@@ -136,11 +136,15 @@ test('permission filtering preserves selections, shows guidance in the dialog, a
   await expect(modal).toBeVisible()
   const list = modal.getByRole('region', { name: 'Danh sách quyền', exact: true })
   const height = (await list.boundingBox())!.height
-  const filter = modal.getByRole('group', { name: 'Lọc nhóm quyền' })
-  if (isMobile) {
-    await modal.getByRole('combobox', { name: 'Nhóm quyền', exact: true }).click()
-    await page.getByRole('option', { name: 'Hóa đơn', exact: true }).click()
-  } else await filter.getByRole('button', { name: 'Hóa đơn', exact: true }).click()
+  expect(height).toBeGreaterThanOrEqual(isMobile ? 240 : 280)
+  expect(
+    await list
+      .locator('strong')
+      .first()
+      .evaluate((node) => parseFloat(getComputedStyle(node).fontSize)),
+  ).toBeGreaterThanOrEqual(14)
+  await modal.getByRole('combobox', { name: 'Nhóm quyền', exact: true }).click()
+  await page.getByRole('option', { name: 'Hóa đơn', exact: true }).click()
   const search = modal.getByLabel('Tìm quyền', { exact: true })
   await search.fill('Bills.Create')
   await expect(list.getByRole('checkbox')).toHaveCount(1)
@@ -150,15 +154,23 @@ test('permission filtering preserves selections, shows guidance in the dialog, a
   expect((await list.boundingBox())!.height).toBe(height)
   await modal.getByRole('button', { name: 'Xóa từ khóa: Tìm quyền', exact: true }).click()
   await expect(search).toBeFocused()
-  if (isMobile) {
-    await modal.getByRole('combobox', { name: 'Nhóm quyền', exact: true }).click()
-    await page.getByRole('option', { name: 'Tất cả nhóm quyền', exact: true }).click()
-  } else await filter.getByRole('button', { name: 'Tất cả', exact: true }).click()
+  await modal.getByRole('combobox', { name: 'Nhóm quyền', exact: true }).click()
+  await page.getByRole('option', { name: 'Tất cả nhóm quyền', exact: true }).click()
   await expect(list.getByRole('checkbox')).toHaveCount(24)
+  await page.screenshot({
+    path: `QA/permissions/${page.viewportSize()!.width}-catalog.png`,
+    animations: 'disabled',
+  })
   await expect(list.getByRole('checkbox', { name: /Tạo hóa đơn Bills.Create/ })).toBeChecked()
   await list.getByRole('checkbox', { name: /Read Groups Groups.Read/ }).hover()
   expect(await list.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true)
-  if (isMobile) await page.setViewportSize({ width: 360, height: 640 })
+  await page.setViewportSize({ width: isMobile ? 360 : 1366, height: 640 })
+  await expect.poll(() => page.evaluate(() => window.innerWidth)).toBe(isMobile ? 360 : 1366)
+  expect((await list.boundingBox())!.height).toBeGreaterThanOrEqual(200)
+  await page.screenshot({
+    path: `QA/permissions/${page.viewportSize()!.width}-low-catalog.png`,
+    animations: 'disabled',
+  })
   const save = modal.getByRole('button', { name: 'Lưu quyền hiệu lực', exact: true })
   const saveBounds = (await save.boundingBox())!
   expect(saveBounds.y + saveBounds.height).toBeLessThan(page.viewportSize()!.height)
@@ -194,10 +206,12 @@ test('user directory opens an accessible detail modal, preserves edits between t
     status: index === 1 ? 'Blocked' : 'Active',
   }))
   let writes = 0
+  const reads: string[] = []
   await page.route('**/api/admin/**', (route) => {
     const request = route.request()
     if (request.method() !== 'GET') writes++
     const path = new URL(request.url()).pathname
+    if (request.method() === 'GET') reads.push(path)
     let data: unknown = { effectivePermissionCodes: ['Bills.Read'] }
     if (path === '/api/admin/users') data = { items: members, totalCount: 8, totalPages: 1 }
     if (path === '/api/admin/users/roles')
@@ -223,11 +237,14 @@ test('user directory opens an accessible detail modal, preserves edits between t
     true,
   )
   const first = page.getByRole('button', { name: /Thành viên 1 member1@example.com/ })
+  expect(reads.filter((path) => path !== '/api/admin/users')).toEqual([])
   await first.click()
   const modal = page.getByRole('dialog', { name: 'Thông tin người dùng', exact: true })
   await expect(modal).toBeVisible()
   await modal.getByRole('combobox', { name: 'Vai trò người dùng' }).click()
   await page.getByRole('option', { name: 'Quản lý', exact: true }).click()
+  expect(reads).not.toContain('/api/admin/users/permissions')
+  expect(reads).not.toContain('/api/admin/users/user-1/permissions')
   const accessTab = modal.getByRole('tab', { name: 'Vai trò & truy cập' })
   const permissionTab = modal.getByRole('tab', { name: 'Quyền hiệu lực', exact: true })
   await accessTab.focus()
@@ -244,6 +261,9 @@ test('user directory opens an accessible detail modal, preserves edits between t
   await expect(
     modal.getByRole('checkbox', { name: 'Tạo hóa đơn Bills.Create', exact: true }),
   ).toBeChecked()
+  expect(reads.filter((path) => path === '/api/admin/users/permissions')).toHaveLength(1)
+  expect(reads.filter((path) => path === '/api/admin/users/user-1/permissions')).toHaveLength(1)
+  await page.screenshot({ path: `QA/permissions/${page.viewportSize()!.width}-editor.png` })
   await page.keyboard.press('Escape')
   await expect(modal).not.toBeVisible()
   await expect(first).toBeFocused()

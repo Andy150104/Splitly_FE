@@ -1972,13 +1972,6 @@ body {
 .splitly-landing .faq-item p {
   color: #b6a3c7;
 }
-.splitly-landing .fallback-wallet {
-  background: linear-gradient(135deg, #8869a8, #513860);
-}
-.splitly-landing .fallback-card {
-  background: #ddd0ef;
-  color: #52375c;
-}
 .ws-modal .ws-form-actions {
   position: sticky;
   bottom: -26px;

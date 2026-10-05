@@ -1938,120 +1938,6 @@ h2 {
 }
 
 /* Graceful first paint / WebGL unavailable state, entirely local. */
-.wallet-fallback {
-  width: 370px;
-  height: 390px;
-  position: absolute;
-  top: 48%;
-  left: 50%;
-  transform: translate(-50%, -50%) rotate(-8deg);
-}
-.fallback-wallet {
-  width: 300px;
-  height: 193px;
-  background: linear-gradient(135deg, #5d93c0, #36648a);
-  border-radius: 24px;
-  position: absolute;
-  bottom: 54px;
-  left: 20px;
-  box-shadow:
-    8px 10px 0 #2c5271,
-    8px 35px 42px #174b772b;
-  padding: 27px;
-  color: #dbebf8;
-  transform: skewY(-3deg);
-}
-.fallback-wallet::before {
-  content: '';
-  position: absolute;
-  inset: 9px;
-  border: 1px dashed #8fc1ea;
-  border-radius: 16px;
-}
-.fallback-wallet b {
-  font-family: Georgia, serif;
-  font-size: 62px;
-  letter-spacing: -5px;
-}
-.fallback-wallet > span {
-  position: absolute;
-  left: 29px;
-  bottom: 27px;
-  font-size: 6px;
-  letter-spacing: 1px;
-}
-.fallback-wallet i {
-  position: absolute;
-  width: 79px;
-  height: 42px;
-  background: #4d89ba;
-  right: -8px;
-  top: 77px;
-  border-radius: 8px;
-  box-shadow: 0 3px 4px #24445d44;
-}
-.fallback-wallet i::after {
-  content: '';
-  position: absolute;
-  left: 18px;
-  top: 12px;
-  width: 15px;
-  height: 15px;
-  border-radius: 50%;
-  background: linear-gradient(130deg, #f4e3a1, #b6994e);
-}
-.fallback-card {
-  position: absolute;
-  left: 13px;
-  top: 60px;
-  width: 270px;
-  height: 172px;
-  border-radius: 12px;
-  background: linear-gradient(125deg, #e0eef9, #a9cfef);
-  transform: rotate(-10deg);
-  padding: 15px 24px;
-  box-shadow: 2px 3px 0 #75b2e5;
-}
-.fallback-card b {
-  font-family: Georgia, serif;
-  font-size: 52px;
-  letter-spacing: -4px;
-}
-.fallback-card > span {
-  display: block;
-  font-size: 6px;
-  margin-top: 6px;
-}
-.fallback-coin {
-  position: absolute;
-  right: 0;
-  bottom: 15px;
-  width: 80px;
-  height: 80px;
-  border: 6px solid #d3b463;
-  background: linear-gradient(130deg, #f3e1a1, #c0a14d);
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  font-family: Georgia, serif;
-  font-size: 49px;
-  color: #9d8237;
-  box-shadow: 4px 4px 0 #9f853d;
-}
-.fallback-receipt {
-  position: absolute;
-  top: 24px;
-  right: 0;
-  padding: 25px 15px;
-  font-family: Georgia, serif;
-  font-size: 24px;
-  text-align: center;
-  background: #f8fbfe;
-  width: 120px;
-  height: 200px;
-  transform: rotate(15deg);
-}
-
 /* The interactive sample is opened deliberately from the homepage. */
 .modal {
   border: 1px solid #c5d9e9;
@@ -3600,9 +3486,6 @@ h2 {
   .footer-bottom button,
   .footer-bottom a {
     font-size: 7px;
-  }
-  .wallet-fallback {
-    transform: translate(-50%, -50%) scale(0.8) rotate(-8deg);
   }
   .modal {
     width: calc(100% - 24px);

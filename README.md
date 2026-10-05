@@ -15,6 +15,10 @@ npm run dev
 
 Mở http://localhost:3000. Giữ `.env.local` đang có. Nếu cần nút **Vào bằng tài khoản phát triển** ở `/login`, đặt `ENABLE_DEV_LOGIN=true` và dùng seed `admin@example.com` trên backend. Google và mã email hoạt động qua cùng gateway; nút phát triển luôn bị tắt trong production.
 
+Nếu VS Code báo thiếu `react` hoặc `@radix-ui/react-popover`, chạy `npm ci --include=dev` từ root này rồi `npm run typecheck`. Khi typecheck qua nhưng editor còn báo lỗi, chọn **TypeScript: Select TypeScript Version → Use Workspace Version**, sau đó **TypeScript: Restart TS Server**. `.vscode/settings.json` trỏ đến TypeScript đã khóa trong dự án. Không thêm declaration giả hoặc bỏ strict để che lỗi dependency.
+
+Nếu báo `EADDRINUSE :3000`, một server đang dùng cổng đó. Dừng đúng terminal đang chạy bằng Ctrl+C trước khi mở phiên mới; không tắt toàn bộ Node trên máy. Có thể chạy preview riêng bằng `npm exec -- cross-env NODE_ENV=development next dev --port 3001`.
+
 Chi tiết cài thêm thư viện, cleanup và đo tốc độ: [hướng dẫn build và tải trang](docs/skills/splitly-development/references/build-and-loading.md). `npm run typecheck` tự sinh route types; không cần commit `next-env.d.ts` hoặc output `.next`. `npm run clean` dọn output khi server đã dừng.
 
 Form login hiển thị từ HTML server. Cảnh 3D tải sau khi trang paint; mobile login không tải renderer bị ẩn. Landing chỉ dựng các chương tiếp theo khi cuộn đến gần, giữ các cảnh đã xem để cuộn ngược ổn định. Script `node scripts/audit-initial-load.mjs` đo bản production ở :3001 và lưu ảnh/số đo tại `QA/initial-load`.
@@ -45,6 +49,12 @@ Các nút quản lý và điều hướng quản trị hiện theo `effectivePer
 ## API và phiên đăng nhập
 
 `src/app/api/[...path]/route.ts` chuyển các endpoint được cho phép về backend để frontend gọi cùng origin. Access/refresh token giữ trong cookie HttpOnly. Thông tin người dùng được ký bằng HMAC, kiểm tra chữ ký và hạn sử dụng trước khi cho vào khu quản lý. Token không trả về JavaScript, không lưu vào localStorage.
+
+`BACKEND_API_URL` phải được cấu hình rõ trong môi trường; gateway không gửi dữ liệu đến một URL ngrok mặc định. `src/lib/api/responses.ts` rút gọn dữ liệu quyền, vai trò, ngân hàng và chi tiết hóa đơn trước khi gửi về trình duyệt. Số tài khoản trong danh sách được che, lookup chỉ trả tên đã xác minh; lỗi không chuyển tiếp response chẩn đoán của ngân hàng. `views.ts` khai báo contract UI, còn `types.ts` giữ schema upstream được sinh từ Swagger. API quản trị kiểm tra quyền hiệu lực từ backend trước khi lấy dữ liệu, chỉ gộp các kiểm tra đồng thời và không cache quyền qua các request đã hoàn thành.
+
+Quyền phiên chỉ chứa hành động được frontend sử dụng, được khai báo trong `capabilities.ts`. Danh mục vai trò chỉ tải khi mở người dùng; danh mục quyền và các grant của người đó chỉ tải khi mở thẻ quyền. Bộ chỉnh quyền giữ toàn bộ grant để không xóa nhầm quyền nghiệp vụ chưa có màn hình frontend. Component riêng nằm trong `src/components/workspace/admin/PermissionsForm.tsx`.
+
+Dữ liệu cần cho UI vẫn đọc được trong DevTools: tên/email khi quản lý người dùng, mã quyền để bật hành động, số tài khoản do người dùng nhập trong request xác minh/lưu, QR và link thanh toán. Không thể giấu dữ liệu này bằng CSS hay mã hóa trong frontend. Backend vẫn phải kiểm tra quyền sở hữu từng hóa đơn/tài khoản; việc rút gọn response không thay thế kiểm tra đó. Xem [quy tắc privacy và gateway](docs/skills/splitly-development/references/api-privacy.md).
 
 Kiểm tra Origin so sánh với Host của request, tránh chặn nhầm `localhost:3000` khi Next dev chạy nội bộ ở `0.0.0.0:3000`. Request từ host khác vẫn bị chặn.
 

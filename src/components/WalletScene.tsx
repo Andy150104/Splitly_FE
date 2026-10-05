@@ -14,6 +14,7 @@ import ScrollParticles from './three/ScrollParticles'
 import { landingCard, landingLeather, landingMetal, landingPaper } from './three/landingMaterials'
 import WalletPocket from './three/WalletPocket'
 import { studio } from './three/materials'
+import SceneReady from './three/SceneReady'
 
 function useLabelTexture(
   kind: 'wallet' | 'card' | 'receipt' | 'share' | 'jar' | 'paid' | 'insight',
@@ -668,29 +669,6 @@ function SavingsScene({ progress, saved }: { progress: React.RefObject<number>; 
   )
 }
 
-export function WalletFallback() {
-  return (
-    <div className="wallet-fallback" aria-hidden="true">
-      <div className="fallback-card">
-        <b>Splitly</b>
-        <span>YOUR EVERYDAY, A LITTLE BETTER</span>
-      </div>
-      <div className="fallback-receipt">
-        Splitly
-        <hr />A GOOD LITTLE DAY
-        <hr />
-        65.000 ₫
-      </div>
-      <div className="fallback-wallet">
-        <b>Splitly</b>
-        <span>A LITTLE SPACE. A LIGHTER MIND.</span>
-        <i />
-      </div>
-      <div className="fallback-coin">₫</div>
-    </div>
-  )
-}
-
 function CinematicCamera({
   progress,
   reducedMotion,
@@ -815,12 +793,14 @@ function SecondaryScenes({
 }
 
 export default function WalletScene({
+  onReady,
   reducedMotion,
   progress,
   inspectionTurn,
   manualOrbit,
   demo,
 }: {
+  onReady: (ready: boolean) => void
   reducedMotion: boolean
   progress: React.RefObject<number>
   inspectionTurn: number
@@ -838,13 +818,16 @@ export default function WalletScene({
     }
   })
   const [contextLost, setContextLost] = useState(false)
+  useEffect(() => {
+    if (!webGLAvailable || contextLost) onReady(false)
+  }, [webGLAvailable, contextLost, onReady])
   const [stacked, setStacked] = useState(() => window.innerWidth <= 1024)
   useEffect(() => {
     const resize = () => setStacked(window.innerWidth <= 1024)
     window.addEventListener('resize', resize, { passive: true })
     return () => window.removeEventListener('resize', resize)
   }, [])
-  if (!webGLAvailable || contextLost) return <WalletFallback />
+  if (!webGLAvailable || contextLost) return null
   return (
     <Canvas
       camera={{ position: [0, 0.1, 7.65], fov: 40 }}
@@ -853,11 +836,18 @@ export default function WalletScene({
       frameloop={reducedMotion ? 'demand' : 'always'}
       onCreated={({ gl }) => {
         gl.transmissionResolutionScale = window.innerWidth <= 640 ? 0.5 : 0.75
-        gl.domElement.addEventListener('webglcontextlost', () => setContextLost(true), {
-          once: true,
-        })
+        gl.domElement.addEventListener(
+          'webglcontextlost',
+          () => {
+            setContextLost(true)
+            onReady(false)
+          },
+          {
+            once: true,
+          },
+        )
       }}
-      fallback={<WalletFallback />}
+      fallback={null}
     >
       <Suspense fallback={null}>
         <LandingLighting />
@@ -887,6 +877,7 @@ export default function WalletScene({
             color={studio.ink}
           />
         </StageComposition>
+        <SceneReady onReady={() => onReady(true)} />
       </Suspense>
     </Canvas>
   )

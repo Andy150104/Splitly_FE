@@ -3,18 +3,10 @@
 import Select from '../ui/Select'
 
 import { useRef, useState } from 'react'
-import type { FormEvent } from 'react'
 import { send } from '../../lib/api/client'
-import type {
-  AdminUser,
-  PageResult,
-  PermissionDefinition,
-  Permissions,
-  RoleDefinition,
-} from '../../lib/api/types'
-import { motion, useReducedMotion } from 'motion/react'
-import { Info } from 'lucide-react'
-import Tooltip from '../ui/Tooltip'
+import type { AdminUser, PageResult } from '../../lib/api/types'
+import type { PermissionDefinitionView, PermissionView, RoleView } from '../../lib/api/views'
+import PermissionsForm from './admin/PermissionsForm'
 import SearchInput from '../ui/SearchInput'
 import WorkspaceModal from '../ui/WorkspaceModal'
 import { Empty, ErrorState, Loading, Notice } from '../ui/Feedback'
@@ -36,10 +28,6 @@ export default function AdminUsers() {
     can('Users.Read')
       ? `admin/users?search=${encodeURIComponent(filter)}&status=${status}&pageNumber=${page}&pageSize=8`
       : null,
-  )
-  const roles = useApi<RoleDefinition[]>(can('Roles.Read') ? 'admin/users/roles' : null)
-  const catalog = useApi<PermissionDefinition[]>(
-    can('Permissions.Read') ? 'admin/users/permissions' : null,
   )
   if (!can('Users.Read'))
     return (
@@ -88,15 +76,6 @@ export default function AdminUsers() {
         <button className="ws-button ws-button-secondary">Tìm kiếm</button>
       </form>
       <Notice message={message} success />
-      {(roles.error || catalog.error) && (
-        <ErrorState
-          message={roles.error || catalog.error}
-          retry={() => {
-            roles.reload()
-            catalog.reload()
-          }}
-        />
-      )}
       <section className="ws-panel ws-admin-list ws-users-directory">
         <div className="ws-section-heading">
           <h2>Danh sách người dùng</h2>
@@ -171,9 +150,6 @@ export default function AdminUsers() {
           <MemberEditor
             key={selected.memberId}
             member={selected}
-            roles={roles.data || []}
-            catalog={catalog.data || []}
-            catalogError={roles.error || catalog.error}
             onBusy={setEditorBusy}
             onSaved={() => {
               setEditorBusy(false)
@@ -190,27 +166,32 @@ export default function AdminUsers() {
 
 function MemberEditor({
   member,
-  roles,
-  catalog,
-  catalogError,
   onSaved,
   onBusy,
 }: {
   member: AdminUser
-  roles: RoleDefinition[]
-  catalog: PermissionDefinition[]
-  catalogError: string
   onSaved: () => void
   onBusy: (busy: boolean) => void
 }) {
   const { can, reloadPermissions, user } = useWorkspace()
-  const permissions = useApi<Permissions>(
-    can('Users.ReadPermissions') ? `admin/users/${member.memberId}/permissions` : null,
-  )
   const [roleId, setRoleId] = useState(member.roleId)
   const [error, setError] = useState('')
   const [pending, setPending] = useState(false)
   const [tab, setTab] = useState<'access' | 'permissions'>('access')
+  const [permissionsOpened, setPermissionsOpened] = useState(false)
+  const roles = useApi<RoleView[]>(can('Roles.Read') ? 'admin/users/roles' : null)
+  const catalog = useApi<PermissionDefinitionView[]>(
+    permissionsOpened && can('Permissions.Read') ? 'admin/users/permissions' : null,
+  )
+  const permissions = useApi<PermissionView>(
+    permissionsOpened && can('Users.ReadPermissions')
+      ? `admin/users/${member.memberId}/permissions`
+      : null,
+  )
+  function selectTab(value: 'access' | 'permissions') {
+    if (value === 'permissions') setPermissionsOpened(true)
+    setTab(value)
+  }
   const tabs = can('Users.ReadPermissions')
     ? (['access', 'permissions'] as const)
     : (['access'] as const)
@@ -234,7 +215,7 @@ function MemberEditor({
     }
   }
   return (
-    <section className="ws-admin-editor ws-user-profile" data-status={member.status}>
+    <section className="ws-admin-editor ws-user-profile" data-status={member.status} data-tab={tab}>
       <div className="ws-user-profile-heading">
         <span className="ws-avatar">{(member.name || member.email || '?')[0].toUpperCase()}</span>
         <div>
@@ -252,12 +233,12 @@ function MemberEditor({
           <span>Quyền hiệu lực</span>
           <strong>
             {can('Users.ReadPermissions')
-              ? (permissions.data?.effectivePermissionCodes?.length ?? '…')
+              ? (permissions.data?.effectivePermissionCodes?.length ?? 'Xem trong thẻ quyền')
               : 'Không có quyền xem'}
           </strong>
         </div>
       </div>
-      <Notice message={error || catalogError} />
+      <Notice message={error} />
       <div className="ws-user-profile-tabs" role="tablist" aria-label="Quản lý người dùng">
         {tabs.map((value) => (
           <button
@@ -268,7 +249,7 @@ function MemberEditor({
             aria-selected={tab === value}
             aria-controls={`user-panel-${value}`}
             tabIndex={tab === value ? 0 : -1}
-            onClick={() => setTab(value)}
+            onClick={() => selectTab(value)}
             onKeyDown={(event) => {
               if (
                 !can('Users.ReadPermissions') ||
@@ -284,7 +265,7 @@ function MemberEditor({
                     : tab === 'access'
                       ? 'permissions'
                       : 'access'
-              setTab(next)
+              selectTab(next)
               document.getElementById(`user-tab-${next}`)?.focus()
             }}
           >
@@ -299,18 +280,19 @@ function MemberEditor({
         hidden={tab !== 'access'}
       >
         <div className="ws-user-access">
+          {roles.error && <ErrorState message={roles.error} retry={roles.reload} />}
           <Field label="Vai trò người dùng">
             <Select
               value={roleId}
-              disabled={pending || (!can('Users.UpdateRole') && !can('Users.UpdateAccess'))}
+              disabled={pending || roles.loading || !!roles.error || !can('Users.UpdateRole')}
               onValueChange={(value) => setRoleId(value)}
             >
-              {!roles.some((role) => role.roleId === member.roleId) && (
+              {!(roles.data || []).some((role) => role.roleId === member.roleId) && (
                 <option value={member.roleId}>{member.role || 'Vai trò hiện tại'}</option>
               )}
-              {roles.map((role) => (
+              {(roles.data || []).map((role) => (
                 <option key={role.roleId} value={role.roleId}>
-                  {role.name || role.code}
+                  {role.name || 'Vai trò'}
                 </option>
               ))}
             </Select>
@@ -322,7 +304,7 @@ function MemberEditor({
               </p>
               <button
                 className="ws-button"
-                disabled={pending || roleId === member.roleId}
+                disabled={pending || roles.loading || !!roles.error || roleId === member.roleId}
                 onClick={() => void save('role', { roleId })}
               >
                 {pending ? 'Đang lưu…' : 'Lưu vai trò'}
@@ -352,21 +334,26 @@ function MemberEditor({
           aria-labelledby="user-tab-permissions"
           hidden={tab !== 'permissions'}
         >
-          {permissions.loading ? (
+          {permissions.loading || catalog.loading ? (
             <Loading />
-          ) : permissions.error ? (
-            <ErrorState message={permissions.error} retry={permissions.reload} />
+          ) : permissions.error || catalog.error ? (
+            <ErrorState
+              message={permissions.error || catalog.error}
+              retry={() => {
+                permissions.reload()
+                catalog.reload()
+              }}
+            />
           ) : (
             permissions.data && (
               <PermissionsForm
                 key={JSON.stringify(permissions.data.effectivePermissionCodes)}
                 initial={permissions.data.effectivePermissionCodes || []}
-                catalog={catalog}
+                catalog={catalog.data || []}
                 editable={
                   can('Users.UpdatePermissions') &&
                   can('Permissions.Read') &&
-                  catalog.length > 0 &&
-                  !catalogError
+                  (catalog.data?.length || 0) > 0
                 }
                 pending={pending}
                 onSave={(codes) => void save('permissions', { effectivePermissionCodes: codes })}
@@ -376,181 +363,5 @@ function MemberEditor({
         </div>
       )}
     </section>
-  )
-}
-
-function PermissionsForm({
-  initial,
-  catalog,
-  editable,
-  pending,
-  onSave,
-}: {
-  initial: string[]
-  catalog: PermissionDefinition[]
-  editable: boolean
-  pending: boolean
-  onSave: (codes: string[]) => void
-}) {
-  const [selected, setSelected] = useState(initial)
-  const [search, setSearch] = useState('')
-  const [groupFilter, setGroupFilter] = useState('')
-  const reduced = useReducedMotion()
-  const changed = [...selected].sort().join('|') !== [...initial].sort().join('|')
-  const definitions = catalog.length
-    ? catalog
-    : initial.map((code) => ({
-        code,
-        name: code,
-        groupCode: 'current',
-        groupName: 'Quyền hiện tại',
-        description: null,
-        sortOrder: 0,
-        permissionId: code,
-      }))
-  const sorted = [...definitions].sort((a, b) => a.sortOrder - b.sortOrder)
-  const groups = [...new Set(sorted.map((item) => item.groupCode || 'other'))]
-  const term = search.trim().toLocaleLowerCase('vi')
-  const visibleGroups = groups
-    .filter((group) => !groupFilter || group === groupFilter)
-    .map((group) => ({
-      group,
-      items: sorted.filter(
-        (item) =>
-          (item.groupCode || 'other') === group &&
-          `${item.name} ${item.code} ${item.description || ''}`
-            .toLocaleLowerCase('vi')
-            .includes(term),
-      ),
-    }))
-    .filter(({ items }) => items.length > 0)
-  function submit(event: FormEvent) {
-    event.preventDefault()
-    onSave(selected)
-  }
-  return (
-    <form className="ws-permissions-form" onSubmit={submit}>
-      <div className="ws-permission-heading">
-        <span>{editable ? 'Quyền truy cập' : 'Quyền hiện tại'}</span>
-        <Tooltip
-          label="Quyền hiệu lực"
-          description={
-            editable
-              ? 'Thay đổi chỉ được áp dụng khi bạn bấm Lưu quyền. Tìm kiếm chỉ lọc danh sách, không bỏ những quyền đã chọn.'
-              : 'Đây là những quyền đang áp dụng cho tài khoản. Bạn có thể tìm kiếm và lọc nhóm để xem chi tiết.'
-          }
-          side="bottom"
-        >
-          <button type="button" className="ws-help-button" aria-label="Giải thích quyền hiệu lực">
-            <Info size={16} aria-hidden="true" />
-          </button>
-        </Tooltip>
-        <span className="ws-permission-count">
-          <strong>{selected.length}</strong> quyền được chọn
-        </span>
-      </div>
-      <div className="ws-permission-toolbar">
-        <SearchInput
-          label="Tìm quyền"
-          value={search}
-          onChange={setSearch}
-          placeholder="Tìm tên hoặc mã quyền…"
-        />
-      </div>
-      <Select
-        className="ws-permission-group-select ws-compact-select"
-        aria-label="Nhóm quyền"
-        value={groupFilter}
-        onValueChange={(value) => setGroupFilter(value)}
-      >
-        <option value="">Tất cả nhóm quyền</option>
-        {groups.map((group) => (
-          <option key={group} value={group}>
-            {sorted.find((item) => (item.groupCode || 'other') === group)?.groupName || group}
-          </option>
-        ))}
-      </Select>
-      <div className="ws-permission-filters" role="group" aria-label="Lọc nhóm quyền">
-        <button type="button" aria-pressed={!groupFilter} onClick={() => setGroupFilter('')}>
-          Tất cả
-        </button>
-        {groups.map((group) => (
-          <button
-            key={group}
-            type="button"
-            aria-pressed={groupFilter === group}
-            onClick={() => setGroupFilter(group)}
-          >
-            {sorted.find((item) => (item.groupCode || 'other') === group)?.groupName || group}
-          </button>
-        ))}
-      </div>
-      <div
-        className="ws-permission-catalog"
-        role="region"
-        aria-label="Danh sách quyền"
-        tabIndex={0}
-      >
-        <motion.div
-          className="ws-permission-groups"
-          key={`${groupFilter}:${term}`}
-          initial={{ opacity: reduced ? 1 : 0, y: reduced ? 0 : 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: reduced ? 0 : 0.18 }}
-        >
-          {visibleGroups.map(({ group, items }) => (
-            <fieldset key={group}>
-              <legend>
-                {items[0].groupName || group}
-                <span>
-                  {items.filter((item) => selected.includes(item.code || '')).length} /{' '}
-                  {items.length}
-                </span>
-              </legend>
-              {items.map(
-                (item) =>
-                  item.code && (
-                    <label className="ws-permission-option" key={item.code}>
-                      <input
-                        type="checkbox"
-                        checked={selected.includes(item.code)}
-                        disabled={!editable || pending}
-                        onChange={(event) => {
-                          const code = item.code!
-                          setSelected((previous) =>
-                            event.target.checked
-                              ? [...previous, code]
-                              : previous.filter((value) => value !== code),
-                          )
-                        }}
-                      />
-                      <span>
-                        <strong>{item.name || item.code}</strong>
-                        <small>{item.code}</small>
-                        {item.description && <small>{item.description}</small>}
-                      </span>
-                    </label>
-                  ),
-              )}
-            </fieldset>
-          ))}
-          {!visibleGroups.length && (
-            <p className="ws-permission-empty">
-              Không tìm thấy quyền phù hợp. Thử từ khóa hoặc nhóm khác.
-            </p>
-          )}
-        </motion.div>
-      </div>
-      {editable && (
-        <div className="ws-permission-actions">
-          <span className="ws-muted" aria-live="polite">
-            {changed ? 'Có thay đổi chưa lưu' : 'Quyền đang được áp dụng'}
-          </span>
-          <button className="ws-button" disabled={pending || !changed}>
-            {pending ? 'Đang lưu…' : 'Lưu quyền hiệu lực'}
-          </button>
-        </div>
-      )}
-    </form>
   )
 }

@@ -3,11 +3,11 @@
 import { createContext, useContext, useCallback, useEffect, useState } from 'react'
 import { api } from '../../lib/api/client'
 import type { User } from '../../lib/api/session'
-import type { Permissions } from '../../lib/api/types'
+import type { PermissionView } from '../../lib/api/views'
 
 export const WorkspaceContext = createContext<{
   user: User
-  permissions: Permissions | null
+  permissions: PermissionView | null
   reloadPermissions: () => void
 }>({
   user: { email: '', displayName: '' },

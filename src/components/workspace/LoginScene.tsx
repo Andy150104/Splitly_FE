@@ -12,6 +12,7 @@ import Brand from '../ui/Brand'
 import LinkedLoop from '../three/LinkedLoop'
 import SplitToken from '../three/SplitToken'
 import StudioLighting from '../three/StudioLighting'
+import SceneReady from '../three/SceneReady'
 import { satin, softMetal, studio } from '../three/materials'
 
 type Pointer = RefObject<{
@@ -73,15 +74,18 @@ function Fallback({ layout }: { layout?: SceneLayout }) {
   )
 }
 class SceneBoundary extends Component<
-  { children: ReactNode; layout: SceneLayout },
+  { children: ReactNode; onError: () => void },
   { failed: boolean }
 > {
   state = { failed: false }
   static getDerivedStateFromError() {
     return { failed: true }
   }
+  componentDidCatch() {
+    this.props.onError()
+  }
   render() {
-    return this.state.failed ? <Fallback layout={this.props.layout} /> : this.props.children
+    return this.state.failed ? null : this.props.children
   }
 }
 
@@ -221,7 +225,9 @@ function MoneyOrbit({
       outerOrbit.current.rotation.set(
         0.12 + Math.sin(time * 0.15) * 0.34,
         -0.08 + Math.cos(time * 0.12) * 0.26,
-        0.08 + time * 0.055,
+        // A full roll turns the wide ellipse into a tall diagonal and cuts it at the page edge.
+        // Precess around the shared centre while keeping its silhouette within the composition.
+        0.08 + Math.sin(time * 0.055) * 0.18,
       )
     }
     if (wave.current) wave.current.scale.setScalar(1 + progress * 0.065)
@@ -588,9 +594,14 @@ function Sculpture({
 }
 
 export default function LoginScene({ frameRef }: { frameRef: RefObject<HTMLDivElement | null> }) {
+  const [rendered, setRendered] = useState(false)
+  const [contextLost, setContextLost] = useState(false)
   const reduced = useReducedMotion()
   const [visible, setVisible] = useState(true)
   const [mobile, setMobile] = useState(false)
+  useEffect(() => {
+    if (mobile) setRendered(false)
+  }, [mobile])
   const [interaction, setInteraction] = useState('rest')
   const [frame, setFrame] = useState<HTMLDivElement | null>(null)
   const [layout, setLayout] = useState<SceneLayout>({
@@ -715,25 +726,44 @@ export default function LoginScene({ frameRef }: { frameRef: RefObject<HTMLDivEl
         !mobile &&
         createPortal(
           <div className="login-scene-canvas" aria-hidden="true">
-            <SceneBoundary layout={layout}>
-              <Suspense fallback={<Fallback layout={layout} />}>
-                <Canvas
-                  style={{ pointerEvents: 'none' }}
-                  camera={{ position: [0, 0, 7.8], fov: 37 }}
-                  dpr={mobile ? [1, 1.25] : [1, 1.5]}
-                  frameloop={reduced || !visible ? 'demand' : 'always'}
-                  gl={{ antialias: !mobile, alpha: true }}
-                  fallback={<Fallback layout={layout} />}
-                  onCreated={(state) => {
-                    invalidate.current = state.invalidate
-                  }}
-                >
-                  <StudioLighting />
-                  <SpatialCamera still={!!reduced} pointer={pointer} mobile={mobile} />
-                  <Sculpture still={!!reduced} pointer={pointer} mobile={mobile} layout={layout} />
-                </Canvas>
-              </Suspense>
-            </SceneBoundary>
+            {!rendered && <Fallback layout={layout} />}
+            {!contextLost && (
+              <SceneBoundary onError={() => setRendered(false)}>
+                <Suspense fallback={null}>
+                  <Canvas
+                    style={{ pointerEvents: 'none' }}
+                    camera={{ position: [0, 0, 7.8], fov: 37 }}
+                    dpr={mobile ? [1, 1.25] : [1, 1.5]}
+                    frameloop={reduced || !visible ? 'demand' : 'always'}
+                    gl={{ antialias: !mobile, alpha: true }}
+                    fallback={null}
+                    onCreated={(state) => {
+                      invalidate.current = state.invalidate
+                      state.gl.domElement.addEventListener(
+                        'webglcontextlost',
+                        () => {
+                          setRendered(false)
+                          setContextLost(true)
+                        },
+                        { once: true },
+                      )
+                    }}
+                  >
+                    <Suspense fallback={null}>
+                      <StudioLighting />
+                      <SpatialCamera still={!!reduced} pointer={pointer} mobile={mobile} />
+                      <Sculpture
+                        still={!!reduced}
+                        pointer={pointer}
+                        mobile={mobile}
+                        layout={layout}
+                      />
+                      <SceneReady onReady={() => setRendered(true)} />
+                    </Suspense>
+                  </Canvas>
+                </Suspense>
+              </SceneBoundary>
+            )}
           </div>,
           frame,
         )}

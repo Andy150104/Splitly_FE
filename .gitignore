@@ -38,7 +38,8 @@ playwright/.cache/
 
 # Editor and OS files
 .idea/
-.vscode/
+.vscode/*
+!.vscode/settings.json
 *.swp
 *.swo
 .DS_Store

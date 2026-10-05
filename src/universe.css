@@ -1,4 +1,38 @@
 /* Only the landing's product atmosphere replaces the old flat decoration. */
+.splitly-landing .wallet-placeholder {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity 220ms ease,
+    visibility 220ms;
+}
+.splitly-landing .wallet-placeholder[data-state='ready'] {
+  opacity: 0;
+  visibility: hidden;
+}
+.splitly-landing .wallet-placeholder-art {
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  width: min(90%, 460px);
+  height: 85%;
+  transform: translate(-50%, -50%);
+}
+@media (min-width: 1025px) {
+  .splitly-landing .hero-shell-pinned .wallet-placeholder-art {
+    left: 72%;
+    width: min(38%, 580px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .splitly-landing .wallet-placeholder {
+    transition: none;
+  }
+}
 .splitly-landing .hero-universe .narrative-backdrop {
   display: none;
 }

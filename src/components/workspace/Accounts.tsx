@@ -6,7 +6,8 @@ import { api, send } from '../../lib/api/client'
 import { motion, useReducedMotion } from 'motion/react'
 import BankPicker, { BankLogo } from './BankPicker'
 import WorkspaceModal from '../ui/WorkspaceModal'
-import type { AccountLookup, Bank, PayoutAccount } from '../../lib/api/types'
+import type { Bank, PayoutAccount } from '../../lib/api/types'
+import type { AccountLookupView } from '../../lib/api/views'
 import { Empty, ErrorState, Loading, Notice } from '../ui/Feedback'
 import { Field } from '../ui/Field'
 import { PageHeading } from '../ui/PageHeading'
@@ -26,7 +27,7 @@ export function AccountForm({
   const [bin, setBin] = useState('')
   const [number, setNumber] = useState('')
   const [isDefault, setDefault] = useState(true)
-  const [verified, setVerified] = useState<AccountLookup | null>(null)
+  const [verified, setVerified] = useState<AccountLookupView | null>(null)
   const [error, setError] = useState('')
   const [pending, setPending] = useState(false)
   const [lookingUp, setLookingUp] = useState(false)
@@ -49,7 +50,7 @@ export function AccountForm({
     setLookingUp(true)
     const timer = setTimeout(async () => {
       try {
-        const lookup = await api<AccountLookup>('vietqr/account-lookup', {
+        const lookup = await api<AccountLookupView>('vietqr/account-lookup', {
           method: 'POST',
           body: JSON.stringify({ bankBin: bin, accountNumber: number }),
           signal: controller.signal,

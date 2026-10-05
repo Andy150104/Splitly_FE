@@ -2,8 +2,8 @@ import { cookies } from 'next/headers'
 import { createHash } from 'node:crypto'
 import { clearSession, getCurrentUser, setSession } from '../../../lib/api/session'
 import type { LoginSession } from '../../../lib/api/types'
+import { browserData, browserError, withoutPrivateFields } from '../../../lib/api/responses'
 
-const baseUrl = process.env.BACKEND_API_URL || 'https://92d4-171-251-232-238.ngrok-free.app'
 const publicAuth = new Set([
   'auth/google',
   'auth/send-login-code',
@@ -15,7 +15,22 @@ const allowed =
 const refreshes = new Map<string, Promise<LoginSession | null>>()
 const adminPaths =
   /^admin\/(users(?:\/(?:permissions|roles|[a-zA-Z0-9-]+\/(?:permissions|role|access)))?|support-requests(?:\/[a-zA-Z0-9-]+\/status)?)$/
+const permissionChecks = new Map<string, Promise<{ status: number; codes: unknown }>>()
+
+function adminPermission(path: string, method: string) {
+  if (path.startsWith('admin/support-requests'))
+    return method === 'GET' ? 'SupportRequests.Read' : 'SupportRequests.Update'
+  if (path === 'admin/users/roles') return 'Roles.Read'
+  if (path === 'admin/users/permissions') return 'Permissions.Read'
+  if (path.endsWith('/permissions'))
+    return method === 'GET' ? 'Users.ReadPermissions' : 'Users.UpdatePermissions'
+  if (path.endsWith('/role')) return 'Users.UpdateRole'
+  if (path.endsWith('/access')) return 'Users.UpdateAccess'
+  return 'Users.Read'
+}
 async function upstream(path: string, method: string, body?: string, token?: string) {
+  const baseUrl = process.env.BACKEND_API_URL
+  if (!baseUrl) throw new Error('BACKEND_API_URL is required')
   return fetch(`${baseUrl.replace(/\/$/, '')}/api/${path}`, {
     method,
     body,
@@ -91,7 +106,7 @@ async function handler(request: Request, context: { params: Promise<{ path: stri
   const user = await getCurrentUser()
   let access = store.get('mo_access')?.value
   const refreshToken = store.get('mo_refresh')?.value
-  if (!publicAuth.has(path) && path !== 'auth/logout' && !user)
+  if (!publicAuth.has(path) && path !== 'auth/logout' && (!user || !access))
     return Response.json({ message: 'Vui lòng đăng nhập để tiếp tục.' }, { status: 401 })
   try {
     let body = request.method === 'GET' ? undefined : await request.text()
@@ -125,18 +140,58 @@ async function handler(request: Request, context: { params: Promise<{ path: stri
       }
       return Response.json({ data: true })
     }
-    let response = await upstream(target, request.method, body, access)
-    if (response.status === 401 && !publicAuth.has(path) && refreshToken) {
-      const session = await refresh(refreshToken)
-      if (session?.accessToken && user) {
-        await setSession(session, user)
-        access = session.accessToken
-        response = await upstream(target, request.method, body, access)
-      } else {
-        await clearSession()
-        return Response.json({ message: 'Phiên đăng nhập đã hết hạn.' }, { status: 401 })
+    async function authenticatedFetch(targetPath: string, method: string, content?: string) {
+      let response = await upstream(targetPath, method, content, access)
+      if (response.status === 401 && !publicAuth.has(path) && refreshToken) {
+        const session = await refresh(refreshToken)
+        if (session?.accessToken && user) {
+          await setSession(session, user)
+          access = session.accessToken
+          response = await upstream(targetPath, method, content, access)
+        } else {
+          await clearSession()
+          return Response.json({ message: 'Phiên đăng nhập đã hết hạn.' }, { status: 401 })
+        }
+      }
+      return response
+    }
+    if (adminPaths.test(path)) {
+      // Check backend-issued effective permissions before fetching private admin resources.
+      // Share concurrent reads only; do not cache permissions after revocation or role changes.
+      const key = createHash('sha256').update(access!).digest('hex')
+      let pending = permissionChecks.get(key)
+      if (!pending) {
+        pending = (async () => {
+          const response = await authenticatedFetch('auth/me/permissions', 'GET')
+          const result = await response.json().catch(() => null)
+          return {
+            status: response.ok && result?.success === false ? 403 : response.status,
+            codes: result?.data?.effectivePermissionCodes,
+          }
+        })()
+        permissionChecks.set(key, pending)
+        const release = () => permissionChecks.delete(key)
+        void pending.then(release, release)
+      }
+      const permissions = await pending
+      const required = adminPermission(path, request.method)
+      if (
+        permissions.status >= 400 ||
+        !Array.isArray(permissions.codes) ||
+        !permissions.codes.includes(required)
+      ) {
+        const status = permissions.status >= 400 ? permissions.status : 403
+        if (status === 401) await clearSession()
+        return Response.json(
+          { success: false, message: browserError(path, status) },
+          {
+            status,
+            headers: { 'Cache-Control': 'no-store' },
+          },
+        )
       }
     }
+    const response = await authenticatedFetch(target, request.method, body)
     if (response.status === 204) return new Response(null, { status: 204 })
     const result = await response.json().catch(() => null)
     if (!result)
@@ -159,15 +214,30 @@ async function handler(request: Request, context: { params: Promise<{ path: stri
       }
       await setSession(session, profile)
       return Response.json(
-        { success: true, data: profile },
+        { success: true, data: true },
         { headers: { 'Cache-Control': 'no-store' } },
       )
     }
     if (response.status === 401 && !publicAuth.has(path)) await clearSession()
-    return Response.json(result, {
-      status: response.status,
-      headers: { 'Cache-Control': 'no-store' },
-    })
+    const failed = !response.ok || result.success === false
+    const status = failed && response.ok ? 400 : response.status
+    return Response.json(
+      failed
+        ? { success: false, message: browserError(path, status) }
+        : {
+            success: true,
+            data: withoutPrivateFields(
+              browserData(
+                path,
+                typeof result === 'object' && 'data' in result ? result.data : result,
+              ),
+            ),
+          },
+      {
+        status,
+        headers: { 'Cache-Control': 'no-store' },
+      },
+    )
   } catch {
     if (path === 'auth/logout') return Response.json({ data: true })
     return Response.json(

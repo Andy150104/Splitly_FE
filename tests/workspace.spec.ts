@@ -245,7 +245,7 @@ test('bank lookup verifies the account before saving the current API payload', a
   })
   await page.route('**/api/vietqr/account-lookup', (route) =>
     route.fulfill({
-      json: { data: { verified: true, accountName: 'MINH ANH', bankName: 'Vietcombank' } },
+      json: { data: { verified: true, accountName: 'MINH ANH' } },
     }),
   )
   await page.goto('/payout-accounts')

@@ -21,33 +21,23 @@ import { storyChapter, storyChapters, storyRange, storyOpacity, storyTarget } fr
 import type { StoryDemo } from '../lib/story'
 import StoryInteraction from './StoryInteraction'
 import { useDeferredScene } from '../hooks/useDeferredScene'
+import WalletPlaceholder from './ui/WalletPlaceholder'
 
-const WalletScene = dynamic(() => import('./WalletScene'), { ssr: false, loading: StaticWallet })
+const WalletScene = dynamic(() => import('./WalletScene'), { ssr: false, loading: () => null })
 
-function StaticWallet() {
-  return (
-    <div className="wallet-fallback" aria-hidden="true">
-      <div className="fallback-card">
-        <b>Splitly</b>
-        <span>A LITTLE BETTER, EVERY DAY.</span>
-      </div>
-      <div className="fallback-wallet">
-        <b>Splitly</b>
-        <span>A LITTLE SPACE. A LIGHTER MIND.</span>
-        <i />
-      </div>
-      <div className="fallback-coin">₫</div>
-    </div>
-  )
-}
-
-class SceneBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+class SceneBoundary extends Component<
+  { children: ReactNode; onError: () => void },
+  { hasError: boolean }
+> {
   state = { hasError: false }
   static getDerivedStateFromError() {
     return { hasError: true }
   }
+  componentDidCatch() {
+    this.props.onError()
+  }
   render() {
-    return this.state.hasError ? <StaticWallet /> : this.props.children
+    return this.state.hasError ? null : this.props.children
   }
 }
 
@@ -127,6 +117,10 @@ export default function Hero({
   const progress = useRef(0)
   const [visible, setVisible] = useState(true)
   const sceneReady = useDeferredScene(visible)
+  const [sceneRendered, setSceneRendered] = useState(false)
+  useEffect(() => {
+    if (!sceneReady) setSceneRendered(false)
+  }, [sceneReady])
   const [tallEnough, setTallEnough] = useState(true)
   const [chapter, setChapter] = useState(0)
   const [inspectionTurn, setInspectionTurn] = useState(0)
@@ -277,7 +271,7 @@ export default function Hero({
           <motion.div
             className="hero-art"
             onPointerDown={(event) => {
-              if (reducedMotion || event.pointerType !== 'mouse') return
+              if (!sceneRendered || reducedMotion || event.pointerType !== 'mouse') return
               if ((event.target as HTMLElement).closest('button')) return
               drag.current = { active: true, x: event.clientX, y: event.clientY }
               event.currentTarget.setPointerCapture(event.pointerId)
@@ -297,7 +291,7 @@ export default function Hero({
               event.currentTarget.classList.remove('is-dragging')
             }}
             onPointerMove={(event) => {
-              if (event.pointerType !== 'mouse' || reducedMotion) return
+              if (!sceneRendered || event.pointerType !== 'mouse' || reducedMotion) return
               const bounds = event.currentTarget.getBoundingClientRect()
               event.currentTarget.style.setProperty(
                 '--spot-x',
@@ -342,17 +336,17 @@ export default function Hero({
               role="img"
               aria-label={`Cảnh 3D ${storyChapters[chapter].label.toLocaleLowerCase('vi')} — chuyển động theo thao tác cuộn`}
             >
-              <SceneBoundary>
-                {sceneReady ? (
+              <WalletPlaceholder ready={sceneReady && sceneRendered} />
+              <SceneBoundary onError={() => setSceneRendered(false)}>
+                {sceneReady && (
                   <WalletScene
+                    onReady={setSceneRendered}
                     reducedMotion={reducedMotion || !pinned}
                     progress={progress}
                     inspectionTurn={inspectionTurn}
                     manualOrbit={manualOrbit}
                     demo={demo}
                   />
-                ) : (
-                  <StaticWallet />
                 )}
               </SceneBoundary>
             </div>
@@ -365,7 +359,7 @@ export default function Hero({
               <button
                 className="scene-interact"
                 aria-label="Xoay vật thể 3D"
-                disabled={!ready}
+                disabled={!ready || !sceneRendered}
                 onClick={() => setInspectionTurn((value) => value + 1)}
               >
                 <Rotate3D size={15} strokeWidth={1.4} /> <span>Xoay mô hình</span>
