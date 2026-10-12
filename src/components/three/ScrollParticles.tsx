@@ -12,6 +12,7 @@ import {
 import type { Points } from 'three'
 import type { RefObject } from 'react'
 import { storyChapters } from '../../lib/story'
+import { useSceneColor } from './SceneTheme'
 
 /** A paused GSAP score follows the existing scroll clock, including reverse scrolling. */
 export default function ScrollParticles({
@@ -21,6 +22,7 @@ export default function ScrollParticles({
   progress: RefObject<number>
   reducedMotion: boolean
 }) {
+  const color = useSceneColor()
   const { size, gl } = useThree()
   const points = useRef<Points>(null)
   const score = useRef<gsap.core.Timeline | null>(null)
@@ -105,6 +107,9 @@ export default function ScrollParticles({
       }),
     [],
   )
+  useEffect(() => {
+    material.uniforms.uColor.value.set(color('#c8b3f0'))
+  }, [material, color])
   useEffect(() => {
     pose.current = { turn: 0, spread: 1, rise: 0, opacity: 1 }
     const timeline = gsap.timeline({

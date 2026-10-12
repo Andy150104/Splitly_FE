@@ -1,5 +1,37 @@
 import { test, expect } from '@playwright/test'
 
+test('mobile login has a visible home link in both themes', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.route('https://accounts.google.com/**', (route) => route.abort())
+  for (const theme of ['dark', 'light']) {
+    for (const width of [390, 320]) {
+      await page.setViewportSize({ width, height: 664 })
+      await page.addInitScript((value) => localStorage.setItem('splitly.theme', value), theme)
+      await page.goto('/login')
+      const home = page.getByRole('link', { name: 'Về trang chủ', exact: true })
+      await expect(home).toBeVisible()
+      const dismiss = page.getByRole('button', { name: 'Đóng thông báo' })
+      if (await dismiss.isVisible()) await dismiss.click()
+      const bounds = (await home.boundingBox())!
+      expect(bounds.y).toBeGreaterThanOrEqual(0)
+      expect(bounds.y + bounds.height).toBeLessThan(664)
+      expect(bounds.height).toBeGreaterThanOrEqual(36)
+      await expect(page.locator('.login-scene-canvas canvas')).toHaveCount(0)
+      await expect(page.getByRole('progressbar')).toBeHidden()
+      await expect(page.locator('.splitly-notification')).toHaveCount(0)
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+        true,
+      )
+      await page.screenshot({
+        path: `QA/scene-startup/mobile-login-${theme}-${width}-home-link.png`,
+      })
+      await home.click()
+      await expect(page).toHaveURL(/\/$/)
+      await expect(page.locator('#hero-title')).toBeVisible()
+    }
+  }
+})
+
 test('login form is visible in server HTML before hydration', async ({ browser, baseURL }) => {
   const context = await browser.newContext({
     baseURL,
@@ -52,11 +84,11 @@ test('mobile login skips the renderer; form works and desktop resize restores 3D
   expect(
     (await Promise.all(rendererResponses)).some((body) => body.includes('WebGLRenderer')),
   ).toBe(true)
-  await expect(page.locator('.login-scene-canvas .login-sculpture-fallback')).toHaveCount(0)
+  await expect(page.locator('.ws-login-spatial-space > .login-sculpture-fallback')).toBeHidden()
   await page
     .locator('.login-scene-canvas canvas')
     .evaluate((canvas) => canvas.dispatchEvent(new Event('webglcontextlost', { cancelable: true })))
-  await expect(page.locator('.login-scene-canvas .login-sculpture-fallback')).toHaveCount(1)
+  await expect(page.locator('.ws-login-spatial-space > .login-sculpture-fallback')).toBeVisible()
   await expect(page.getByLabel('Mã đăng nhập')).toBeVisible()
 })
 
@@ -83,6 +115,7 @@ test('landing keeps artwork in its own column while the renderer chunk is slow',
     await expect.poll(() => held).toBeGreaterThan(0)
     await expect(placeholder).toHaveAttribute('data-state', 'loading')
     await expect(placeholder).toBeVisible()
+    await expect(page.locator('.wallet-placeholder-art')).toHaveCSS('filter', /blur\(/)
     const viewports = testInfo.project.name.includes('mobile')
       ? [
           [360, 740],
@@ -156,12 +189,15 @@ test('landing keeps usable artwork when WebGL is unavailable', async ({ page }, 
     .toBeGreaterThan(0)
   await expect(page.locator('.wallet-placeholder')).toBeVisible()
   await expect(page.locator('.wallet-placeholder')).toHaveAttribute('data-state', 'loading')
+  await expect(page.locator('.wallet-placeholder')).not.toHaveAttribute('data-preview', 'soft')
+  await expect(page.locator('.wallet-placeholder-art')).not.toHaveCSS('filter', /blur\(/)
+  await expect(page.getByRole('progressbar', { name: 'Chuẩn bị không gian 3D' })).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Xoay vật thể 3D', exact: true })).toBeDisabled()
   await page.screenshot({ path: `QA/initial-artwork/${testInfo.project.name}-no-webgl.png` })
   await page.getByRole('button', { name: 'Bắt đầu cùng Splitly', exact: true }).first().click()
   await expect(page).toHaveURL(/\/login/)
   await expect(page.getByLabel('Email của bạn')).toBeVisible()
   if (!testInfo.project.name.includes('mobile')) {
-    await expect(page.locator('.login-scene-canvas .login-sculpture-fallback')).toHaveCount(1)
+    await expect(page.locator('.ws-login-spatial-space > .login-sculpture-fallback')).toBeVisible()
   }
 })

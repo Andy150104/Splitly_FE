@@ -4,6 +4,7 @@ import type { MeshBasicMaterial, Texture } from 'three'
 import type { ReactNode } from 'react'
 import { landingMetal, landingPaper } from './landingMaterials'
 import useSurfaceGrain from './useSurfaceGrain'
+import { useSceneColor, useSceneTheme } from './SceneTheme'
 
 /** Hollow glass, a narrow paper wrap and an anodized lid have distinct finishes. */
 export default function SavingsVessel({
@@ -13,6 +14,8 @@ export default function SavingsVessel({
   label: Texture
   children: ReactNode
 }) {
+  const color = useSceneColor()
+  const theme = useSceneTheme()
   const grain = useSurfaceGrain()
   const backdrop = useRef<MeshBasicMaterial>(null)
   const wall = useMemo(
@@ -65,7 +68,7 @@ export default function SavingsVessel({
         <planeGeometry args={[8, 8]} />
         <meshBasicMaterial
           ref={backdrop}
-          color="#0e0c16"
+          color={theme === 'light' ? '#f4f8fc' : '#0e0c16'}
           colorWrite={false}
           depthWrite={false}
           toneMapped={false}
@@ -75,7 +78,7 @@ export default function SavingsVessel({
       <mesh>
         <latheGeometry args={[wall, 96]} />
         <meshPhysicalMaterial
-          color="#e7e2ed"
+          color={color('#e7e2ed')}
           transmission={0.96}
           thickness={0.06}
           ior={1.45}
@@ -86,7 +89,12 @@ export default function SavingsVessel({
       </mesh>
       <mesh position={[0, 0.16, 0]}>
         <cylinderGeometry args={[0.786, 0.786, 0.61, 96, 1, true]} />
-        <meshStandardMaterial {...landingPaper} color="#e6e0d5" bumpMap={grain} bumpScale={0.004} />
+        <meshStandardMaterial
+          {...landingPaper}
+          color={color('#e6e0d5')}
+          bumpMap={grain}
+          bumpScale={0.004}
+        />
       </mesh>
       <mesh position={[0, 0.16, 0]}>
         <cylinderGeometry
@@ -96,17 +104,22 @@ export default function SavingsVessel({
       </mesh>
       <mesh position={[0, 1.03, 0]}>
         <latheGeometry args={[lid, 96]} />
-        <meshPhysicalMaterial {...landingMetal} color="#443255" metalness={0.7} roughness={0.34} />
+        <meshPhysicalMaterial
+          {...landingMetal}
+          color={color('#443255')}
+          metalness={0.7}
+          roughness={0.34}
+        />
       </mesh>
       {[-0.04, 0.015].map((offset) => (
         <mesh key={offset} position={[0, 1.03 + offset, 0]} rotation={[Math.PI / 2, 0, 0]}>
           <torusGeometry args={[0.702, 0.006, 8, 96]} />
-          <meshPhysicalMaterial {...landingMetal} color="#b5a6c7" roughness={0.36} />
+          <meshPhysicalMaterial {...landingMetal} color={color('#b5a6c7')} roughness={0.36} />
         </mesh>
       ))}
       <mesh position={[0, 1.122, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[0.53, 0.065]} />
-        <meshStandardMaterial color="#17121f" roughness={0.9} />
+        <meshStandardMaterial color={color('#17121f')} roughness={0.9} />
       </mesh>
     </group>
   )

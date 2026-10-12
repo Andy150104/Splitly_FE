@@ -1,4 +1,4 @@
-import { GroupDetail } from '../../../../components/workspace/Groups'
+import { GroupDetailView } from '../../_components/WorkspaceViews'
 export default async function Page({ params }: { params: Promise<{ groupId: string }> }) {
-  return <GroupDetail groupId={(await params).groupId} />
+  return <GroupDetailView groupId={(await params).groupId} />
 }

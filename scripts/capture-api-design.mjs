@@ -1,10 +1,14 @@
 import { chromium } from '@playwright/test'
 import { mkdir } from 'node:fs/promises'
 import { readFileSync } from 'node:fs'
-import { mockWorkspace, billId, permissions } from '../tests/helpers/workspace.ts'
+import { mockWorkspace, billId, permissions, fixtureAdminData } from '../tests/helpers/workspace.ts'
 
 // Node 22: node --experimental-strip-types scripts/capture-api-design.mjs
 // Uses fixtures only. Never writes to the connected backend.
+// Start the isolated production/permission fixture stack described in README first.
+process.env.WORKSPACE_TEST_BASE_URL ||= 'http://localhost:3210'
+process.env.SESSION_SECRET ||= 'splitly-local-playwright-session-fixture'
+const baseUrl = process.env.WORKSPACE_TEST_BASE_URL
 const output = 'QA/api-integration'
 await mkdir(output, { recursive: true })
 const browser = await chromium.launch({ channel: 'chrome', headless: true })
@@ -52,7 +56,7 @@ try {
       if (path === '/api/admin/users/permissions')
         data = ['Bills.Read', 'Bills.Create', 'Groups.Read'].map((code, index) => ({
           code,
-          name: code,
+          name: ['Xem hóa đơn', 'Tạo hóa đơn', 'Xem nhóm'][index],
           groupCode: 'Workspace',
           groupName: 'Không gian cá nhân',
           sortOrder: index,
@@ -78,7 +82,7 @@ try {
           totalCount: 1,
           totalPages: 1,
         }
-      return route.fulfill({ json: { data } })
+      return route.fulfill({ json: { data: fixtureAdminData(path, data) } })
     })
     for (const [label, path] of [
       ['dashboard', '/dashboard'],
@@ -91,7 +95,7 @@ try {
       ['admin-users', '/admin/users'],
       ['admin-support', '/admin/support-requests'],
     ]) {
-      await page.goto(`http://localhost:3000${path}`)
+      await page.goto(`${baseUrl}${path}`)
       await page.locator('.ws-main h1').waitFor()
       await page.evaluate(() => document.fonts.ready)
       await page
@@ -112,7 +116,7 @@ try {
         animations: 'disabled',
       })
     }
-    await page.goto('http://localhost:3000/payout-accounts')
+    await page.goto(`${baseUrl}/payout-accounts`)
     await page.getByRole('button', { name: '+ Thêm tài khoản', exact: true }).click()
     await page.getByRole('combobox', { name: 'Ngân hàng', exact: true }).click()
     await page.locator('.ws-bank-popover').waitFor()
@@ -132,7 +136,7 @@ try {
       animations: 'disabled',
     })
     if (name === 'desktop') {
-      await page.goto('http://localhost:3000/dashboard')
+      await page.goto(`${baseUrl}/dashboard`)
       await page.getByRole('button', { name: 'Thu gọn sidebar' }).click()
       await page.screenshot({
         path: `${output}/${name}-sidebar-collapsed.png`,
@@ -141,7 +145,7 @@ try {
       })
     }
     await page.context().clearCookies()
-    await page.goto('http://localhost:3000/login')
+    await page.goto(`${baseUrl}/login`)
     await page.getByLabel('Email của bạn').waitFor()
     await page
       .locator('.ws-google iframe')

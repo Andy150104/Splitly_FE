@@ -1,4 +1,4 @@
-import Bills from '../../../components/workspace/Bills'
+import { BillsView } from '../_components/WorkspaceViews'
 export default async function Page({ searchParams }: { searchParams: Promise<{ owed?: string }> }) {
-  return <Bills initialOwed={(await searchParams).owed === 'true'} />
+  return <BillsView initialOwed={(await searchParams).owed === 'true'} />
 }

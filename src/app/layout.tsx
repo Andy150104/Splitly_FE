@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import type { ReactNode } from 'react'
 import RouteTransition from '../components/RouteTransition'
 import Notifications from '../components/ui/Notifications'
+import { themeBootstrap } from '../lib/theme'
 import '@fontsource/be-vietnam-pro/latin-400.css'
 import '@fontsource/be-vietnam-pro/vietnamese-400.css'
 import '@fontsource/be-vietnam-pro/latin-500.css'
@@ -21,6 +22,7 @@ import '../workspace.css'
 import '../splitly.css'
 import '../refinement.css'
 import '../universe.css'
+import '../theme.css'
 
 export const metadata: Metadata = {
   title: 'Splitly — Tiền gọn gàng. Đời thảnh thơi.',
@@ -33,7 +35,10 @@ export const viewport: Viewport = { themeColor: '#0b0b12' }
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="vi">
+    <html lang="vi" data-theme="dark" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
+      </head>
       <body>
         <Notifications>
           <RouteTransition>{children}</RouteTransition>

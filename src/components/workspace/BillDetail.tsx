@@ -3,9 +3,11 @@
 import Select from '../ui/Select'
 
 import Link from 'next/link'
+import type { ReactNode } from 'react'
+import { bindControl } from './slots'
 import { useRef, useState } from 'react'
 import type { FormEvent } from 'react'
-import { ArrowLeft, ArrowUpRight, Bell, Check, Copy, RefreshCw } from 'lucide-react'
+import { ArrowLeft, ArrowUpRight, Check, Copy, RefreshCw } from 'lucide-react'
 import { money, safeExternalUrl, send } from '../../lib/api/client'
 import { Disclosure, Reveal } from '../ui/Motion'
 import WorkspaceModal, { ConfirmDialog } from '../ui/WorkspaceModal'
@@ -21,8 +23,26 @@ const needsPolling = (bill: BillView) =>
   bill.status !== 'Draft' &&
   bill.status !== 'Cancelled' &&
   (bill.members?.some((m) => m.remainingAmount > 0) ?? false)
-export default function BillDetail({ billId }: { billId: string }) {
-  const { user, can } = useWorkspace()
+export default function BillDetail({
+  billId,
+  recordButton,
+  paymentHistory,
+  removeButton,
+  checkoutLink,
+  paymentQr,
+  remindButton,
+  cancelButton,
+}: {
+  billId: string
+  recordButton: ReactNode
+  paymentHistory: ReactNode
+  removeButton: ReactNode
+  checkoutLink: ReactNode
+  paymentQr: ReactNode
+  remindButton: ReactNode
+  cancelButton: ReactNode
+}) {
+  const { user } = useWorkspace()
   const query = useApi<BillView>(`bills/${billId}`, needsPolling)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
@@ -172,19 +192,14 @@ export default function BillDetail({ billId }: { billId: string }) {
                       <small>Còn {money(member.remainingAmount, bill.currency || 'VND')}</small>
                       {active &&
                         bill.isOwner &&
-                        can('Payments.RecordManual') &&
-                        member.remainingAmount > 0 && (
-                          <button
-                            disabled={pending}
-                            className="ws-text-button"
-                            onClick={() => {
-                              setManualMember(member)
-                              setError('')
-                            }}
-                          >
-                            Ghi nhận đã trả
-                          </button>
-                        )}
+                        member.remainingAmount > 0 &&
+                        bindControl(recordButton, {
+                          disabled: pending,
+                          onClick: () => {
+                            setManualMember(member)
+                            setError('')
+                          },
+                        })}
                     </div>
                   </div>
                   <div className="ws-member-detail">
@@ -203,37 +218,39 @@ export default function BillDetail({ billId }: { billId: string }) {
                         </span>
                       )}
                     </div>
-                    {can('Payments.Read') && (
-                      <div className="ws-payment-history">
-                        <h3>Lịch sử thanh toán</h3>
-                        {member.payments?.length ? (
-                          member.payments.map((payment) => (
-                            <div className="ws-history-row" key={payment.paymentId}>
-                              <span>
-                                <strong>
-                                  {payment.method === 'Cash'
-                                    ? 'Tiền mặt'
-                                    : payment.method === 'BankTransfer'
-                                      ? 'Chuyển khoản'
-                                      : payment.method}
-                                </strong>
-                                <small>
-                                  {new Date(payment.paidAtUtc).toLocaleString('vi-VN')}
-                                  {payment.note ? ` · ${payment.note}` : ''}
-                                </small>
-                              </span>
-                              <strong>{money(payment.amount, bill.currency || 'VND')}</strong>
-                            </div>
-                          ))
-                        ) : (
-                          <p className="ws-muted">Chưa có giao dịch được ghi nhận.</p>
-                        )}
-                      </div>
-                    )}
+                    {bindControl(paymentHistory, {
+                      children: (
+                        <>
+                          <h3>Lịch sử thanh toán</h3>
+                          {member.payments?.length ? (
+                            member.payments.map((payment) => (
+                              <div className="ws-history-row" key={payment.paymentId}>
+                                <span>
+                                  <strong>
+                                    {payment.method === 'Cash'
+                                      ? 'Tiền mặt'
+                                      : payment.method === 'BankTransfer'
+                                        ? 'Chuyển khoản'
+                                        : payment.method}
+                                  </strong>
+                                  <small>
+                                    {new Date(payment.paidAtUtc).toLocaleString('vi-VN')}
+                                    {payment.note ? ` · ${payment.note}` : ''}
+                                  </small>
+                                </span>
+                                <strong>{money(payment.amount, bill.currency || 'VND')}</strong>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="ws-muted">Chưa có giao dịch được ghi nhận.</p>
+                          )}
+                        </>
+                      ),
+                    })}
                     {active &&
                       member.remainingAmount > 0 &&
                       bill.isOwner &&
-                      can('Payments.Read') &&
+                      paymentHistory &&
                       member.email?.toLowerCase() !== user.email.toLowerCase() && (
                         <div className="ws-owner-payment">
                           <div>
@@ -262,17 +279,12 @@ export default function BillDetail({ billId }: { billId: string }) {
                           )}
                         </div>
                       )}
-                    {bill.isOwner && bill.status === 'Draft' && can('Bills.ManageMembers') && (
-                      <div className="ws-remove-member">
-                        <button
-                          className="ws-text-button ws-danger"
-                          disabled={pending}
-                          onClick={() => setRemoveMember(member.memberId)}
-                        >
-                          Xóa khỏi bản nháp
-                        </button>
-                      </div>
-                    )}
+                    {bill.isOwner &&
+                      bill.status === 'Draft' &&
+                      bindControl(removeButton, {
+                        disabled: pending,
+                        onClick: () => setRemoveMember(member.memberId),
+                      })}
                   </div>
                 </Disclosure>
               ))
@@ -338,28 +350,15 @@ export default function BillDetail({ billId }: { billId: string }) {
                           </strong>
                         </button>
                       )}
-                      {can('Payments.Create') && safeExternalUrl(m.paymentUrl) && (
-                        <a
-                          className="ws-button"
-                          href={safeExternalUrl(m.paymentUrl)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          Thanh toán qua PayOS <ArrowUpRight size={17} />
-                        </a>
-                      )}
+                      {safeExternalUrl(m.paymentUrl) &&
+                        bindControl(checkoutLink, { href: safeExternalUrl(m.paymentUrl) })}
                       {!m.paymentUrl && !m.paymentQrImageUrl && (
                         <Notice message="Chưa có thông tin thanh toán. Vui lòng liên hệ chủ hóa đơn." />
                       )}
                     </div>
-                    {can('Payments.Create') && safeExternalUrl(m.paymentQrImageUrl) && (
+                    {paymentQr && safeExternalUrl(m.paymentQrImageUrl) && (
                       <div className="ws-qr">
-                        <img
-                          src={safeExternalUrl(m.paymentQrImageUrl)}
-                          alt="Mã QR thanh toán phần của bạn"
-                          width={220}
-                          height={220}
-                        />
+                        {bindControl(paymentQr, { src: safeExternalUrl(m.paymentQrImageUrl) })}
                         <small>QUÉT MÃ · THANH TOÁN ĐÚNG PHẦN</small>
                       </div>
                     )}
@@ -399,11 +398,12 @@ export default function BillDetail({ billId }: { billId: string }) {
                 Tiếp tục bản nháp <ArrowUpRight size={17} />
               </Link>
             )}
-            {bill.isOwner && active && can('Bills.SendReminders') && bill.remainingAmount > 0 && (
-              <button
-                className="ws-button ws-button-secondary ws-full"
-                disabled={pending}
-                onClick={() =>
+            {bill.isOwner &&
+              active &&
+              bill.remainingAmount > 0 &&
+              bindControl(remindButton, {
+                disabled: pending,
+                onClick: () =>
                   void action(
                     'reminders',
                     {
@@ -413,24 +413,14 @@ export default function BillDetail({ billId }: { billId: string }) {
                           .map((member) => member.memberId) || [],
                     },
                     'Đã gửi lời nhắc đến những người chưa thanh toán.',
-                  )
-                }
-              >
-                <Bell size={16} />
-                Nhắc thanh toán
-              </button>
-            )}
+                  ),
+              })}
             {bill.isOwner &&
               !['Cancelled', 'Paid', 'Completed'].includes(bill.status || '') &&
-              can('Bills.Delete') && (
-                <button
-                  className="ws-text-button ws-danger"
-                  disabled={pending}
-                  onClick={() => setCancel((v) => !v)}
-                >
-                  Hủy hóa đơn
-                </button>
-              )}
+              bindControl(cancelButton, {
+                disabled: pending,
+                onClick: () => setCancel((v) => !v),
+              })}
             <WorkspaceModal
               open={cancel}
               title="Hủy hóa đơn này?"

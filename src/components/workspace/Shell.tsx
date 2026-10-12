@@ -22,65 +22,30 @@ import {
 } from 'lucide-react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import type { User } from '../../lib/api/session'
-import type { PermissionView } from '../../lib/api/views'
 import { send } from '../../lib/api/client'
 import { Reveal } from '../ui/Motion'
 import Brand from '../ui/Brand'
+import ThemeToggle from '../ui/ThemeToggle'
 import Atmosphere from '../ui/Atmosphere'
 import Tooltip from '../ui/Tooltip'
 import { useNotify } from '../ui/Notifications'
-import { ErrorState, Loading } from '../ui/Feedback'
-import { WorkspaceContext, useApi } from './hooks'
+import { WorkspaceContext } from './hooks'
 
-const links = [
-  {
-    href: '/dashboard',
-    label: 'Tổng quan',
-    description: 'Theo dõi khoản chung và tiến độ thu tiền.',
-    icon: LayoutDashboard,
-  },
-  {
-    href: '/bills',
-    label: 'Hóa đơn',
-    description: 'Các khoản bạn tạo và những khoản bạn cùng chia.',
-    permission: 'Bills.Read',
-    icon: ReceiptText,
-  },
-  {
-    href: '/groups',
-    label: 'Nhóm của bạn',
-    description: 'Quản lý những người thường cùng bạn chia tiền.',
-    permission: 'Groups.Read',
-    icon: Users,
-  },
-  {
-    href: '/payout-accounts',
-    label: 'Tài khoản nhận tiền',
-    description: 'Thêm và chọn tài khoản ngân hàng để nhận tiền.',
-    permission: 'PayoutAccounts.Read',
-    icon: Building2,
-  },
-  {
-    href: '/support',
-    label: 'Hỗ trợ',
-    description: 'Gửi yêu cầu khi bạn cần hỗ trợ.',
-    icon: LifeBuoy,
-  },
-  {
-    href: '/admin/users',
-    label: 'Người dùng & quyền',
-    description: 'Quản lý vai trò và quyền truy cập của từng tài khoản.',
-    permission: 'Users.Read',
-    icon: ShieldCheck,
-  },
-  {
-    href: '/admin/support-requests',
-    label: 'Yêu cầu hỗ trợ',
-    description: 'Tiếp nhận và xử lý yêu cầu hỗ trợ của người dùng.',
-    permission: 'SupportRequests.Read',
-    icon: MessagesSquare,
-  },
-]
+const navigationIcons = {
+  dashboard: LayoutDashboard,
+  bills: ReceiptText,
+  groups: Users,
+  accounts: Building2,
+  support: LifeBuoy,
+  users: ShieldCheck,
+  requests: MessagesSquare,
+}
+export type NavigationLink = {
+  href: string
+  label: string
+  description: string
+  icon: keyof typeof navigationIcons
+}
 const navigationGroups = [
   { id: 'shared', label: 'Không gian chung', paths: ['/dashboard', '/bills', '/groups'] },
   { id: 'payment', label: 'Thanh toán', paths: ['/payout-accounts'] },
@@ -95,7 +60,7 @@ function NavigationGroup({
   closeMenu,
 }: {
   group: (typeof navigationGroups)[number]
-  items: typeof links
+  items: NavigationLink[]
   pathname: string
   collapsed: boolean
   closeMenu: () => void
@@ -128,7 +93,8 @@ function NavigationGroup({
         aria-hidden={!expanded}
         transition={{ duration: reduced ? 0 : 0.28, ease: [0.22, 1, 0.36, 1] }}
       >
-        {items.map(({ href, label, description, icon: Icon }) => {
+        {items.map(({ href, label, description, icon }) => {
+          const Icon = navigationIcons[icon]
           const active = pathname === href || pathname.startsWith(`${href}/`)
           return (
             <Tooltip key={href} label={label} description={description} disabled={!collapsed}>
@@ -156,12 +122,21 @@ function NavigationGroup({
     </section>
   )
 }
-export default function Shell({ user, children }: { user: User; children: ReactNode }) {
+export default function Shell({
+  user,
+  children,
+  links,
+  createBillLink,
+}: {
+  user: User
+  children: ReactNode
+  links: NavigationLink[]
+  createBillLink: ReactNode
+}) {
   const pathname = usePathname()
   const navigate = useSplitlyNavigation()
   const reduced = useReducedMotion()
   const notify = useNotify()
-  const permissions = useApi<PermissionView>('auth/me/permissions')
   const [menu, setMenu] = useState(false)
   const [mobileViewport, setMobileViewport] = useState(false)
   const menuTrigger = useRef<HTMLButtonElement>(null)
@@ -228,14 +203,9 @@ export default function Shell({ user, children }: { user: User; children: ReactN
       setLoggingOut(false)
     }
   }
-  const visibleLinks = links.filter(
-    (link) =>
-      !link.permission || permissions.data?.effectivePermissionCodes?.includes(link.permission),
-  )
+  const visibleLinks = links
   return (
-    <WorkspaceContext.Provider
-      value={{ user, permissions: permissions.data, reloadPermissions: permissions.reload }}
-    >
+    <WorkspaceContext.Provider value={{ user }}>
       <div className={`workspace ${collapsed ? 'is-sidebar-collapsed' : ''}`}>
         <Atmosphere />
         <a className="skip-link" href="#workspace-content">
@@ -360,14 +330,11 @@ export default function Shell({ user, children }: { user: User; children: ReactN
               </span>
             </div>
             <div className="ws-topbar-account">
+              <ThemeToggle />
               {pathname !== '/dashboard' &&
                 pathname !== '/bills' &&
                 !pathname.startsWith('/bills/new') &&
-                permissions.data?.effectivePermissionCodes?.includes('Bills.Create') && (
-                  <Link className="ws-small-create" href="/bills/new">
-                    + Tạo hóa đơn
-                  </Link>
-                )}
+                createBillLink}
               <details className="ws-profile-menu">
                 <summary aria-label="Mở menu tài khoản">
                   <span className="ws-avatar">{user.displayName.slice(0, 1).toUpperCase()}</span>
@@ -398,15 +365,9 @@ export default function Shell({ user, children }: { user: User; children: ReactN
             </div>
           </header>
           <main id="workspace-content" className="ws-main">
-            {permissions.loading ? (
-              <Loading variant="page" rows={5} />
-            ) : permissions.error ? (
-              <ErrorState message={permissions.error} retry={permissions.reload} />
-            ) : (
-              <Reveal key={pathname} className="ws-route">
-                {children}
-              </Reveal>
-            )}
+            <Reveal key={pathname} className="ws-route" initiallyVisible>
+              {children}
+            </Reveal>
           </main>
           <footer className="ws-footer">
             <span>Splitly / Khoản chung, cùng nhau.</span>

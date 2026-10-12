@@ -8,12 +8,14 @@ import { RoundedBox } from '@react-three/drei'
 import { useReducedMotion } from 'motion/react'
 import { CatmullRomCurve3, MathUtils, Vector3 } from 'three'
 import type { Group, Mesh, MeshBasicMaterial, PointLight } from 'three'
-import Brand from '../ui/Brand'
 import LinkedLoop from '../three/LinkedLoop'
 import SplitToken from '../three/SplitToken'
 import StudioLighting from '../three/StudioLighting'
 import SceneReady from '../three/SceneReady'
 import { satin, softMetal, studio } from '../three/materials'
+import SceneTheme, { useSceneColor } from '../three/SceneTheme'
+import { useThemeTransition } from '../../hooks/useTheme'
+import type { SceneLoadingStage } from '../../lib/scene-loading'
 
 type Pointer = RefObject<{
   x: number
@@ -51,28 +53,6 @@ function idleSequence(pointer: Pointer) {
 function pulseProgress(pointer: Pointer) {
   return MathUtils.clamp((performance.now() / 1000 - pointer.current.pulseAt) / 1.5, 0, 1)
 }
-function Fallback({ layout }: { layout?: SceneLayout }) {
-  return (
-    <div
-      className="login-sculpture-fallback"
-      style={
-        layout
-          ? {
-              position: 'absolute',
-              left: layout.centerX,
-              top: layout.centerY,
-              width: 120,
-              height: 120,
-              transform: 'translate(-50%, -50%)',
-              background: 'transparent',
-            }
-          : undefined
-      }
-    >
-      <Brand compact />
-    </div>
-  )
-}
 class SceneBoundary extends Component<
   { children: ReactNode; onError: () => void },
   { failed: boolean }
@@ -98,6 +78,7 @@ function SpatialCamera({
   pointer: Pointer
   mobile: boolean
 }) {
+  const color = useSceneColor()
   const light = useRef<PointLight>(null)
   useFrame(({ camera, clock }, delta) => {
     if (still) return
@@ -142,7 +123,7 @@ function SpatialCamera({
       )
     }
   })
-  return <pointLight ref={light} position={[-3, -1, 3]} intensity={3} color="#bda6da" />
+  return <pointLight ref={light} position={[-3, -1, 3]} intensity={3} color={color('#bda6da')} />
 }
 
 function MoneyOrbit({
@@ -154,6 +135,7 @@ function MoneyOrbit({
   pointer: Pointer
   layout: SceneLayout
 }) {
+  const color = useSceneColor()
   const nodes = useRef<Group>(null)
   const orbit = useRef<Group>(null)
   const outerOrbit = useRef<Group>(null)
@@ -246,13 +228,23 @@ function MoneyOrbit({
       <group ref={outerOrbit} rotation={[0.12, -0.08, 0.08]}>
         <mesh>
           <tubeGeometry args={[extension, 256, pixel * 0.5, 8, true]} />
-          <meshBasicMaterial color="#b49bcf" transparent opacity={0.23} depthWrite={false} />
+          <meshBasicMaterial
+            color={color('#b49bcf')}
+            transparent
+            opacity={0.23}
+            depthWrite={false}
+          />
         </mesh>
         <group ref={outerNodes}>
           {[0, 0.5].map((position) => (
             <mesh key={position} position={extension.getPointAt(position)}>
               <sphereGeometry args={[pixel * 2.4, 12, 12]} />
-              <meshBasicMaterial color="#dcc8f4" transparent opacity={0.6} depthWrite={false} />
+              <meshBasicMaterial
+                color={color('#dcc8f4')}
+                transparent
+                opacity={0.6}
+                depthWrite={false}
+              />
             </mesh>
           ))}
         </group>
@@ -260,17 +252,27 @@ function MoneyOrbit({
       <group ref={orbit} rotation={[0.04, -0.04, -0.16]}>
         <mesh>
           <tubeGeometry args={[curve, 256, pixel * 0.7, 8, true]} />
-          <meshBasicMaterial ref={trackMaterial} color="#b49bcf" transparent opacity={0.42} />
+          <meshBasicMaterial
+            ref={trackMaterial}
+            color={color('#b49bcf')}
+            transparent
+            opacity={0.42}
+          />
         </mesh>
         <mesh>
           <tubeGeometry args={[curve, 256, pixel * 3, 8, true]} />
-          <meshBasicMaterial color="#a282c9" transparent opacity={0.055} depthWrite={false} />
+          <meshBasicMaterial
+            color={color('#a282c9')}
+            transparent
+            opacity={0.055}
+            depthWrite={false}
+          />
         </mesh>
         <mesh ref={wave}>
           <tubeGeometry args={[curve, 256, pixel * 1.2, 8, true]} />
           <meshBasicMaterial
             ref={waveMaterial}
-            color="#ddc8ff"
+            color={color('#ddc8ff')}
             transparent
             opacity={0}
             depthWrite={false}
@@ -282,15 +284,20 @@ function MoneyOrbit({
               <mesh>
                 <sphereGeometry args={[pixel * 3, 12, 12]} />
                 <meshStandardMaterial
-                  color="#eee2ff"
-                  emissive="#b08adb"
+                  color={color('#eee2ff')}
+                  emissive={color('#b08adb')}
                   emissiveIntensity={0.75}
                   roughness={0.25}
                 />
               </mesh>
               <mesh>
                 <sphereGeometry args={[pixel * 8, 12, 12]} />
-                <meshBasicMaterial color="#b99bdf" transparent opacity={0.12} depthWrite={false} />
+                <meshBasicMaterial
+                  color={color('#b99bdf')}
+                  transparent
+                  opacity={0.12}
+                  depthWrite={false}
+                />
               </mesh>
             </group>
           ))}
@@ -311,6 +318,7 @@ function Sculpture({
   mobile: boolean
   layout: SceneLayout
 }) {
+  const color = useSceneColor()
   const group = useRef<Group>(null)
   const assembly = useRef<Group>(null)
   const ringOne = useRef<Group>(null)
@@ -320,7 +328,6 @@ function Sculpture({
   const frontCard = useRef<Group>(null)
   const middleCard = useRef<Mesh>(null)
   const emblem = useRef<Group>(null)
-  const entered = useRef(0)
   const viewport = useThree((state) => state.viewport)
   const anchorX = (layout.centerX / layout.width - 0.5) * viewport.width
   const anchorY = (0.5 - layout.centerY / layout.height) * viewport.height
@@ -362,15 +369,11 @@ function Sculpture({
       return
     }
     const step = Math.min(delta, 0.05)
-    entered.current = Math.min(1, entered.current + step / 0.9)
-    const entrance = 1 - (1 - entered.current) ** 3
     const t = clock.elapsedTime
     const idle = idleSequence(pointer)
     const energy = Math.sin(pulseProgress(pointer) * Math.PI)
-    group.current.scale.setScalar(
-      modelScale * (0.92 + entrance * 0.08 + energy * 0.025 - idle.energy * 0.1),
-    )
-    group.current.position.set(0, -(1 - entrance) * 0.1, -0.25 * (1 - entrance))
+    group.current.scale.setScalar(modelScale * (1 + energy * 0.025 - idle.energy * 0.1))
+    group.current.position.set(0, 0, 0)
     assembly.current.position.y += idle.energy * 0.035
     group.current.rotation.y = MathUtils.damp(
       group.current.rotation.y,
@@ -528,7 +531,7 @@ function Sculpture({
           rotation={[0.08, 0, -0.16]}
           smoothness={4}
         >
-          <meshPhysicalMaterial color={studio.ink} {...satin} />
+          <meshPhysicalMaterial color={color(studio.ink)} {...satin} />
         </RoundedBox>
         <RoundedBox
           ref={middleCard}
@@ -538,12 +541,12 @@ function Sculpture({
           rotation={[0, 0, -0.06]}
           smoothness={4}
         >
-          <meshPhysicalMaterial color={studio.lavender} {...satin} />
+          <meshPhysicalMaterial color={color(studio.lavender)} {...satin} />
         </RoundedBox>
         <group ref={frontCard}>
           <group rotation={[0.05, 0.08, 0.06]}>
             <RoundedBox args={[3.5, 2.15, 0.28]} radius={0.18} smoothness={4}>
-              <meshPhysicalMaterial color={studio.indigo} {...satin} />
+              <meshPhysicalMaterial color={color(studio.indigo)} {...satin} />
             </RoundedBox>
             <RoundedBox
               args={[3.18, 1.82, 0.08]}
@@ -551,11 +554,11 @@ function Sculpture({
               position={[0, 0, 0.17]}
               smoothness={4}
             >
-              <meshPhysicalMaterial color={studio.violet} {...satin} />
+              <meshPhysicalMaterial color={color(studio.violet)} {...satin} />
             </RoundedBox>
             <mesh position={[-1.12, -0.69, 0.23]}>
               <boxGeometry args={[0.55, 0.032, 0.015]} />
-              <meshStandardMaterial color={studio.pale} roughness={0.65} />
+              <meshStandardMaterial color={color(studio.pale)} roughness={0.65} />
             </mesh>
             {[0, 1, 2].map((i) => (
               <RoundedBox
@@ -565,7 +568,7 @@ function Sculpture({
                 position={[1.11 + i * 0.08, 0.59, 0.225]}
                 smoothness={2}
               >
-                <meshPhysicalMaterial color={studio.lavender} {...softMetal} />
+                <meshPhysicalMaterial color={color(studio.lavender)} {...softMetal} />
               </RoundedBox>
             ))}
           </group>
@@ -573,13 +576,13 @@ function Sculpture({
         <group ref={emblem} position={[0, 0.08, 0.45]} rotation={[0.12, -0.16, 0]}>
           <LinkedLoop
             ref={ringOne}
-            color={studio.pale}
+            color={color(studio.pale)}
             position={[-0.15, 0.32, 0]}
             rotation={[0, 0, 0.15]}
           />
           <LinkedLoop
             ref={ringTwo}
-            color={studio.violet}
+            color={color(studio.violet)}
             position={[0.15, -0.32, 0.14]}
             rotation={[0, 0, Math.PI + 0.15]}
           />
@@ -593,15 +596,29 @@ function Sculpture({
   )
 }
 
-export default function LoginScene({ frameRef }: { frameRef: RefObject<HTMLDivElement | null> }) {
+export default function LoginScene({
+  frameRef,
+  onReady,
+  onStage,
+}: {
+  frameRef: RefObject<HTMLDivElement | null>
+  onReady: (ready: boolean) => void
+  onStage: (stage: SceneLoadingStage) => void
+}) {
   const [rendered, setRendered] = useState(false)
   const [contextLost, setContextLost] = useState(false)
+  useEffect(() => onStage('renderer'), [onStage])
+  useEffect(() => {
+    if (contextLost) onStage('fallback')
+  }, [contextLost, onStage])
+  const transitioning = useThemeTransition()
   const reduced = useReducedMotion()
   const [visible, setVisible] = useState(true)
   const [mobile, setMobile] = useState(false)
   useEffect(() => {
     if (mobile) setRendered(false)
   }, [mobile])
+  useEffect(() => onReady(rendered), [onReady, rendered])
   const [interaction, setInteraction] = useState('rest')
   const [frame, setFrame] = useState<HTMLDivElement | null>(null)
   const [layout, setLayout] = useState<SceneLayout>({
@@ -725,16 +742,27 @@ export default function LoginScene({ frameRef }: { frameRef: RefObject<HTMLDivEl
         layout.stageHeight > 0 &&
         !mobile &&
         createPortal(
-          <div className="login-scene-canvas" aria-hidden="true">
-            {!rendered && <Fallback layout={layout} />}
+          <div
+            className="login-scene-canvas"
+            data-state={rendered ? 'ready' : 'loading'}
+            aria-hidden="true"
+          >
             {!contextLost && (
-              <SceneBoundary onError={() => setRendered(false)}>
+              <SceneBoundary
+                onError={() => {
+                  setRendered(false)
+                  setContextLost(true)
+                }}
+              >
                 <Suspense fallback={null}>
                   <Canvas
+                    className="scene-renderer"
                     style={{ pointerEvents: 'none' }}
                     camera={{ position: [0, 0, 7.8], fov: 37 }}
                     dpr={mobile ? [1, 1.25] : [1, 1.5]}
-                    frameloop={reduced || !visible ? 'demand' : 'always'}
+                    frameloop={
+                      reduced || !visible || transitioning || !rendered ? 'demand' : 'always'
+                    }
                     gl={{ antialias: !mobile, alpha: true }}
                     fallback={null}
                     onCreated={(state) => {
@@ -750,15 +778,21 @@ export default function LoginScene({ frameRef }: { frameRef: RefObject<HTMLDivEl
                     }}
                   >
                     <Suspense fallback={null}>
-                      <StudioLighting />
-                      <SpatialCamera still={!!reduced} pointer={pointer} mobile={mobile} />
-                      <Sculpture
-                        still={!!reduced}
-                        pointer={pointer}
-                        mobile={mobile}
-                        layout={layout}
-                      />
-                      <SceneReady onReady={() => setRendered(true)} />
+                      <SceneTheme>
+                        <StudioLighting />
+                        <SpatialCamera still={!!reduced} pointer={pointer} mobile={mobile} />
+                        <Sculpture
+                          still={!!reduced}
+                          pointer={pointer}
+                          mobile={mobile}
+                          layout={layout}
+                        />
+                        <SceneReady
+                          onStage={onStage}
+                          onReady={() => setRendered(true)}
+                          onError={() => setContextLost(true)}
+                        />
+                      </SceneTheme>
                     </Suspense>
                   </Canvas>
                 </Suspense>
@@ -770,6 +804,7 @@ export default function LoginScene({ frameRef }: { frameRef: RefObject<HTMLDivEl
       <button
         type="button"
         className="login-scene-interaction"
+        disabled={!rendered || contextLost}
         aria-label="Tương tác với ví Splitly"
         aria-describedby={hintId}
         onPointerDown={(event) => {

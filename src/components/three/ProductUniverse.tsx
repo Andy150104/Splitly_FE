@@ -10,10 +10,12 @@ import {
 } from 'three'
 import type { Group } from 'three'
 import type { RefObject } from 'react'
+import { useSceneColor, useSceneTheme } from './SceneTheme'
 
 export type UniverseMotion = { time: number; lift: number }
 
 function useAtmosphereTexture(kind: 'haze' | 'star') {
+  const light = useSceneTheme() === 'light'
   const texture = useMemo(() => {
     const canvas = document.createElement('canvas')
     canvas.width = canvas.height = kind === 'star' ? 64 : 256
@@ -22,24 +24,25 @@ function useAtmosphereTexture(kind: 'haze' | 'star') {
     const gradient = ctx.createRadialGradient(center, center, 0, center, center, center)
     if (kind === 'star') {
       gradient.addColorStop(0, 'rgba(255,255,255,1)')
-      gradient.addColorStop(0.16, 'rgba(235,222,255,.9)')
-      gradient.addColorStop(0.4, 'rgba(186,152,244,.2)')
+      gradient.addColorStop(0.16, light ? 'rgba(222,238,255,.9)' : 'rgba(235,222,255,.9)')
+      gradient.addColorStop(0.4, light ? 'rgba(152,198,244,.2)' : 'rgba(186,152,244,.2)')
     } else {
-      gradient.addColorStop(0, 'rgba(109,70,157,.48)')
-      gradient.addColorStop(0.44, 'rgba(73,49,113,.28)')
+      gradient.addColorStop(0, light ? 'rgba(70,114,157,.48)' : 'rgba(109,70,157,.48)')
+      gradient.addColorStop(0.44, light ? 'rgba(49,81,113,.28)' : 'rgba(73,49,113,.28)')
       gradient.addColorStop(0.75, 'rgba(42,75,98,.1)')
     }
     gradient.addColorStop(1, 'rgba(0,0,0,0)')
     ctx.fillStyle = gradient
     ctx.fillRect(0, 0, canvas.width, canvas.height)
     return new CanvasTexture(canvas)
-  }, [kind])
+  }, [kind, light])
   useEffect(() => () => texture.dispose(), [texture])
   return texture
 }
 
 /** A small, local universe shares the product's centre and actual perspective. */
 export default function ProductUniverse({ motion }: { motion: RefObject<UniverseMotion> }) {
+  const color = useSceneColor()
   const { size } = useThree()
   const ring = useRef<Group>(null)
   const stars = useRef<Group>(null)
@@ -116,7 +119,7 @@ export default function ProductUniverse({ motion }: { motion: RefObject<Universe
         <points geometry={geometry}>
           <pointsMaterial
             map={glow}
-            color="#dacbec"
+            color={color('#dacbec')}
             size={0.095}
             transparent
             opacity={0.78}
@@ -130,7 +133,7 @@ export default function ProductUniverse({ motion }: { motion: RefObject<Universe
           <mesh key={i}>
             <tubeGeometry args={[curve, 128, i ? 0.003 : 0.006, 5, true]} />
             <meshBasicMaterial
-              color={i ? '#89abb5' : '#a892c2'}
+              color={i ? color('#89abb5') : color('#a892c2')}
               transparent
               opacity={i ? 0.3 : 0.48}
               depthWrite={false}
@@ -146,12 +149,12 @@ export default function ProductUniverse({ motion }: { motion: RefObject<Universe
           >
             <mesh>
               <sphereGeometry args={[0.026, 12, 8]} />
-              <meshBasicMaterial color="#eadcff" />
+              <meshBasicMaterial color={color('#eadcff')} />
             </mesh>
             <sprite scale={[0.22, 0.22, 1]}>
               <spriteMaterial
                 map={glow}
-                color="#d9b8ff"
+                color={color('#d9b8ff')}
                 transparent
                 opacity={0.68}
                 blending={AdditiveBlending}

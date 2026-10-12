@@ -1,5 +1,11 @@
 import { test, expect } from '@playwright/test'
-import { mockWorkspace, permissions, fixtureBill } from './helpers/workspace'
+import {
+  fixtureAdminData,
+  fixtureReference,
+  mockWorkspace,
+  permissions,
+  fixtureBill,
+} from './helpers/workspace'
 
 test('custom filters fit the viewport and keyboard dismissal leaves the user dialog open', async ({
   page,
@@ -39,7 +45,7 @@ test('custom filters fit the viewport and keyboard dismissal leaves the user dia
       ]
     if (path === '/api/admin/users/controls/permissions')
       data = { effectivePermissionCodes: ['Bills.Read'] }
-    return route.fulfill({ json: { data } })
+    return route.fulfill({ json: { data: fixtureAdminData(path, data) } })
   })
   if (!isMobile) await page.setViewportSize({ width: 1556, height: 830 })
   await page.goto('/admin/users')
@@ -74,7 +80,7 @@ test('custom filters fit the viewport and keyboard dismissal leaves the user dia
   await expect(role).toBeFocused()
   await role.click()
   await page.getByRole('option', { name: 'Quản lý', exact: true }).click()
-  await expect(role).toHaveAttribute('data-value', 'manager')
+  await expect(role).toHaveAttribute('data-value', fixtureReference('role', 'manager').id)
   await page.keyboard.press('Escape')
   await expect(modal).not.toBeVisible()
 })

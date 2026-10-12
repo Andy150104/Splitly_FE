@@ -6,6 +6,9 @@ import {
   fixtureBill,
   mockWorkspace,
   provisionSession,
+  fixtureAdminData,
+  fixtureAdminBody,
+  owner,
 } from './helpers/workspace'
 
 test('protected email deep links return to their bill after login', async ({ page }) => {
@@ -52,7 +55,10 @@ test('four steps call create, members, calculate and publish in order', async ({
   await page.getByRole('button', { name: 'Lưu & tiếp tục' }).click()
   await expect(page.getByRole('button', { name: 'Chia đều', exact: false })).toBeVisible()
   await page.getByRole('button', { name: 'Lưu & tiếp tục' }).click()
-  await expect(page.getByRole('combobox', { name: /^Tài khoản nhận tiền/ })).toHaveValue(accountId)
+  await expect(page.getByRole('combobox', { name: /^Tài khoản nhận tiền/ })).toHaveAttribute(
+    'data-value',
+    accountId,
+  )
   await page.getByRole('button', { name: 'Phát hành hóa đơn', exact: true }).click()
   await expect(page).toHaveURL(`/bills/${billId}`)
   expect(calls).toEqual([
@@ -171,6 +177,163 @@ test('permissions hide unauthorized actions and the session can sign out', async
   await page.getByRole('button', { name: 'Đăng xuất', exact: true }).click()
   await expect(page).toHaveURL('/login')
 })
+
+test('server renders allowed controls without sending a session permission map', async ({
+  page,
+}) => {
+  await mockWorkspace(page, ['Bills.Read', 'Bills.Create'])
+  const requests: string[] = []
+  page.on('request', (request) => requests.push(new URL(request.url()).pathname))
+  const document = await page.goto('/bills')
+  await expect(page.getByRole('link', { name: '+ Tạo hóa đơn', exact: true })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Người dùng & quyền', exact: true })).toHaveCount(0)
+  await page.goto('/bills/new')
+  await expect(page.getByRole('heading', { name: 'Tạo khoản chung.' })).toBeVisible()
+  // Read a complete Flight response; background prefetch streams may stay open.
+  const flight = await page.request.get('/bills/new', { headers: { RSC: '1' } })
+  expect(flight.headers()['content-type']).toContain('text/x-component')
+  expect(requests).not.toContain('/api/auth/me/permissions')
+  expect((await document!.text()) + (await flight.text())).not.toMatch(
+    /effectivePermissionCodes|rolePermissionCodes|Bills\.Create|Bills\.Read|Users\.Read|"actions"/,
+  )
+  const blocked = await page.request.get('/api/auth/me/permissions')
+  expect(blocked.status()).toBe(404)
+  const admin = await page.request.get('/api/admin/users')
+  expect(admin.status()).toBe(403)
+})
+
+test('changing your own role refreshes server-rendered menus and controls', async ({ page }) => {
+  await mockWorkspace(page, [
+    'Bills.Read',
+    'Bills.Create',
+    'Users.Read',
+    'Roles.Read',
+    'Users.UpdateRole',
+  ])
+  await page.route('**/api/admin/users?**', (route) =>
+    route.fulfill({
+      json: {
+        data: fixtureAdminData('/api/admin/users', {
+          totalCount: 1,
+          totalPages: 1,
+          items: [
+            {
+              memberId: 'self',
+              name: owner.displayName,
+              email: owner.email,
+              roleId: 'role-1',
+              role: 'Admin',
+              status: 'Active',
+            },
+          ],
+        }),
+      },
+    }),
+  )
+  await page.route('**/api/admin/users/roles', (route) =>
+    route.fulfill({
+      json: {
+        data: fixtureAdminData('/api/admin/users/roles', [
+          { roleId: 'role-1', name: 'Admin' },
+          { roleId: 'role-2', name: 'User' },
+        ]),
+      },
+    }),
+  )
+  await page.route('**/api/admin/users/self/role', async (route) => {
+    expect(fixtureAdminBody(route.request().postDataJSON())).toEqual({ roleId: 'role-2' })
+    await provisionSession(page, ['Bills.Read'])
+    await route.fulfill({ json: { data: true } })
+  })
+  await page.goto('/admin/users')
+  await page.getByRole('button', { name: /Minh Anh.*owner@example/ }).click()
+  await page.getByRole('combobox', { name: 'Vai trò người dùng' }).click()
+  await page.getByRole('option', { name: 'User', exact: true }).click()
+  await page.getByRole('button', { name: 'Lưu vai trò', exact: true }).click()
+  await expect(
+    page.getByRole('heading', { name: 'Chưa có quyền quản lý người dùng' }),
+  ).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Người dùng & quyền', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('link', { name: /Tạo hóa đơn/ })).toHaveCount(0)
+})
+
+test('admin editor hides backend identifiers through the real local gateway and preserves unknown grants', async ({
+  page,
+}) => {
+  await provisionSession(page, [
+    'Users.Read',
+    'Roles.Read',
+    'Permissions.Read',
+    'Users.ReadPermissions',
+    'Users.UpdateRole',
+    'Users.UpdatePermissions',
+  ])
+  const payloads: Promise<string>[] = []
+  page.on('response', (response) => {
+    if (new URL(response.url()).pathname.startsWith('/api/admin/users'))
+      payloads.push(response.text())
+  })
+  await page.goto('/admin/users')
+  await page.getByRole('button', { name: /Linh friend@example.com/ }).click()
+  await page.getByRole('combobox', { name: 'Vai trò người dùng' }).click()
+  await page.getByRole('option', { name: 'Quản lý', exact: true }).click()
+  const roleWrite = page.waitForRequest(
+    (request) => request.method() === 'PATCH' && request.url().endsWith('/role'),
+  )
+  await page.getByRole('button', { name: 'Lưu vai trò', exact: true }).click()
+  const roleBody = (await roleWrite).postDataJSON()
+  expect(roleBody).toEqual({ role: expect.stringMatching(/^v1\./) })
+  const modal = page.getByRole('dialog', { name: 'Thông tin người dùng', exact: true })
+  await expect(modal).not.toBeVisible()
+  await page.getByRole('button', { name: /Linh friend@example.com/ }).click()
+  await page.getByRole('tab', { name: 'Quyền hiệu lực', exact: true }).click()
+  await expect(page.getByRole('checkbox', { name: 'Quyền hiện tại 1', exact: true })).toBeChecked()
+  await page.getByRole('checkbox', { name: 'Tạo hóa đơn', exact: true }).check()
+  const permissionWrite = page.waitForRequest(
+    (request) => request.method() === 'PATCH' && request.url().endsWith('/permissions'),
+  )
+  await page.getByRole('button', { name: 'Lưu quyền hiệu lực', exact: true }).click()
+  const permissionBody = (await permissionWrite).postDataJSON()
+  expect(permissionBody).toEqual({
+    permissions: [
+      expect.stringMatching(/^v1\./),
+      expect.stringMatching(/^v1\./),
+      expect.stringMatching(/^v1\./),
+    ],
+  })
+  await expect(modal).not.toBeVisible()
+  const received = (await Promise.all(payloads)).join('\n')
+  expect(received).toContain('Quản lý')
+  expect(received).toContain('Tạo hóa đơn')
+  expect(received + JSON.stringify([roleBody, permissionBody])).not.toMatch(
+    /Bills\.Read|Bills\.Create|System\.Configure|roleId|permissionId|groupCode|effectivePermissionCodes|rolePermissionCodes|private-/,
+  )
+})
+
+test('server refuses malformed permission grants without exposing the backend payload', async ({
+  page,
+}) => {
+  for (const granted of [
+    'Bills.Create',
+    { actions: { createBill: true } },
+    [true, 123, 'Unknown.Permission'],
+    ['Bills.Create', true],
+    ['Unknown.Permission'],
+  ]) {
+    await mockWorkspace(page)
+    await provisionSession(page, granted)
+    await page.goto('/bills/new')
+    await expect(
+      page.getByRole('heading', {
+        name:
+          Array.isArray(granted) && granted.every((code) => typeof code === 'string')
+            ? 'Chưa có quyền tạo hóa đơn'
+            : 'Chưa tải được dữ liệu',
+      }),
+    ).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Người dùng & quyền', exact: true })).toHaveCount(0)
+  }
+})
 test('workspace and login meet structural accessibility checks', async ({ page }) => {
   await mockWorkspace(page)
   await page.goto('/dashboard')
@@ -196,9 +359,6 @@ test('email login retains the bill destination and handles a wrong code', async 
     await provisionSession(page)
     await route.fulfill({ json: { data: { email: 'owner@example.com' } } })
   })
-  await page.route('**/api/auth/me/permissions', (route) =>
-    route.fulfill({ json: { data: { effectivePermissionCodes: ['Bills.Read'] } } }),
-  )
   await page.route(`**/api/bills/${billId}`, (route) =>
     route.fulfill({ json: { data: fixtureBill() } }),
   )

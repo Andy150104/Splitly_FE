@@ -1,6 +1,8 @@
 import type { ThreeElements } from '@react-three/fiber'
+import { SphereGeometry, TorusGeometry } from 'three'
 import { softMetal } from './materials'
 import { landingMetal } from './landingMaterials'
+import { useSceneGeometry } from './SceneTheme'
 
 type Props = ThreeElements['group'] & {
   color: string
@@ -18,15 +20,22 @@ export default function LinkedLoop({
   ...props
 }: Props) {
   const arc = Math.PI * 1.58
+  const loop = useSceneGeometry(
+    `loop:${radius}:${thickness}`,
+    () => new TorusGeometry(radius, thickness, 20, 64, arc),
+  )
+  const cap = useSceneGeometry(`loop-cap:${thickness}`, () => new SphereGeometry(thickness, 20, 12))
   return (
     <group {...props}>
-      <mesh>
-        <torusGeometry args={[radius, thickness, 20, 64, arc]} />
+      <mesh geometry={loop}>
         <meshPhysicalMaterial color={color} {...(polished ? landingMetal : softMetal)} />
       </mesh>
       {[0, arc].map((angle) => (
-        <mesh key={angle} position={[Math.cos(angle) * radius, Math.sin(angle) * radius, 0]}>
-          <sphereGeometry args={[thickness, 20, 12]} />
+        <mesh
+          geometry={cap}
+          key={angle}
+          position={[Math.cos(angle) * radius, Math.sin(angle) * radius, 0]}
+        >
           <meshPhysicalMaterial color={color} {...(polished ? landingMetal : softMetal)} />
         </mesh>
       ))}

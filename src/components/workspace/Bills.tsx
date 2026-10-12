@@ -4,6 +4,8 @@ import Select from '../ui/Select'
 
 import Link from 'next/link'
 import { useState } from 'react'
+import type { ReactNode } from 'react'
+import { bindControl } from './slots'
 import { motion, useReducedMotion } from 'motion/react'
 import { Count, Disclosure, Reveal } from '../ui/Motion'
 import SearchInput from '../ui/SearchInput'
@@ -51,14 +53,17 @@ function BillList({ rows }: { rows: BillItem[] }) {
   )
 }
 
-export default function Bills({ initialOwed = false }: { initialOwed?: boolean }) {
-  const { can } = useWorkspace()
+export default function Bills({
+  initialOwed = false,
+  createBillLink,
+}: {
+  initialOwed?: boolean
+  createBillLink: ReactNode
+}) {
   const [owed, setOwed] = useState(initialOwed)
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
-  const query = useApi<PageResult<BillItem>>(
-    can('Bills.Read') ? `bills?owed=${owed}&pageNumber=${page}&pageSize=12` : null,
-  )
+  const query = useApi<PageResult<BillItem>>(`bills?owed=${owed}&pageNumber=${page}&pageSize=12`)
   const rows =
     query.data?.items?.filter((bill) =>
       (bill.title || '').toLocaleLowerCase('vi-VN').includes(search.toLocaleLowerCase('vi-VN')),
@@ -75,11 +80,7 @@ export default function Bills({ initialOwed = false }: { initialOwed?: boolean }
         title="Hóa đơn."
         description="Các khoản bạn tạo và những khoản bạn cùng tham gia."
       >
-        {can('Bills.Create') && (
-          <Link href="/bills/new" className="ws-button">
-            + Tạo hóa đơn
-          </Link>
-        )}
+        {createBillLink}
       </PageHeading>
       <div className="ws-toolbar">
         <div className="ws-tabs">
@@ -98,12 +99,7 @@ export default function Bills({ initialOwed = false }: { initialOwed?: boolean }
           placeholder="Tìm hóa đơn trong trang…"
         />
       </div>
-      {!can('Bills.Read') ? (
-        <Empty
-          title="Chưa có quyền xem hóa đơn"
-          description="Liên hệ quản trị viên để mở quyền truy cập."
-        />
-      ) : query.loading ? (
+      {query.loading ? (
         <Loading />
       ) : query.error ? (
         <ErrorState message={query.error} retry={query.reload} />
@@ -119,8 +115,7 @@ export default function Bills({ initialOwed = false }: { initialOwed?: boolean }
                   ? 'Thử tên khác hoặc xóa nội dung tìm kiếm.'
                   : 'Tạo khoản chung đầu tiên để bắt đầu.'
               }
-              href={can('Bills.Create') ? '/bills/new' : undefined}
-              action="Tạo hóa đơn đầu tiên"
+              actionSlot={bindControl(createBillLink, { children: 'Tạo hóa đơn đầu tiên' })}
             />
           )}
           {(query.data?.totalPages || 0) > 1 && (
@@ -142,20 +137,26 @@ export default function Bills({ initialOwed = false }: { initialOwed?: boolean }
   )
 }
 
-export function Dashboard() {
-  const { user, can } = useWorkspace()
+export function Dashboard({
+  createBillLink,
+  billsLink,
+  groupsLink,
+}: {
+  createBillLink: ReactNode
+  billsLink: ReactNode
+  groupsLink: ReactNode
+}) {
+  const { user } = useWorkspace()
   const [owed, setOwed] = useState(false)
   const [filter, setFilter] = useState('all')
   const reduced = useReducedMotion()
   const owned = useApi<PageResult<BillItem>>(
-    can('Bills.Read') ? 'bills?owed=false&pageNumber=1&pageSize=6' : null,
+    billsLink ? 'bills?owed=false&pageNumber=1&pageSize=6' : null,
   )
   const joined = useApi<PageResult<BillItem>>(
-    can('Bills.Read') ? 'bills?owed=true&pageNumber=1&pageSize=6' : null,
+    billsLink ? 'bills?owed=true&pageNumber=1&pageSize=6' : null,
   )
-  const groups = useApi<PageResult<GroupItem>>(
-    can('Groups.Read') ? 'groups?pageNumber=1&pageSize=3' : null,
-  )
+  const groups = useApi<PageResult<GroupItem>>(groupsLink ? 'groups?pageNumber=1&pageSize=3' : null)
   const query = owed ? joined : owned
   const recent = query.data?.items || []
   const rows = recent.filter(
@@ -173,24 +174,24 @@ export function Dashboard() {
       label: 'Hóa đơn bạn tạo',
       query: owned,
       href: '/bills',
-      permission: 'Bills.Read',
+      link: billsLink,
       note: 'Quản lý khoản chung',
     },
     {
       label: 'Hóa đơn tham gia',
       query: joined,
       href: '/bills?owed=true',
-      permission: 'Bills.Read',
+      link: billsLink,
       note: 'Theo dõi phần của bạn',
     },
     {
       label: 'Nhóm của bạn',
       query: groups,
       href: '/groups',
-      permission: 'Groups.Read',
+      link: groupsLink,
       note: 'Những người cùng chia',
     },
-  ]
+  ] as const
   return (
     <>
       <PageHeading
@@ -198,11 +199,7 @@ export function Dashboard() {
         title={`Chào ${user.displayName.split(' ').pop()}.`}
         description="Một góc nhìn rõ ràng về các khoản chung của bạn."
       >
-        {can('Bills.Create') && (
-          <Link href="/bills/new" className="ws-button">
-            + Tạo hóa đơn
-          </Link>
-        )}
+        {createBillLink}
       </PageHeading>
       <Disclosure
         title="Tổng quan khoản chung"
@@ -211,7 +208,7 @@ export function Dashboard() {
       >
         <section className="ws-overview" aria-label="Tổng quan khoản chung">
           {metrics
-            .filter((metric) => can(metric.permission))
+            .filter((metric) => metric.link)
             .map((metric, index) => (
               <motion.div
                 key={metric.href}
@@ -298,15 +295,10 @@ export function Dashboard() {
                   ? 'Hóa đơn sẽ xuất hiện ở đây khi bạn tạo hoặc được mời tham gia.'
                   : 'Chọn trạng thái khác để xem các khoản gần đây.'
               }
-              href={can('Bills.Create') ? '/bills/new' : undefined}
-              action="Tạo hóa đơn đầu tiên"
+              actionSlot={bindControl(createBillLink, { children: 'Tạo hóa đơn đầu tiên' })}
             />
           )}
-          {can('Bills.Read') && (
-            <Link className="ws-section-link" href={owed ? '/bills?owed=true' : '/bills'}>
-              Xem tất cả hóa đơn <span>↗</span>
-            </Link>
-          )}
+          {bindControl(billsLink, { href: owed ? '/bills?owed=true' : '/bills' })}
         </Disclosure>
         <div className="ws-dashboard-rail">
           <Disclosure
@@ -360,7 +352,7 @@ export function Dashboard() {
               <p className="ws-muted">Tiến độ sẽ xuất hiện sau khi bạn phát hành hóa đơn.</p>
             )}
           </Disclosure>
-          {can('Groups.Read') && (
+          {groupsLink && (
             <Disclosure
               title="Nhóm của bạn"
               meta={`${groups.data?.totalCount ?? '…'} nhóm`}
@@ -392,9 +384,13 @@ export function Dashboard() {
               ) : (
                 <p className="ws-muted">Tạo một nhóm để chia những khoản thường xuyên.</p>
               )}
-              <Link className="ws-section-link" href="/groups">
-                Mở không gian nhóm <span>↗</span>
-              </Link>
+              {bindControl(groupsLink, {
+                children: (
+                  <>
+                    Mở không gian nhóm <span>↗</span>
+                  </>
+                ),
+              })}
             </Disclosure>
           )}
         </div>

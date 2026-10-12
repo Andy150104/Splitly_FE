@@ -1,2 +1,2 @@
-import Groups from '../../../components/workspace/Groups'
-export default Groups
+import { GroupsView } from '../_components/WorkspaceViews'
+export default GroupsView

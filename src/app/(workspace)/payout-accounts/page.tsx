@@ -1,2 +1,2 @@
-import Accounts from '../../../components/workspace/Accounts'
-export default Accounts
+import { AccountsView } from '../_components/WorkspaceViews'
+export default AccountsView

@@ -3,39 +3,44 @@
 import Select from '../ui/Select'
 
 import { useRef, useState } from 'react'
+import type { ReactNode } from 'react'
+import { useRouter } from 'next/navigation'
+import { bindControl, fillControl } from './slots'
 import { send } from '../../lib/api/client'
-import type { AdminUser, PageResult } from '../../lib/api/types'
-import type { PermissionDefinitionView, PermissionView, RoleView } from '../../lib/api/views'
+import type { PageResult } from '../../lib/api/types'
+import type {
+  AdminUserView,
+  PermissionDefinitionView,
+  AdminPermissionView,
+  RoleView,
+} from '../../lib/api/views'
 import PermissionsForm from './admin/PermissionsForm'
 import SearchInput from '../ui/SearchInput'
 import WorkspaceModal from '../ui/WorkspaceModal'
 import { Empty, ErrorState, Loading, Notice } from '../ui/Feedback'
-import { Field } from '../ui/Field'
 import { PageHeading } from '../ui/PageHeading'
 import { Status } from '../ui/Status'
 import { useApi, useWorkspace } from './hooks'
 
-export default function AdminUsers() {
-  const { can } = useWorkspace()
+export type MemberEditorSlots = {
+  roleField: ReactNode
+  permissionsPanel: ReactNode
+  permissionPicker: ReactNode
+  saveRoleButton: ReactNode
+  accessButton: ReactNode
+  savePermissionsButton: ReactNode
+}
+export default function AdminUsers(slots: MemberEditorSlots) {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('')
   const [status, setStatus] = useState('')
   const [page, setPage] = useState(1)
-  const [selected, setSelected] = useState<AdminUser | null>(null)
+  const [selected, setSelected] = useState<AdminUserView | null>(null)
   const [editorBusy, setEditorBusy] = useState(false)
   const [message, setMessage] = useState('')
-  const query = useApi<PageResult<AdminUser>>(
-    can('Users.Read')
-      ? `admin/users?search=${encodeURIComponent(filter)}&status=${status}&pageNumber=${page}&pageSize=8`
-      : null,
+  const query = useApi<PageResult<AdminUserView>>(
+    `admin/users?search=${encodeURIComponent(filter)}&status=${status}&pageNumber=${page}&pageSize=8`,
   )
-  if (!can('Users.Read'))
-    return (
-      <Empty
-        title="Chưa có quyền quản lý người dùng"
-        description="Liên hệ quản trị viên để mở quyền truy cập."
-      />
-    )
   return (
     <>
       <PageHeading
@@ -150,6 +155,7 @@ export default function AdminUsers() {
           <MemberEditor
             key={selected.memberId}
             member={selected}
+            {...slots}
             onBusy={setEditorBusy}
             onSaved={() => {
               setEditorBusy(false)
@@ -168,33 +174,39 @@ function MemberEditor({
   member,
   onSaved,
   onBusy,
-}: {
-  member: AdminUser
+  roleField,
+  permissionsPanel,
+  permissionPicker,
+  saveRoleButton,
+  accessButton,
+  savePermissionsButton,
+}: MemberEditorSlots & {
+  member: AdminUserView
   onSaved: () => void
   onBusy: (busy: boolean) => void
 }) {
-  const { can, reloadPermissions, user } = useWorkspace()
-  const [roleId, setRoleId] = useState(member.roleId)
+  const { user } = useWorkspace()
+  const router = useRouter()
+  const [selectedRole, setSelectedRole] = useState(member.roleSelection?.id || '')
   const [error, setError] = useState('')
   const [pending, setPending] = useState(false)
   const [tab, setTab] = useState<'access' | 'permissions'>('access')
   const [permissionsOpened, setPermissionsOpened] = useState(false)
-  const roles = useApi<RoleView[]>(can('Roles.Read') ? 'admin/users/roles' : null)
+  const roles = useApi<RoleView[]>(roleField ? 'admin/users/roles' : null)
+  const roleValue =
+    roles.data?.find((role) => role.id === selectedRole)?.value ||
+    (selectedRole === member.roleSelection?.id ? member.roleSelection.value : undefined)
   const catalog = useApi<PermissionDefinitionView[]>(
-    permissionsOpened && can('Permissions.Read') ? 'admin/users/permissions' : null,
+    permissionsOpened && permissionPicker ? 'admin/users/permissions' : null,
   )
-  const permissions = useApi<PermissionView>(
-    permissionsOpened && can('Users.ReadPermissions')
-      ? `admin/users/${member.memberId}/permissions`
-      : null,
+  const permissions = useApi<AdminPermissionView>(
+    permissionsOpened && permissionsPanel ? `admin/users/${member.memberId}/permissions` : null,
   )
   function selectTab(value: 'access' | 'permissions') {
     if (value === 'permissions') setPermissionsOpened(true)
     setTab(value)
   }
-  const tabs = can('Users.ReadPermissions')
-    ? (['access', 'permissions'] as const)
-    : (['access'] as const)
+  const tabs = permissionsPanel ? (['access', 'permissions'] as const) : (['access'] as const)
   const lock = useRef(false)
   async function save(path: string, body: unknown, method = 'PATCH') {
     if (lock.current) return
@@ -204,7 +216,7 @@ function MemberEditor({
     setError('')
     try {
       await send(`admin/users/${member.memberId}/${path}`, body, method)
-      if (member.email?.toLowerCase() === user.email.toLowerCase()) reloadPermissions()
+      if (member.email?.toLowerCase() === user.email.toLowerCase()) router.refresh()
       onSaved()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Chưa cập nhật được người dùng.')
@@ -232,8 +244,8 @@ function MemberEditor({
         <div>
           <span>Quyền hiệu lực</span>
           <strong>
-            {can('Users.ReadPermissions')
-              ? (permissions.data?.effectivePermissionCodes?.length ?? 'Xem trong thẻ quyền')
+            {permissionsPanel
+              ? (permissions.data?.permissions.length ?? 'Xem trong thẻ quyền')
               : 'Không có quyền xem'}
           </strong>
         </div>
@@ -252,7 +264,7 @@ function MemberEditor({
             onClick={() => selectTab(value)}
             onKeyDown={(event) => {
               if (
-                !can('Users.ReadPermissions') ||
+                !permissionsPanel ||
                 !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)
               )
                 return
@@ -281,87 +293,105 @@ function MemberEditor({
       >
         <div className="ws-user-access">
           {roles.error && <ErrorState message={roles.error} retry={roles.reload} />}
-          <Field label="Vai trò người dùng">
-            <Select
-              value={roleId}
-              disabled={pending || roles.loading || !!roles.error || !can('Users.UpdateRole')}
-              onValueChange={(value) => setRoleId(value)}
-            >
-              {!(roles.data || []).some((role) => role.roleId === member.roleId) && (
-                <option value={member.roleId}>{member.role || 'Vai trò hiện tại'}</option>
-              )}
-              {(roles.data || []).map((role) => (
-                <option key={role.roleId} value={role.roleId}>
-                  {role.name || 'Vai trò'}
-                </option>
-              ))}
-            </Select>
-          </Field>
-          {can('Users.UpdateRole') && (
+          {roleField ? (
+            fillControl(roleField, {
+              children: (
+                <>
+                  <Select
+                    value={selectedRole}
+                    disabled={pending || roles.loading || !!roles.error || !saveRoleButton}
+                    onValueChange={setSelectedRole}
+                  >
+                    {!(roles.data || []).some((role) => role.id === member.roleSelection?.id) && (
+                      <option value={member.roleSelection?.id || ''}>
+                        {member.role || 'Vai trò hiện tại'}
+                      </option>
+                    )}
+                    {(roles.data || []).map((role) => (
+                      <option key={role.id} value={role.id}>
+                        {role.name || 'Vai trò'}
+                      </option>
+                    ))}
+                  </Select>
+                </>
+              ),
+            })
+          ) : (
+            <p className="ws-muted">Vai trò hiện tại: {member.role}</p>
+          )}
+          {saveRoleButton && (
             <>
               <p className="ws-muted">
                 Đổi vai trò sẽ xóa các quyền cấp thêm hoặc bị từ chối riêng của tài khoản này.
               </p>
-              <button
-                className="ws-button"
-                disabled={pending || roles.loading || !!roles.error || roleId === member.roleId}
-                onClick={() => void save('role', { roleId })}
-              >
-                {pending ? 'Đang lưu…' : 'Lưu vai trò'}
-              </button>
+              {bindControl(saveRoleButton, {
+                disabled:
+                  pending ||
+                  roles.loading ||
+                  !!roles.error ||
+                  !roleValue ||
+                  selectedRole === member.roleSelection?.id,
+                onClick: () => void save('role', { role: roleValue }),
+                children: pending ? 'Đang lưu…' : 'Lưu vai trò',
+              })}
             </>
           )}
-          {can('Users.UpdateAccess') && (
+          {accessButton && (
             <div className="ws-access-control">
               <Status value={member.status} />
-              <button
-                className="ws-button ws-button-secondary"
-                disabled={pending}
-                onClick={() =>
-                  void save('access', { blocked: member.status !== 'Blocked', roleId }, 'PUT')
-                }
-              >
-                {member.status === 'Blocked' ? 'Mở lại truy cập' : 'Chặn truy cập'}
-              </button>
+              {bindControl(accessButton, {
+                disabled: pending || !roleValue,
+                onClick: () =>
+                  void save(
+                    'access',
+                    { blocked: member.status !== 'Blocked', role: roleValue },
+                    'PUT',
+                  ),
+                children: member.status === 'Blocked' ? 'Mở lại truy cập' : 'Chặn truy cập',
+              })}
             </div>
           )}
         </div>
       </div>
-      {can('Users.ReadPermissions') && (
-        <div
-          id="user-panel-permissions"
-          role="tabpanel"
-          aria-labelledby="user-tab-permissions"
-          hidden={tab !== 'permissions'}
-        >
-          {permissions.loading || catalog.loading ? (
-            <Loading />
-          ) : permissions.error || catalog.error ? (
-            <ErrorState
-              message={permissions.error || catalog.error}
-              retry={() => {
-                permissions.reload()
-                catalog.reload()
-              }}
-            />
-          ) : (
-            permissions.data && (
-              <PermissionsForm
-                key={JSON.stringify(permissions.data.effectivePermissionCodes)}
-                initial={permissions.data.effectivePermissionCodes || []}
-                catalog={catalog.data || []}
-                editable={
-                  can('Users.UpdatePermissions') &&
-                  can('Permissions.Read') &&
-                  (catalog.data?.length || 0) > 0
-                }
-                pending={pending}
-                onSave={(codes) => void save('permissions', { effectivePermissionCodes: codes })}
+      {bindControl(permissionsPanel, {
+        hidden: tab !== 'permissions',
+        children: (
+          <>
+            {permissions.loading || catalog.loading ? (
+              <Loading />
+            ) : permissions.error || catalog.error ? (
+              <ErrorState
+                message={permissions.error || catalog.error}
+                retry={() => {
+                  permissions.reload()
+                  catalog.reload()
+                }}
               />
-            )
-          )}
-        </div>
-      )}
+            ) : (
+              permissions.data &&
+              (permissionPicker ? (
+                bindControl(permissionPicker, {
+                  key: JSON.stringify(
+                    permissions.data.permissions.map((permission) => permission.id),
+                  ),
+                  initial: permissions.data.permissions,
+                  catalog: catalog.data || [],
+                  saveButton: savePermissionsButton,
+                  pending,
+                  onSave: (values: string[]) => void save('permissions', { permissions: values }),
+                })
+              ) : (
+                <PermissionsForm
+                  initial={permissions.data.permissions}
+                  catalog={[]}
+                  saveButton={null}
+                  pending={pending}
+                />
+              ))
+            )}
+          </>
+        ),
+      })}
     </section>
   )
 }

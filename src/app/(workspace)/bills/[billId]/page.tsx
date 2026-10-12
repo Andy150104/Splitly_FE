@@ -1,4 +1,4 @@
-import BillDetail from '../../../../components/workspace/BillDetail'
+import { BillDetailView } from '../../_components/WorkspaceViews'
 export default async function Page({ params }: { params: Promise<{ billId: string }> }) {
-  return <BillDetail billId={(await params).billId} />
+  return <BillDetailView billId={(await params).billId} />
 }

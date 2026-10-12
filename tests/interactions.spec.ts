@@ -1,6 +1,14 @@
 import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
-import { accountId, billId, fixtureBill, mockWorkspace, permissions } from './helpers/workspace'
+import {
+  fixtureAdminData,
+  fixtureAdminBody,
+  accountId,
+  billId,
+  fixtureBill,
+  mockWorkspace,
+  permissions,
+} from './helpers/workspace'
 
 test('login stays legible and accessible after the color refresh', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
@@ -231,22 +239,22 @@ test('admin role and effective permission changes send the reference contracts',
       }))
     if (path.endsWith('/role')) {
       expect(request.method()).toBe('PATCH')
-      expect(request.postDataJSON()).toEqual({ roleId: 'role-manager' })
+      expect(fixtureAdminBody(request.postDataJSON())).toEqual({ roleId: 'role-manager' })
       member.roleId = 'role-manager'
       member.role = 'Manager'
-      writes.push(request.postDataJSON())
+      writes.push(fixtureAdminBody(request.postDataJSON()))
     }
     if (path === '/api/admin/users/user-1/permissions') {
       if (request.method() === 'PATCH') {
-        expect(request.postDataJSON()).toEqual({
+        expect(fixtureAdminBody(request.postDataJSON())).toEqual({
           effectivePermissionCodes: ['Bills.Read', 'Bills.Create'],
         })
-        effective = request.postDataJSON().effectivePermissionCodes
-        writes.push(request.postDataJSON())
+        effective = fixtureAdminBody(request.postDataJSON()).effectivePermissionCodes as string[]
+        writes.push(fixtureAdminBody(request.postDataJSON()))
       }
       data = { effectivePermissionCodes: effective }
     }
-    return route.fulfill({ json: { data } })
+    return route.fulfill({ json: { data: fixtureAdminData(path, data) } })
   })
   await page.goto('/admin/users')
   await page.getByRole('button', { name: /Linh friend@example.com/ }).click()
@@ -256,7 +264,7 @@ test('admin role and effective permission changes send the reference contracts',
   await expect(page.locator('.ws-admin-editor')).toHaveCount(0)
   await page.getByRole('button', { name: /Linh friend@example.com/ }).click()
   await page.getByRole('tab', { name: 'Quyền hiệu lực', exact: true }).click()
-  await page.getByRole('checkbox', { name: 'Tạo hóa đơn Bills.Create', exact: true }).check()
+  await page.getByRole('checkbox', { name: 'Tạo hóa đơn', exact: true }).check()
   await page.getByRole('button', { name: 'Lưu quyền hiệu lực', exact: true }).click()
   await expect(page.locator('.ws-admin-editor')).toHaveCount(0)
   expect(writes).toHaveLength(2)

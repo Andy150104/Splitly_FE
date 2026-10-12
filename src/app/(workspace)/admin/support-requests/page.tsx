@@ -1,2 +1,2 @@
-import AdminSupport from '../../../../components/workspace/AdminSupport'
-export default AdminSupport
+import { AdminSupportView } from '../../_components/WorkspaceViews'
+export default AdminSupportView

@@ -43,9 +43,11 @@ Route page thường là wrapper mỏng; giữ form, state và action trong comp
 
 ## CSS, layout và motion
 
-Thứ tự import trong root layout: `styles.css` → `story.css` → `navbar.css` → `experience.css` → `workspace.css` → `splitly.css` → `refinement.css` → `universe.css`. Các file cũ có selector/nền sáng còn tồn tại; đọc cascade thay vì chỉ thay một token rồi giả định mọi màn đã đổi màu.
+Thứ tự import trong root layout: `styles.css` → `story.css` → `navbar.css` → `experience.css` → `workspace.css` → `splitly.css` → `refinement.css` → `universe.css` → `theme.css`. Các file cũ có selector/nền sáng còn tồn tại; đọc cascade thay vì chỉ thay một token rồi giả định mọi màn đã đổi màu.
 
 Theme hiện tại: nền khoảng `#0b0b12`, surfaces tối, accent lavender/tím; workspace dùng biến `--ws-*`. Tái sử dụng token/component phù hợp. Typography landing có style global; workspace cần scope để tránh heading khổng lồ hoặc `white-space: nowrap` tràn màn.
+
+Dark vẫn là mặc định; light chọn bằng `ThemeToggle` dùng chung ở landing/login/workspace. `theme.css` chỉ định nghĩa `--theme-*` ở `html[data-theme='light']`; CSS cũ dùng màu dark gốc làm fallback. Giữ token light khỏi `:root` chung để không thay dark. `splitly.theme` lưu preference, `themeBootstrap` áp dụng trước paint, `useTheme` đồng bộ các tab. Overlay portal kế thừa theme từ html. Landing/login dùng `SceneTheme` để đổi vật liệu, texture và ánh sáng tím sang xanh trong light; ảnh dự phòng dùng `--theme-art-*`, dark giữ màu gốc. `useThemeTransition` chuyển canvas sang demand trong vòng tròn đổi mode, rồi phục hồi animation; không thêm canvas hoặc thay choreography. Kiểm tra contrast và các trạng thái focus/hover/disabled ở cả hai chế độ.
 
 Workspace có chiều cao `100dvh`; `.ws-main-shell` là flex column, `.ws-main` cuộn dọc với `min-height: 0`. Route có giới hạn chiều rộng, grid dùng `minmax(0, ...)`, children cần `min-width: 0`. Không dùng `overflow: hidden` để che nội dung cần thao tác.
 
@@ -64,9 +66,9 @@ Các model login và landing dùng chung `src/components/three/`: `materials.ts`
 ## API và state invariants
 
 - `api<T>(path, options)` nhận path **không có** `/api/` ở đầu, fetch `/api/${path}`, no-store, unwrap envelope `data`, gom lỗi và xử lý session hết hạn. `send<T>(path, data, method)` mặc định POST.
-- `useApi<T>(path, poll)` trả `data`, `error`, `loading`, `isRefreshing`, `reload`. `path=null` nghĩa không fetch; thường gắn với `can('Permission.Code')`. Resource được gắn theo path, không dùng data của URL cũ để render URL mới. Reload cùng path giữ data trong lúc request mới chạy.
+- `useApi<T>(path, poll)` trả `data`, `error`, `loading`, `isRefreshing`, `reload`. `path=null` nghĩa không fetch; tài nguyên tùy chọn chỉ tải khi có slot giao diện server tương ứng. Resource được gắn theo path, không dùng data của URL cũ để render URL mới. Reload cùng path giữ data trong lúc request mới chạy.
 - Giữ AbortController, bỏ qua response bị abort, cleanup timeout và poll khi document visible. Dispatch đầu được defer để tránh request đôi do effect replay ở development. Nếu truyền poll callback, giữ reference ổn định theo pattern hiện tại.
-- `useWorkspace().can(code)` dựa trên `effectivePermissionCodes`. Ẩn/disable hành động theo quyền, hiển thị lỗi quyền/retry có ích; UI gating không thay cho authorization backend.
+- `useWorkspace()` chỉ cung cấp user. Quyền phiên đọc ở `permissions.server.ts`, dùng mã BE trực tiếp; server composition ở `src/app/(workspace)/_components/WorkspaceViews.tsx` dựng các control ReactNode. Client dùng `bindControl`/`fillControl` để gắn interaction và dữ liệu local; không truyền bảng quyền, cờ grant hoặc mảng mã quyền qua props. Sau khi sửa quyền của chính mình, dùng `router.refresh()`. Bộ chỉnh quyền admin dùng contract riêng `AdminPermissionView`; UI không thay authorization gateway/BE.
 - Gateway allowlist có cả path nghiệp vụ và admin. Admin method quan trọng: list GET, role/permission PATCH, access PUT, support status PATCH. Catalog là `admin/users/roles` và `admin/users/permissions`.
 - Token cookie hiện dùng tên legacy `mo_access`, `mo_refresh`, `mo_profile`; profile ký HMAC. LocalStorage `mo.sidebar` lưu preference UI. Đổi brand hiển thị không tự đổi các key này nếu chưa có migration tương ứng.
 - Origin của request ghi được so với Host; giữ xử lý dev bind `0.0.0.0`. Refresh upstream khi 401 một lần, gom concurrent refresh bằng hash/token và grace window. Logout clear session ngay cả khi upstream lỗi.
@@ -76,15 +78,15 @@ Các model login và landing dùng chung `src/components/three/`: `materials.ts`
 
 ### Các contract dễ sửa nhầm
 
-| Flow                | Invariant                                                                                                                                                                                              |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Email login         | Email trim/lowercase; code trim/uppercase, hỗ trợ mã có dấu gạch nối. Giữ redirect `next` hợp lệ qua login.                                                                                            |
-| Tài khoản nhận tiền | Lookup `bankBin` + `accountNumber`, debounce 550ms sau tối thiểu 6 số; invalidate tên khi đổi ngân hàng/số. Chỉ lưu kết quả đúng identity hiện tại và khóa submit trùng.                               |
-| Lưu tài khoản       | POST `payout-accounts` với `bankBin`, `accountNumber`, `isDefault`; tên chủ tài khoản readonly từ lookup, không lấy tên người đăng nhập để điền.                                                       |
-| Chia hóa đơn        | Tạo draft → members → calculate với enum chuỗi `Equal`/`CustomAmount` → publish với `payoutAccountId`. Custom allocation phải đúng tổng. Giữ draft khi call lỗi.                                       |
-| Thanh toán          | QR/checkout/lịch sử đến từ bill detail; poll 3 giây theo `needsPolling`, dừng khi phần cần theo dõi hoàn tất hoặc rời trang. Chủ xem QR người chưa trả nhưng không trở thành người thanh toán thay họ. |
-| Nhắc/hủy            | Nhắc đúng danh sách còn nợ; hủy có reason qua modal. Quay lại/đóng modal chưa xác nhận không gửi action.                                                                                               |
-| Admin               | Đừng rút gọn catalog thành `admin/roles`/`admin/permissions`; access dùng `blocked` + `roleId`; support `Resolved`/`Dismissed` cần note.                                                               |
+| Flow                | Invariant                                                                                                                                                                                                                            |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Email login         | Email trim/lowercase; code trim/uppercase, hỗ trợ mã có dấu gạch nối. Giữ redirect `next` hợp lệ qua login.                                                                                                                          |
+| Tài khoản nhận tiền | Lookup `bankBin` + `accountNumber`, debounce 550ms sau tối thiểu 6 số; invalidate tên khi đổi ngân hàng/số. Chỉ lưu kết quả đúng identity hiện tại và khóa submit trùng.                                                             |
+| Lưu tài khoản       | POST `payout-accounts` với `bankBin`, `accountNumber`, `isDefault`; tên chủ tài khoản readonly từ lookup, không lấy tên người đăng nhập để điền.                                                                                     |
+| Chia hóa đơn        | Tạo draft → members → calculate với enum chuỗi `Equal`/`CustomAmount` → publish với `payoutAccountId`. Custom allocation phải đúng tổng. Giữ draft khi call lỗi.                                                                     |
+| Thanh toán          | QR/checkout/lịch sử đến từ bill detail; poll 3 giây theo `needsPolling`, dừng khi phần cần theo dõi hoàn tất hoặc rời trang. Chủ xem QR người chưa trả nhưng không trở thành người thanh toán thay họ.                               |
+| Nhắc/hủy            | Nhắc đúng danh sách còn nợ; hủy có reason qua modal. Quay lại/đóng modal chưa xác nhận không gửi action.                                                                                                                             |
+| Admin               | Giữ path `admin/users/roles`/`admin/users/permissions`; browser gửi mã tham chiếu `role`/`permissions`, gateway chuyển về `roleId`/`effectivePermissionCodes` cho BE. Access giữ `blocked`; support `Resolved`/`Dismissed` cần note. |
 
 ## Kiểm tra phù hợp với thay đổi
 
@@ -110,6 +112,4 @@ npx playwright test tests/splitly-important.spec.ts --project=mobile-chrome --gr
 npm run build
 ```
 
-Playwright config có `desktop-chrome` và `mobile-chrome`, tái sử dụng server local :3000. `tests/helpers/workspace.ts` provision phiên fixture và mock `/api/**`; tránh vô tình bỏ mock rồi ghi lên backend. Kiểm tra UI desktop 1440px, mobile 390px; viewport 230px dùng khi sửa overflow và nút modal. Visual QA lưu ở `QA/`; có script `scripts/capture-api-design.mjs` dùng fixtures, chạy bằng `node --experimental-strip-types scripts/capture-api-design.mjs` khi cần bộ ảnh tương ứng.
-
-Môi trường hiện tại là PowerShell. Dùng `rg`/`rg --files` để tìm, `Get-Content -LiteralPath` cho tên chứa `[...path]`/`[id]`, đọc/ghi UTF-8 để giữ tiếng Việt. Không đọc hoặc in `.env.local` vào báo cáo; `.env.example` đủ để hiểu tên biến cấu hình.
+Playwright config có `desktop-chrome` và `mobile-chrome`, chạy production riêng :3210 cùng BE fixture quyền :3211; không tái sử dụng server :3000 của người dùng. `npm run test:e2e` build trước; nếu dùng `npx playwright test`, build trước một lần. `tests/helpers/workspace.ts` provision cookie fixture và mock `/api/**`; fixture BE từ chối mọi endpoint nghiệp vụ. Kiểm tra desktop 1440px, mobile 390px; viewport 230px khi sửa overflow/modal. Visual QA lưu ở `QA/`. Script `capture-api-design.mjs` dùng cùng stack fixture, xem phần kiểm tra trong README.

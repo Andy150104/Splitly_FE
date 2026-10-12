@@ -1,2 +1,2 @@
-import { Dashboard } from '../../../components/workspace/Bills'
-export default Dashboard
+import { DashboardView } from '../_components/WorkspaceViews'
+export default DashboardView

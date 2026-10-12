@@ -3,6 +3,9 @@ import { createHash } from 'node:crypto'
 import { clearSession, getCurrentUser, setSession } from '../../../lib/api/session'
 import type { LoginSession } from '../../../lib/api/types'
 import { browserData, browserError, withoutPrivateFields } from '../../../lib/api/responses'
+import { requiredAdminPermission } from '../../../lib/api/permissions.server'
+import { refresh, upstream } from '../../../lib/api/upstream.server'
+import { adminRequestBody } from '../../../lib/api/admin-references.server'
 
 const publicAuth = new Set([
   'auth/google',
@@ -11,59 +14,11 @@ const publicAuth = new Set([
   'auth/dev-login',
 ])
 const allowed =
-  /^(auth\/(google|send-login-code|verify-login-code|dev-login|logout|me\/permissions)|bills(?:\/[a-zA-Z0-9-]+(?:\/(?:members(?:\/[a-zA-Z0-9-]+(?:\/manual-payments)?)?|calculate|publish|cancel|reminders|vietqr-payment))?)?|groups(?:\/[a-zA-Z0-9-]+(?:\/(?:members(?:\/[a-zA-Z0-9-]+)?|close))?)?|payout-accounts(?:\/[a-zA-Z0-9-]+\/default)?|payment-accounts(?:\/[a-zA-Z0-9-]+\/default)?|bill-splits\/[a-zA-Z0-9-]+\/payment-order|payment-orders\/[a-zA-Z0-9-]+(?:\/payout-request)?|support-requests|vietqr\/(banks|account-lookup))$/
-const refreshes = new Map<string, Promise<LoginSession | null>>()
+  /^(auth\/(google|send-login-code|verify-login-code|dev-login|logout)|bills(?:\/[a-zA-Z0-9-]+(?:\/(?:members(?:\/[a-zA-Z0-9-]+(?:\/manual-payments)?)?|calculate|publish|cancel|reminders|vietqr-payment))?)?|groups(?:\/[a-zA-Z0-9-]+(?:\/(?:members(?:\/[a-zA-Z0-9-]+)?|close))?)?|payout-accounts(?:\/[a-zA-Z0-9-]+\/default)?|payment-accounts(?:\/[a-zA-Z0-9-]+\/default)?|bill-splits\/[a-zA-Z0-9-]+\/payment-order|payment-orders\/[a-zA-Z0-9-]+(?:\/payout-request)?|support-requests|vietqr\/(banks|account-lookup))$/
 const adminPaths =
   /^admin\/(users(?:\/(?:permissions|roles|[a-zA-Z0-9-]+\/(?:permissions|role|access)))?|support-requests(?:\/[a-zA-Z0-9-]+\/status)?)$/
 const permissionChecks = new Map<string, Promise<{ status: number; codes: unknown }>>()
 
-function adminPermission(path: string, method: string) {
-  if (path.startsWith('admin/support-requests'))
-    return method === 'GET' ? 'SupportRequests.Read' : 'SupportRequests.Update'
-  if (path === 'admin/users/roles') return 'Roles.Read'
-  if (path === 'admin/users/permissions') return 'Permissions.Read'
-  if (path.endsWith('/permissions'))
-    return method === 'GET' ? 'Users.ReadPermissions' : 'Users.UpdatePermissions'
-  if (path.endsWith('/role')) return 'Users.UpdateRole'
-  if (path.endsWith('/access')) return 'Users.UpdateAccess'
-  return 'Users.Read'
-}
-async function upstream(path: string, method: string, body?: string, token?: string) {
-  const baseUrl = process.env.BACKEND_API_URL
-  if (!baseUrl) throw new Error('BACKEND_API_URL is required')
-  return fetch(`${baseUrl.replace(/\/$/, '')}/api/${path}`, {
-    method,
-    body,
-    cache: 'no-store',
-    signal: AbortSignal.timeout(20_000),
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-      'ngrok-skip-browser-warning': 'true',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  })
-}
-async function refresh(token: string): Promise<LoginSession | null> {
-  const key = createHash('sha256').update(token).digest('hex')
-  let pending = refreshes.get(key)
-  if (!pending) {
-    pending = (async () => {
-      const response = await upstream(
-        'auth/refresh',
-        'POST',
-        JSON.stringify({ refreshToken: token }),
-      )
-      const body = await response.json()
-      return response.ok && body.success !== false ? (body.data as LoginSession) : null
-    })()
-    refreshes.set(key, pending)
-    // Keep a short grace window for simultaneous requests using a rotated token.
-    const timer = setTimeout(() => refreshes.delete(key), 15_000)
-    timer.unref()
-  }
-  return pending
-}
 async function handler(request: Request, context: { params: Promise<{ path: string[] }> }) {
   const path = (await context.params).path.join('/')
   if (!allowed.test(path) && !adminPaths.test(path))
@@ -174,10 +129,11 @@ async function handler(request: Request, context: { params: Promise<{ path: stri
         void pending.then(release, release)
       }
       const permissions = await pending
-      const required = adminPermission(path, request.method)
+      const required = requiredAdminPermission(path, request.method)
       if (
         permissions.status >= 400 ||
         !Array.isArray(permissions.codes) ||
+        permissions.codes.some((code) => typeof code !== 'string') ||
         !permissions.codes.includes(required)
       ) {
         const status = permissions.status >= 400 ? permissions.status : 403
@@ -188,6 +144,19 @@ async function handler(request: Request, context: { params: Promise<{ path: stri
             status,
             headers: { 'Cache-Control': 'no-store' },
           },
+        )
+      }
+    }
+    if (adminPaths.test(path) && request.method !== 'GET') {
+      try {
+        body = adminRequestBody(path, body, user!.email)
+      } catch {
+        return Response.json(
+          {
+            success: false,
+            message: 'Lựa chọn chưa hợp lệ. Tải lại thông tin người dùng và thử lại.',
+          },
+          { status: 400, headers: { 'Cache-Control': 'no-store' } },
         )
       }
     }
@@ -230,6 +199,7 @@ async function handler(request: Request, context: { params: Promise<{ path: stri
               browserData(
                 path,
                 typeof result === 'object' && 'data' in result ? result.data : result,
+                user?.email,
               ),
             ),
           },

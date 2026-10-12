@@ -1,5 +1,12 @@
 import { expect, test } from '@playwright/test'
-import { mockWorkspace, owner, permissions } from './helpers/workspace'
+import {
+  fixtureAdminData,
+  fixtureAdminBody,
+  fixtureReference,
+  mockWorkspace,
+  owner,
+  permissions,
+} from './helpers/workspace'
 
 test('group bills stay compact and searchable; adding members requires submitting the modal', async ({
   page,
@@ -119,8 +126,8 @@ test('permission filtering preserves selections, shows guidance in the dialog, a
     if (path === '/api/admin/users') data = { items: [member], totalCount: 1, totalPages: 1 }
     if (path === '/api/admin/users/roles') data = [{ roleId: 'member', name: 'User' }]
     if (path === '/api/admin/users/permissions') data = catalog
-    if (request.method() === 'PATCH') saved = request.postDataJSON()
-    return route.fulfill({ json: { data } })
+    if (request.method() === 'PATCH') saved = fixtureAdminBody(request.postDataJSON())
+    return route.fulfill({ json: { data: fixtureAdminData(path, data) } })
   })
   await page.goto('/admin/users')
   await page.getByRole('button', { name: /Linh friend@example.com/ }).click()
@@ -146,9 +153,9 @@ test('permission filtering preserves selections, shows guidance in the dialog, a
   await modal.getByRole('combobox', { name: 'Nhóm quyền', exact: true }).click()
   await page.getByRole('option', { name: 'Hóa đơn', exact: true }).click()
   const search = modal.getByLabel('Tìm quyền', { exact: true })
-  await search.fill('Bills.Create')
+  await search.fill('Tạo hóa đơn')
   await expect(list.getByRole('checkbox')).toHaveCount(1)
-  await list.getByRole('checkbox', { name: /Tạo hóa đơn Bills.Create/ }).check()
+  await list.getByRole('checkbox', { name: /Tạo hóa đơn/ }).check()
   await search.fill('không có quyền này')
   await expect(list).toContainText('Không tìm thấy quyền phù hợp')
   expect((await list.boundingBox())!.height).toBe(height)
@@ -161,8 +168,8 @@ test('permission filtering preserves selections, shows guidance in the dialog, a
     path: `QA/permissions/${page.viewportSize()!.width}-catalog.png`,
     animations: 'disabled',
   })
-  await expect(list.getByRole('checkbox', { name: /Tạo hóa đơn Bills.Create/ })).toBeChecked()
-  await list.getByRole('checkbox', { name: /Read Groups Groups.Read/ }).hover()
+  await expect(list.getByRole('checkbox', { name: /Tạo hóa đơn/ })).toBeChecked()
+  await list.getByRole('checkbox', { name: /Read Groups/ }).hover()
   expect(await list.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true)
   await page.setViewportSize({ width: isMobile ? 360 : 1366, height: 640 })
   await expect.poll(() => page.evaluate(() => window.innerWidth)).toBe(isMobile ? 360 : 1366)
@@ -228,7 +235,7 @@ test('user directory opens an accessible detail modal, preserves edits between t
         groupName: 'Hóa đơn',
         sortOrder: index,
       }))
-    return route.fulfill({ json: { data } })
+    return route.fulfill({ json: { data: fixtureAdminData(path, data) } })
   })
   await page.goto('/admin/users')
   await expect(page.locator('.ws-admin-person')).toHaveCount(8)
@@ -251,16 +258,14 @@ test('user directory opens an accessible detail modal, preserves edits between t
   await page.keyboard.press('ArrowRight')
   await expect(permissionTab).toBeFocused()
   await expect(permissionTab).toHaveAttribute('aria-selected', 'true')
-  await modal.getByRole('checkbox', { name: 'Tạo hóa đơn Bills.Create', exact: true }).check()
+  await modal.getByRole('checkbox', { name: 'Tạo hóa đơn', exact: true }).check()
   await permissionTab.press('ArrowLeft')
   await expect(modal.getByRole('combobox', { name: 'Vai trò người dùng' })).toHaveAttribute(
     'data-value',
-    'role-manager',
+    fixtureReference('role', 'role-manager').id,
   )
   await permissionTab.click()
-  await expect(
-    modal.getByRole('checkbox', { name: 'Tạo hóa đơn Bills.Create', exact: true }),
-  ).toBeChecked()
+  await expect(modal.getByRole('checkbox', { name: 'Tạo hóa đơn', exact: true })).toBeChecked()
   expect(reads.filter((path) => path === '/api/admin/users/permissions')).toHaveLength(1)
   expect(reads.filter((path) => path === '/api/admin/users/user-1/permissions')).toHaveLength(1)
   await page.screenshot({ path: `QA/permissions/${page.viewportSize()!.width}-editor.png` })
@@ -273,7 +278,7 @@ test('user directory opens an accessible detail modal, preserves edits between t
   await expect(modal.getByText('Đã chặn', { exact: true }).first()).toBeVisible()
   await expect(modal.getByRole('combobox', { name: 'Vai trò người dùng' })).toHaveAttribute(
     'data-value',
-    'role-member',
+    fixtureReference('role', 'role-member').id,
   )
 })
 

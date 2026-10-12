@@ -18,10 +18,13 @@ export function useDeferredScene(enabled = true, mediaQuery = '(min-width: 0px)'
     }
     const schedule = () => {
       cancel()
-      if (!enabled || !media.matches) {
+      if (!media.matches) {
         setReady(false)
         return
       }
+      // Retain an initialized scene offscreen; its owner pauses the render loop.
+      // Recreating the context and all geometry on every return causes stalls.
+      if (!enabled) return
       if (document.visibilityState !== 'visible') return
       frame = requestAnimationFrame(() => {
         frame = requestAnimationFrame(() => {
@@ -46,5 +49,5 @@ export function useDeferredScene(enabled = true, mediaQuery = '(min-width: 0px)'
       document.removeEventListener('visibilitychange', schedule)
     }
   }, [enabled, mediaQuery])
-  return enabled && ready
+  return ready
 }

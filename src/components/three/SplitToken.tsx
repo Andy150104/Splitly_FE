@@ -5,11 +5,13 @@ import type { InstancedMesh } from 'three'
 import LinkedLoop from './LinkedLoop'
 import { satin, softMetal, studio } from './materials'
 import { landingMetal } from './landingMaterials'
+import { useSceneColor } from './SceneTheme'
 
 export default function SplitToken({
   finish = 'studio',
   ...props
 }: ThreeElements['group'] & { finish?: 'studio' | 'metal' }) {
+  const color = useSceneColor()
   const metallic = finish === 'metal'
   const milling = useRef<InstancedMesh>(null)
   useLayoutEffect(() => {
@@ -43,14 +45,14 @@ export default function SplitToken({
       <mesh rotation={[Math.PI / 2, 0, 0]}>
         <latheGeometry args={[edge, 64]} />
         <meshPhysicalMaterial
-          color={metallic ? '#c7bfd5' : studio.lavender}
+          color={metallic ? color('#c7bfd5') : color(studio.lavender)}
           {...(metallic ? landingMetal : softMetal)}
         />
       </mesh>
       <instancedMesh ref={milling} args={[undefined, undefined, 48]}>
         <boxGeometry args={[0.009, 0.014, 0.065]} />
         <meshPhysicalMaterial
-          color={metallic ? '#aaa0b9' : studio.indigo}
+          color={metallic ? color('#aaa0b9') : color(studio.indigo)}
           {...(metallic ? landingMetal : softMetal)}
         />
       </instancedMesh>
@@ -59,25 +61,28 @@ export default function SplitToken({
           <mesh position={[0, 0, 0.051]}>
             <circleGeometry args={[0.32, 64]} />
             <meshPhysicalMaterial
-              color={metallic ? '#4d3c64' : studio.indigo}
+              color={metallic ? color('#4d3c64') : color(studio.indigo)}
               {...(metallic ? { metalness: 0.7, roughness: 0.36 } : satin)}
             />
           </mesh>
           <mesh position={[0, 0, 0.055]}>
             <torusGeometry args={[0.324, 0.009, 8, 64]} />
-            <meshPhysicalMaterial color={studio.pale} {...(metallic ? landingMetal : softMetal)} />
+            <meshPhysicalMaterial
+              color={color(studio.pale)}
+              {...(metallic ? landingMetal : softMetal)}
+            />
           </mesh>
           <group position={[0, 0, 0.065]} scale={0.215}>
             <LinkedLoop
               polished={metallic}
-              color={studio.pale}
+              color={color(studio.pale)}
               thickness={0.14}
               position={[-0.12, 0.28, 0]}
               rotation={[0, 0, 0.15]}
             />
             <LinkedLoop
               polished={metallic}
-              color={studio.lavender}
+              color={color(studio.lavender)}
               thickness={0.14}
               position={[0.12, -0.28, 0.04]}
               rotation={[0, 0, Math.PI + 0.15]}

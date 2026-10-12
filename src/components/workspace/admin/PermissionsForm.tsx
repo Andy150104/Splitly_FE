@@ -1,10 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import type { FormEvent } from 'react'
+import type { FormEvent, ReactNode } from 'react'
+import { bindControl } from '../slots'
 import { motion, useReducedMotion } from 'motion/react'
 import { Info } from 'lucide-react'
-import type { PermissionDefinitionView } from '../../../lib/api/views'
+import type { AdminReference, PermissionDefinitionView } from '../../../lib/api/views'
 import Tooltip from '../../ui/Tooltip'
 import SearchInput from '../../ui/SearchInput'
 import Select from '../../ui/Select'
@@ -12,33 +13,45 @@ import Select from '../../ui/Select'
 export default function PermissionsForm({
   initial,
   catalog,
-  editable,
+  saveButton,
   pending,
   onSave,
 }: {
-  initial: string[]
+  initial: AdminReference[]
   catalog: PermissionDefinitionView[]
-  editable: boolean
+  saveButton: ReactNode
   pending: boolean
-  onSave: (codes: string[]) => void
+  onSave?: (values: string[]) => void
 }) {
+  const editable = !!saveButton && catalog.length > 0
   const [selected, setSelected] = useState(initial)
   const [search, setSearch] = useState('')
   const [groupFilter, setGroupFilter] = useState('')
   const reduced = useReducedMotion()
-  const changed = [...selected].sort().join('|') !== [...initial].sort().join('|')
-  const definitions = catalog.length
-    ? catalog
-    : initial.map((code) => ({
-        code,
-        name: code,
-        groupCode: 'current',
+  const changed =
+    selected
+      .map((item) => item.id)
+      .sort()
+      .join('|') !==
+    initial
+      .map((item) => item.id)
+      .sort()
+      .join('|')
+  // Preserve grants absent from the catalog when editing other selections.
+  const definitions = [
+    ...catalog,
+    ...initial
+      .filter((item) => !catalog.some((entry) => entry.id === item.id))
+      .map((item, index) => ({
+        ...item,
+        name: `Quyền hiện tại ${index + 1}`,
         groupName: 'Quyền hiện tại',
         description: null,
         sortOrder: 0,
-      }))
+      })),
+  ]
   const sorted = [...definitions].sort((a, b) => a.sortOrder - b.sortOrder)
-  const groups = [...new Set(sorted.map((item) => item.groupCode || 'other'))]
+  const groups = [...new Set(sorted.map((item) => item.groupName))]
   const term = search.trim().toLocaleLowerCase('vi')
   const visibleGroups = groups
     .filter((group) => !groupFilter || group === groupFilter)
@@ -46,16 +59,14 @@ export default function PermissionsForm({
       group,
       items: sorted.filter(
         (item) =>
-          (item.groupCode || 'other') === group &&
-          `${item.name} ${item.code} ${item.description || ''}`
-            .toLocaleLowerCase('vi')
-            .includes(term),
+          item.groupName === group &&
+          `${item.name} ${item.description || ''}`.toLocaleLowerCase('vi').includes(term),
       ),
     }))
     .filter(({ items }) => items.length > 0)
   function submit(event: FormEvent) {
     event.preventDefault()
-    onSave(selected)
+    if (editable) onSave?.(selected.map((item) => item.value))
   }
   return (
     <form className="ws-permissions-form" onSubmit={submit}>
@@ -83,7 +94,7 @@ export default function PermissionsForm({
           label="Tìm quyền"
           value={search}
           onChange={setSearch}
-          placeholder="Tìm tên hoặc mã quyền…"
+          placeholder="Tìm tên quyền…"
         />
         <Select
           className="ws-permission-group-select ws-compact-select"
@@ -94,7 +105,7 @@ export default function PermissionsForm({
           <option value="">Tất cả nhóm quyền</option>
           {groups.map((group) => (
             <option key={group} value={group}>
-              {sorted.find((item) => (item.groupCode || 'other') === group)?.groupName || group}
+              {group}
             </option>
           ))}
         </Select>
@@ -117,30 +128,28 @@ export default function PermissionsForm({
               <legend>
                 {items[0].groupName || group}
                 <span>
-                  {items.filter((item) => selected.includes(item.code || '')).length} /{' '}
+                  {items.filter((item) => selected.some((entry) => entry.id === item.id)).length} /{' '}
                   {items.length}
                 </span>
               </legend>
               {items.map(
                 (item) =>
-                  item.code && (
-                    <label className="ws-permission-option" key={item.code}>
+                  item.id && (
+                    <label className="ws-permission-option" key={item.id}>
                       <input
                         type="checkbox"
-                        checked={selected.includes(item.code)}
+                        checked={selected.some((entry) => entry.id === item.id)}
                         disabled={!editable || pending}
                         onChange={(event) => {
-                          const code = item.code!
                           setSelected((previous) =>
                             event.target.checked
-                              ? [...previous, code]
-                              : previous.filter((value) => value !== code),
+                              ? [...previous, { id: item.id, value: item.value }]
+                              : previous.filter((value) => value.id !== item.id),
                           )
                         }}
                       />
                       <span>
-                        <strong>{item.name || item.code}</strong>
-                        <small>{item.code}</small>
+                        <strong>{item.name}</strong>
                         {item.description && <small>{item.description}</small>}
                       </span>
                     </label>
@@ -160,9 +169,10 @@ export default function PermissionsForm({
           <span className="ws-muted" aria-live="polite">
             {changed ? 'Có thay đổi chưa lưu' : 'Quyền đang được áp dụng'}
           </span>
-          <button className="ws-button" disabled={pending || !changed}>
-            {pending ? 'Đang lưu…' : 'Lưu quyền hiệu lực'}
-          </button>
+          {bindControl(saveButton, {
+            disabled: pending || !changed,
+            children: pending ? 'Đang lưu…' : 'Lưu quyền hiệu lực',
+          })}
         </div>
       )}
     </form>

@@ -48,7 +48,7 @@ export default function BankPicker({
 }: {
   banks: Bank[]
   value: string
-  onChange: (bank: Bank) => void
+  onChange?: (bank: Bank) => void
   disabled?: boolean
 }) {
   const [open, setOpen] = useState(false)
@@ -87,7 +87,7 @@ export default function BankPicker({
     return () => document.removeEventListener('pointerdown', outside)
   }, [open])
   function select(bank: Bank) {
-    onChange(bank)
+    onChange?.(bank)
     setOpen(false)
     setQuery('')
     input.current?.focus()

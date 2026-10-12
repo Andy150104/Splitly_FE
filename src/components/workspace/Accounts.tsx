@@ -1,29 +1,33 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import type { FormEvent } from 'react'
+import type { FormEvent, ReactNode } from 'react'
 import { api, send } from '../../lib/api/client'
 import { motion, useReducedMotion } from 'motion/react'
-import BankPicker, { BankLogo } from './BankPicker'
+import { BankLogo } from './BankPicker'
 import WorkspaceModal from '../ui/WorkspaceModal'
 import type { Bank, PayoutAccount } from '../../lib/api/types'
 import type { AccountLookupView } from '../../lib/api/views'
 import { Empty, ErrorState, Loading, Notice } from '../ui/Feedback'
 import { Field } from '../ui/Field'
 import { PageHeading } from '../ui/PageHeading'
-import { useApi, useWorkspace } from './hooks'
+import { useApi } from './hooks'
+import { bindControl } from './slots'
 
 export function AccountForm({
   onSaved,
   onCancel,
   onBusy,
+  bankPicker,
+  saveButton,
 }: {
-  onSaved: (account: PayoutAccount) => void
+  onSaved?: (account: PayoutAccount) => void
+  bankPicker: ReactNode
+  saveButton: ReactNode
   onCancel?: () => void
   onBusy?: (busy: boolean) => void
 }) {
-  const { can } = useWorkspace()
-  const banks = useApi<Bank[]>(can('Banks.Read') ? 'vietqr/banks' : null)
+  const banks = useApi<Bank[]>(bankPicker ? 'vietqr/banks' : null)
   const [bin, setBin] = useState('')
   const [number, setNumber] = useState('')
   const [isDefault, setDefault] = useState(true)
@@ -86,7 +90,7 @@ export function AccountForm({
         accountNumber: number,
         isDefault,
       })
-      onSaved(account)
+      onSaved?.(account)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Không thêm được tài khoản.')
     } finally {
@@ -106,15 +110,15 @@ export function AccountForm({
         <Loading />
       ) : (
         <>
-          <BankPicker
-            banks={banks.data || []}
-            value={bin}
-            disabled={pending}
-            onChange={(bank) => {
+          {bindControl(bankPicker, {
+            banks: banks.data || [],
+            value: bin,
+            disabled: pending,
+            onChange: (bank: Bank) => {
               setBin(bank.bin || '')
               setVerified(null)
-            }}
-          />
+            },
+          })}
           <div className="ws-account-fields">
             <Field label="Số tài khoản">
               <input
@@ -170,19 +174,11 @@ export function AccountForm({
                   Hủy
                 </button>
               )}
-              <button
-                className="ws-button"
-                aria-busy={pending}
-                disabled={
-                  pending ||
-                  lookingUp ||
-                  !owner ||
-                  !can('PayoutAccounts.Create') ||
-                  !can('Banks.Read')
-                }
-              >
-                {pending ? 'Đang lưu…' : 'Lưu tài khoản'}
-              </button>
+              {bindControl(saveButton, {
+                'aria-busy': pending,
+                disabled: pending || lookingUp || !owner,
+                children: pending ? 'Đang lưu…' : 'Lưu tài khoản',
+              })}
             </div>
           </div>
         </>
@@ -200,10 +196,19 @@ export function AccountForm({
     </form>
   )
 }
-export default function Accounts() {
-  const { can } = useWorkspace()
-  const query = useApi<PayoutAccount[]>(can('PayoutAccounts.Read') ? 'payout-accounts' : null)
-  const banks = useApi<Bank[]>(can('Banks.Read') ? 'vietqr/banks' : null)
+export default function Accounts({
+  addButton,
+  defaultButton,
+  bankLogo,
+  accountForm,
+}: {
+  addButton: ReactNode
+  defaultButton: ReactNode
+  bankLogo: ReactNode
+  accountForm: ReactNode
+}) {
+  const query = useApi<PayoutAccount[]>('payout-accounts')
+  const banks = useApi<Bank[]>(bankLogo ? 'vietqr/banks' : null)
   const reduced = useReducedMotion()
   const [adding, setAdding] = useState(false)
   const [error, setError] = useState('')
@@ -229,11 +234,7 @@ export default function Accounts() {
         title="Tài khoản nhận tiền."
         description="Các tài khoản ngân hàng đã xác minh để nhận tiền từ hóa đơn."
       >
-        {can('PayoutAccounts.Create') && (
-          <button className="ws-button" aria-haspopup="dialog" onClick={() => setAdding(true)}>
-            + Thêm tài khoản
-          </button>
-        )}
+        {bindControl(addButton, { onClick: () => setAdding(true) })}
       </PageHeading>
       <Notice message={error} />
       {query.isRefreshing && (
@@ -248,14 +249,14 @@ export default function Accounts() {
         busy={saving}
         onClose={() => setAdding(false)}
       >
-        <AccountForm
-          onBusy={setSaving}
-          onCancel={() => setAdding(false)}
-          onSaved={() => {
+        {bindControl(accountForm, {
+          onBusy: setSaving,
+          onCancel: () => setAdding(false),
+          onSaved: () => {
             setAdding(false)
             query.reload()
-          }}
-        />
+          },
+        })}
       </WorkspaceModal>
       {query.loading ? (
         <Loading variant="cards" />
@@ -273,12 +274,16 @@ export default function Accounts() {
               whileHover={reduced ? undefined : { y: -5 }}
             >
               <div className="ws-card-top">
-                <BankLogo
-                  bank={banks.data?.find(
-                    (bank) => bank.bin === a.bankBin || (!!bank.code && bank.code === a.bankCode),
-                  )}
-                  name={a.bankCode || a.bankName}
-                />
+                {bankLogo ? (
+                  bindControl(bankLogo, {
+                    bank: banks.data?.find(
+                      (bank) => bank.bin === a.bankBin || (!!bank.code && bank.code === a.bankCode),
+                    ),
+                    name: a.bankCode || a.bankName,
+                  })
+                ) : (
+                  <BankLogo name={a.bankCode || a.bankName} />
+                )}
 
                 {a.isDefault && <span className="ws-status is-paid">Mặc định</span>}
               </div>
@@ -286,15 +291,11 @@ export default function Accounts() {
               <h3>{a.bankName}</h3>
               <strong className="ws-account-number">{a.accountNumberMasked}</strong>
               <p>{a.accountHolderName}</p>
-              {!a.isDefault && can('PayoutAccounts.Update') && (
-                <button
-                  className="ws-text-button"
-                  disabled={pending}
-                  onClick={() => void makeDefault(a.id)}
-                >
-                  Đặt làm mặc định
-                </button>
-              )}
+              {!a.isDefault &&
+                bindControl(defaultButton, {
+                  disabled: pending,
+                  onClick: () => void makeDefault(a.id),
+                })}
             </motion.article>
           ))}
         </div>

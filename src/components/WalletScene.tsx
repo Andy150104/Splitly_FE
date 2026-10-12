@@ -15,13 +15,17 @@ import { landingCard, landingLeather, landingMetal, landingPaper } from './three
 import WalletPocket from './three/WalletPocket'
 import { studio } from './three/materials'
 import SceneReady from './three/SceneReady'
+import { useThemeTransition } from '../hooks/useTheme'
+import SceneTheme, { useSceneColor } from './three/SceneTheme'
+import type { SceneLoadingStage } from '../lib/scene-loading'
 
 function useLabelTexture(
   kind: 'wallet' | 'card' | 'receipt' | 'share' | 'jar' | 'paid' | 'insight',
   index = 0,
   people = 3,
 ) {
-  const [fontsReady, setFontsReady] = useState(false)
+  const color = useSceneColor()
+  const [fontsReady, setFontsReady] = useState(() => document.fonts.status === 'loaded')
   useEffect(() => {
     let mounted = true
     document.fonts.ready.then(() => {
@@ -36,12 +40,17 @@ function useLabelTexture(
     canvas.width = 1024
     canvas.height = kind === 'receipt' ? 1536 : 640
     const ctx = canvas.getContext('2d')!
-    ctx.fillStyle = kind === 'card' ? studio.pale : kind === 'receipt' ? '#f2ede4' : studio.violet
+    ctx.fillStyle =
+      kind === 'card'
+        ? color(studio.pale)
+        : kind === 'receipt'
+          ? color('#f2ede4')
+          : color(studio.violet)
     ctx.fillRect(0, 0, canvas.width, canvas.height)
     if (kind === 'paid') {
       ctx.clearRect(0, 0, 1024, 640)
-      ctx.strokeStyle = studio.indigo
-      ctx.fillStyle = studio.indigo
+      ctx.strokeStyle = color(studio.indigo)
+      ctx.fillStyle = color(studio.indigo)
       ctx.lineWidth = 18
       ctx.beginPath()
       ctx.roundRect(24, 110, 976, 420, 30)
@@ -50,9 +59,14 @@ function useLabelTexture(
       ctx.textAlign = 'center'
       ctx.fillText('ĐÃ GỌN.', 512, 380)
     } else if (kind === 'share') {
-      ctx.fillStyle = [studio.lavender, studio.paper, studio.pale, '#c9b7df'][index]
+      ctx.fillStyle = [
+        color(studio.lavender),
+        color(studio.paper),
+        color(studio.pale),
+        color('#c9b7df'),
+      ][index]
       ctx.fillRect(0, 0, 1024, 640)
-      ctx.fillStyle = '#473252'
+      ctx.fillStyle = color('#473252')
       ctx.textAlign = index === 2 ? 'right' : 'left'
       const textX = index === 2 ? 959 : 65
       ctx.font = 'bold 115px sans-serif'
@@ -67,7 +81,7 @@ function useLabelTexture(
       ctx.fillText('VND / YOUR LITTLE SHARE', textX, 548)
       const badgeX = index === 2 ? 123 : 901
       ctx.lineWidth = 3
-      ctx.strokeStyle = studio.violet
+      ctx.strokeStyle = color(studio.violet)
       ctx.beginPath()
       ctx.arc(badgeX, 114, 41, 0, Math.PI * 2)
       ctx.stroke()
@@ -76,32 +90,32 @@ function useLabelTexture(
       ctx.fillText(String(index + 1), badgeX, 128)
     } else if (kind === 'jar') {
       ctx.clearRect(0, 0, 1024, 640)
-      ctx.fillStyle = '#30233d'
+      ctx.fillStyle = color('#30233d')
       ctx.textAlign = 'center'
       ctx.font = fontsReady ? '600 186px Be Vietnam Pro, sans-serif' : 'bold 186px sans-serif'
       ctx.fillText('Splitly', 512, 325)
       ctx.font = '30px sans-serif'
       ctx.fillText('ĐỂ DÀNH CHO ĐIỀU ĐẸP.', 512, 435)
     } else if (kind === 'insight') {
-      ctx.fillStyle = '#eee8df'
+      ctx.fillStyle = color('#eee8df')
       ctx.fillRect(0, 0, 1024, 640)
-      ctx.fillStyle = '#302339'
+      ctx.fillStyle = color('#302339')
       ctx.font = fontsReady ? '600 96px Be Vietnam Pro, sans-serif' : 'bold 96px sans-serif'
       ctx.fillText('Splitly', 64, 132)
       ctx.font = '24px sans-serif'
       ctx.fillText('THÁNG NÀY, RÕ HƠN.', 68, 185)
-      ctx.strokeStyle = studio.lavender
+      ctx.strokeStyle = color(studio.lavender)
       ctx.lineWidth = 2
       ctx.beginPath()
       ctx.moveTo(66, 225)
       ctx.lineTo(958, 225)
       ctx.stroke()
-      ctx.fillStyle = '#665471'
+      ctx.fillStyle = color('#665471')
       ctx.font = '28px sans-serif'
       ctx.fillText('CHI TIÊU', 70, 305)
       ctx.fillText('DÀNH DỤM', 70, 392)
       ctx.fillText('CÒN LẠI', 70, 479)
-      ctx.fillStyle = '#302339'
+      ctx.fillStyle = color('#302339')
       ctx.font = 'bold 48px monospace'
       ctx.textAlign = 'right'
       ctx.fillText('34%', 430, 305)
@@ -109,19 +123,19 @@ function useLabelTexture(
       ctx.fillText('44%', 430, 479)
       ctx.textAlign = 'left'
       ctx.font = '24px sans-serif'
-      ctx.fillStyle = '#665471'
+      ctx.fillStyle = color('#665471')
       ctx.fillText('MỖI KHOẢN ĐỀU CÓ CHỖ.', 68, 575)
     } else if (kind === 'wallet') {
       // Brand ink only: the pocket contour, seam and surface grain are real geometry/materials.
       ctx.clearRect(0, 0, 1024, 640)
-      ctx.fillStyle = '#e4d8ed'
+      ctx.fillStyle = color('#e4d8ed')
       ctx.font = fontsReady ? '600 102px Be Vietnam Pro, sans-serif' : 'bold 102px sans-serif'
       ctx.fillText('Splitly', 285, 256)
       ctx.font = '21px sans-serif'
       ctx.fillText('KHOẢN CHUNG. RÕ TỪNG PHẦN.', 75, 530)
     } else if (kind === 'card') {
       ctx.clearRect(0, 0, 1024, 640)
-      ctx.fillStyle = '#382b47'
+      ctx.fillStyle = color('#382b47')
       ctx.font = fontsReady ? '600 112px Be Vietnam Pro, sans-serif' : 'bold 112px sans-serif'
       ctx.fillText('Splitly', 66, 160)
       ctx.font = '22px sans-serif'
@@ -130,7 +144,7 @@ function useLabelTexture(
       ctx.fillText('••••   ••••   ••••   0926', 65, 490)
       ctx.font = '20px sans-serif'
       ctx.fillText('CÙNG NHAU, NHẸ NHÀNG HƠN', 68, 560)
-      ctx.strokeStyle = studio.violet
+      ctx.strokeStyle = color(studio.violet)
       ctx.lineWidth = 4
       ctx.beginPath()
       ctx.arc(880, 120, 32, 0, Math.PI * 2)
@@ -139,13 +153,13 @@ function useLabelTexture(
       ctx.arc(845, 120, 32, 0, Math.PI * 2)
       ctx.stroke()
     } else if (kind === 'receipt') {
-      ctx.fillStyle = '#302335'
+      ctx.fillStyle = color('#302335')
       ctx.textAlign = 'center'
       ctx.font = fontsReady ? '600 150px Be Vietnam Pro, sans-serif' : 'bold 150px sans-serif'
       ctx.fillText('Splitly', 512, 220)
       ctx.font = '40px monospace'
       ctx.fillText('HÓA ĐƠN THÁNG NÀY', 512, 325)
-      ctx.strokeStyle = '#b7a9bd'
+      ctx.strokeStyle = color('#b7a9bd')
       ctx.lineWidth = 3
       ctx.setLineDash([15, 13])
       for (const y of [400, 995]) {
@@ -171,7 +185,7 @@ function useLabelTexture(
       ctx.fillText('TỔNG', 96, 1130)
       ctx.textAlign = 'right'
       ctx.fillText('250.000', 926, 1130)
-      ctx.fillStyle = '#302335'
+      ctx.fillStyle = color('#302335')
       for (let x = 175; x < 850; x += 13) ctx.fillRect(x, 1250, 3 + (x % 8), 100)
       ctx.font = '28px monospace'
       ctx.textAlign = 'center'
@@ -181,7 +195,7 @@ function useLabelTexture(
     result.colorSpace = THREE.SRGBColorSpace
     result.anisotropy = 4
     return result
-  }, [kind, index, people, fontsReady])
+  }, [kind, index, people, fontsReady, color])
   useEffect(() => () => texture.dispose(), [texture])
   return texture
 }
@@ -207,6 +221,13 @@ function Wallet({
   progress: React.RefObject<number>
   inspectionTurn: number
 }) {
+  const color = useSceneColor()
+  const leather = {
+    ...landingLeather,
+    color: color(landingLeather.color),
+    sheenColor: color(landingLeather.sheenColor),
+  }
+  const cardMaterial = { ...landingCard, color: color(landingCard.color) }
   const group = useRef<THREE.Group>(null)
   const card = useRef<THREE.Group>(null)
   const receipt = useRef<THREE.Group>(null)
@@ -214,7 +235,7 @@ function Wallet({
   const front = useRef<THREE.Group>(null)
   const coins = useRef<THREE.Group>(null)
   const atmosphere = useRef<UniverseMotion>({ time: 0, lift: 0 })
-  const elapsed = useRef(0)
+  const elapsed = useRef(1.8)
   const lastInspection = useRef(inspectionTurn)
   const inspectionAge = useRef(Infinity)
   const walletLabel = useLabelTexture('wallet')
@@ -353,16 +374,16 @@ function Wallet({
           smoothness={6}
           position={[0, 0.01, -0.12]}
         >
-          <meshPhysicalMaterial {...landingLeather} color="#2e233c" />
+          <meshPhysicalMaterial {...leather} color={color('#2e233c')} />
         </RoundedBox>
       </group>
       <group ref={card} position={[-0.2, 0.68, 0]} rotation={[0, 0, 0.19]}>
         <RoundedBox args={[2.38, 1.5, 0.075]} radius={0.095} smoothness={6}>
-          <meshPhysicalMaterial {...landingCard} />
+          <meshPhysicalMaterial {...cardMaterial} />
         </RoundedBox>
         <mesh position={[0, 0, 0.041]}>
           <planeGeometry args={[2.25, 1.4]} />
-          <meshPhysicalMaterial map={cardLabel} transparent depthWrite={false} {...landingCard} />
+          <meshPhysicalMaterial map={cardLabel} transparent depthWrite={false} {...cardMaterial} />
         </mesh>
         <RoundedBox
           args={[0.31, 0.22, 0.018]}
@@ -370,12 +391,12 @@ function Wallet({
           position={[-0.88, -0.05, 0.052]}
           smoothness={4}
         >
-          <meshPhysicalMaterial color="#cdbfcf" {...landingMetal} />
+          <meshPhysicalMaterial color={color('#cdbfcf')} {...landingMetal} />
         </RoundedBox>
         {[0, 1, 2].map((i) => (
           <mesh key={i} position={[-0.88, -0.115 + i * 0.065, 0.063]}>
             <boxGeometry args={[0.27, 0.006, 0.003]} />
-            <meshStandardMaterial color={studio.indigo} roughness={0.6} />
+            <meshStandardMaterial color={color(studio.indigo)} roughness={0.6} />
           </mesh>
         ))}
       </group>
@@ -392,11 +413,11 @@ function Wallet({
           smoothness={6}
           position={[1.18, -0.14, 0.31]}
         >
-          <meshPhysicalMaterial {...landingLeather} color="#39283f" />
+          <meshPhysicalMaterial {...leather} color={color('#39283f')} />
         </RoundedBox>
         <mesh position={[1.01, -0.14, 0.39]} rotation={[Math.PI / 2, 0, 0]}>
           <cylinderGeometry args={[0.091, 0.091, 0.025, 32]} />
-          <meshPhysicalMaterial color="#e4d9e7" {...landingMetal} />
+          <meshPhysicalMaterial color={color('#e4d9e7')} {...landingMetal} />
         </mesh>
       </group>
       <group ref={coins}>
@@ -418,6 +439,7 @@ function SharingCard({
   people: number
 }) {
   const group = useRef<THREE.Group>(null)
+  const color = useSceneColor()
   const label = useLabelTexture('share', index, people)
   useFrame((state) => {
     if (!group.current) return
@@ -435,7 +457,11 @@ function SharingCard({
     <group ref={group}>
       <RoundedBox args={[2.08, 1.34, 0.055]} radius={0.09} smoothness={6}>
         <meshPhysicalMaterial
-          color={[studio.lavender, studio.paper, studio.pale, '#c9b7df'][index]}
+          color={
+            [color(studio.lavender), color(studio.paper), color(studio.pale), color('#c9b7df')][
+              index
+            ]
+          }
           metalness={0.32}
           roughness={0.48}
           clearcoat={0.03}
@@ -530,6 +556,7 @@ function BillScene({ progress, paid }: { progress: React.RefObject<number>; paid
 
 function InsightsScene({ progress }: { progress: React.RefObject<number> }) {
   const group = useRef<THREE.Group>(null)
+  const color = useSceneColor()
   const bars = useRef<(THREE.Group | null)[]>([])
   const label = useLabelTexture('insight')
   const heights = [0.82, 0.53, 1.06]
@@ -563,7 +590,12 @@ function InsightsScene({ progress }: { progress: React.RefObject<number> }) {
   return (
     <group ref={group} visible={false}>
       <RoundedBox args={[3.15, 2.05, 0.085]} radius={0.035} smoothness={7}>
-        <meshPhysicalMaterial {...landingMetal} color="#b0a4bd" metalness={0.7} roughness={0.38} />
+        <meshPhysicalMaterial
+          {...landingMetal}
+          color={color('#b0a4bd')}
+          metalness={0.7}
+          roughness={0.38}
+        />
       </RoundedBox>
       <mesh position={[0, 0, 0.045]}>
         <planeGeometry args={[3.02, 1.92]} />
@@ -581,7 +613,7 @@ function InsightsScene({ progress }: { progress: React.RefObject<number> }) {
             <RoundedBox args={[0.27, height, 0.2]} radius={0.035} smoothness={5}>
               <meshPhysicalMaterial
                 {...landingMetal}
-                color={['#a994c4', '#483154', '#c7bfcd'][index]}
+                color={[color('#a994c4'), color('#483154'), color('#c7bfcd')][index]}
                 metalness={0.65}
                 roughness={0.4}
               />
@@ -590,7 +622,7 @@ function InsightsScene({ progress }: { progress: React.RefObject<number> }) {
         ))}
         <mesh position={[0, -0.73, 0.01]}>
           <boxGeometry args={[1.3, 0.018, 0.025]} />
-          <meshStandardMaterial color="#ad9cbe" roughness={0.65} />
+          <meshStandardMaterial color={color('#ad9cbe')} roughness={0.65} />
         </mesh>
       </group>
       <Coin position={[-1.72, -0.88, 0.1]} rotation={[0.4, -0.2, 0.18]} scale={0.35} />
@@ -794,6 +826,8 @@ function SecondaryScenes({
 
 export default function WalletScene({
   onReady,
+  onStage,
+  active,
   reducedMotion,
   progress,
   inspectionTurn,
@@ -801,12 +835,24 @@ export default function WalletScene({
   demo,
 }: {
   onReady: (ready: boolean) => void
+  onStage: (stage: SceneLoadingStage) => void
+  active: boolean
   reducedMotion: boolean
   progress: React.RefObject<number>
   inspectionTurn: number
   manualOrbit: { x: number; y: number }
   demo: StoryDemo
 }) {
+  const transitioning = useThemeTransition()
+  useEffect(() => onStage('renderer'), [onStage])
+  const [rendered, setRendered] = useState(false)
+  const [pageVisible, setPageVisible] = useState(true)
+  useEffect(() => {
+    const update = () => setPageVisible(document.visibilityState === 'visible')
+    update()
+    document.addEventListener('visibilitychange', update)
+    return () => document.removeEventListener('visibilitychange', update)
+  }, [])
   const [webGLAvailable] = useState(() => {
     try {
       const probe = document.createElement('canvas').getContext('webgl2')
@@ -819,8 +865,11 @@ export default function WalletScene({
   })
   const [contextLost, setContextLost] = useState(false)
   useEffect(() => {
-    if (!webGLAvailable || contextLost) onReady(false)
-  }, [webGLAvailable, contextLost, onReady])
+    if (!webGLAvailable || contextLost) {
+      onReady(false)
+      onStage('fallback')
+    }
+  }, [webGLAvailable, contextLost, onReady, onStage])
   const [stacked, setStacked] = useState(() => window.innerWidth <= 1024)
   useEffect(() => {
     const resize = () => setStacked(window.innerWidth <= 1024)
@@ -830,10 +879,13 @@ export default function WalletScene({
   if (!webGLAvailable || contextLost) return null
   return (
     <Canvas
+      className="scene-renderer"
       camera={{ position: [0, 0.1, 7.65], fov: 40 }}
       dpr={[1, stacked ? 1.25 : 1.6]}
       gl={{ alpha: true, antialias: true, powerPreference: 'low-power' }}
-      frameloop={reducedMotion ? 'demand' : 'always'}
+      frameloop={
+        reducedMotion || transitioning || !rendered || !active || !pageVisible ? 'demand' : 'always'
+      }
       onCreated={({ gl }) => {
         gl.transmissionResolutionScale = window.innerWidth <= 640 ? 0.5 : 0.75
         gl.domElement.addEventListener(
@@ -850,34 +902,43 @@ export default function WalletScene({
       fallback={null}
     >
       <Suspense fallback={null}>
-        <LandingLighting />
-        <CinematicCamera progress={progress} reducedMotion={reducedMotion} />
-        <StageComposition reducedMotion={reducedMotion} stacked={stacked}>
-          <ScrollParticles progress={progress} reducedMotion={reducedMotion} />
-          <SceneRig
-            inspectionTurn={inspectionTurn}
-            reducedMotion={reducedMotion}
-            manualOrbit={manualOrbit}
-          >
-            <Wallet
-              reducedMotion={reducedMotion}
-              progress={progress}
+        <SceneTheme>
+          <LandingLighting />
+          <CinematicCamera progress={progress} reducedMotion={reducedMotion} />
+          <StageComposition reducedMotion={reducedMotion} stacked={stacked}>
+            <ScrollParticles progress={progress} reducedMotion={reducedMotion} />
+            <SceneRig
               inspectionTurn={inspectionTurn}
+              reducedMotion={reducedMotion}
+              manualOrbit={manualOrbit}
+            >
+              <Wallet
+                reducedMotion={reducedMotion}
+                progress={progress}
+                inspectionTurn={inspectionTurn}
+              />
+              {!reducedMotion && <SecondaryScenes progress={progress} demo={demo} />}
+            </SceneRig>
+            <ContactShadows
+              position={[0, -1.8, 0]}
+              opacity={0.18}
+              scale={7}
+              blur={3}
+              far={3}
+              resolution={256}
+              frames={1}
+              color={studio.ink}
             />
-            {!reducedMotion && <SecondaryScenes progress={progress} demo={demo} />}
-          </SceneRig>
-          <ContactShadows
-            position={[0, -1.8, 0]}
-            opacity={0.18}
-            scale={7}
-            blur={3}
-            far={3}
-            resolution={256}
-            frames={1}
-            color={studio.ink}
+          </StageComposition>
+          <SceneReady
+            onStage={onStage}
+            onReady={() => {
+              setRendered(true)
+              onReady(true)
+            }}
+            onError={() => setContextLost(true)}
           />
-        </StageComposition>
-        <SceneReady onReady={() => onReady(true)} />
+        </SceneTheme>
       </Suspense>
     </Canvas>
   )

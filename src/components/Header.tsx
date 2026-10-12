@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react'
 import { ArrowUpRight, Menu, X } from 'lucide-react'
 import { storyChapter, storyChapters, storyTarget } from '../lib/story'
 import Brand from './ui/Brand'
+import ThemeToggle from './ui/ThemeToggle'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 
 type ActiveSection = 'home' | 'discover' | 'dreams'
@@ -377,6 +378,7 @@ export default function Header({
           </div>
         )}
 
+        <ThemeToggle />
         {!compact ? (
           <button onClick={onOpenWallet} className="nav-cta" disabled={!ready}>
             <span>BẮT ĐẦU</span>

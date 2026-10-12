@@ -1,21 +1,22 @@
 // Only import from server code. Never forward upstream envelopes or diagnostic payloads.
-import { frontendPermissionCodes } from './capabilities'
+import 'server-only'
+import { adminReference } from './admin-references.server'
 
 type JsonObject = Record<string, unknown>
+
+const privateFields =
+  /^(accessToken|refreshToken|idToken|password|secret|authorization|accountNumber|providerResponse|rawResponse|stackTrace|exception|debug)$/i
+const internalPermissionFields =
+  /^(roleId|permissionId|roleCode|effectivePermissionCodes|rolePermissionCodes|grantedPermissionCodes|deniedPermissionCodes|defaultPermissionCodes|permissionCodes|privileges)$/i
 
 // Defense in depth for legacy endpoints that do not yet have a dedicated browser DTO.
 // These fields are never used for rendering; bank numbers entered by the user still go upstream.
 export function withoutPrivateFields(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(withoutPrivateFields)
+  if (Array.isArray(value)) return value.map((item) => withoutPrivateFields(item))
   if (value === null || typeof value !== 'object') return value
   return Object.fromEntries(
     Object.entries(value)
-      .filter(
-        ([key]) =>
-          !/^(accessToken|refreshToken|idToken|password|secret|authorization|accountNumber|providerResponse|rawResponse|stackTrace|exception|debug)$/i.test(
-            key,
-          ),
-      )
+      .filter(([key]) => !privateFields.test(key) && !internalPermissionFields.test(key))
       .map(([key, item]) => [key, withoutPrivateFields(item)]),
   )
 }
@@ -70,38 +71,63 @@ function page(value: unknown, keys: readonly string[]) {
   }
 }
 
-export function browserData(path: string, value: unknown): unknown {
+export function browserData(path: string, value: unknown, viewer = ''): unknown {
   if (path === 'auth/send-login-code') return true
-  if (path === 'auth/me/permissions') {
+  // Admin edits must preserve all grants, including backend actions with no frontend screen.
+  if (/^admin\/users\/[^/]+\/permissions$/.test(path)) {
     const codes = object(value).effectivePermissionCodes
+    if (!Array.isArray(codes) || codes.some((code) => typeof code !== 'string'))
+      throw new Error('Invalid upstream permissions')
     return {
-      effectivePermissionCodes: Array.isArray(codes)
-        ? [
-            ...new Set(
-              codes.filter((code) => typeof code === 'string' && frontendPermissionCodes.has(code)),
-            ),
-          ]
-        : [],
+      permissions: [...new Set(codes)].map((code) => adminReference('permission', code, viewer)),
     }
   }
-  // Admin edits must preserve all grants, including backend actions with no frontend screen.
-  if (/^admin\/users\/[^/]+\/permissions$/.test(path))
-    return pick(value, ['effectivePermissionCodes'])
   if (path === 'admin/users/roles')
     return Array.isArray(value)
-      ? value.map((role) => ({
-          ...pick(role, ['roleId']),
-          name: object(role).name || object(role).code || 'Vai trò',
-        }))
+      ? value.map((role) => {
+          const source = object(role)
+          if (typeof source.roleId !== 'string') throw new Error('Invalid upstream role')
+          return {
+            ...adminReference('role', source.roleId, viewer),
+            name: typeof source.name === 'string' && source.name ? source.name : 'Vai trò',
+          }
+        })
       : []
   if (path === 'admin/users/permissions')
     return Array.isArray(value)
-      ? value.map((permission) =>
-          pick(permission, ['code', 'name', 'description', 'groupCode', 'groupName', 'sortOrder']),
-        )
+      ? value.map((permission) => {
+          const source = object(permission)
+          if (typeof source.code !== 'string') throw new Error('Invalid upstream permission')
+          return {
+            ...adminReference('permission', source.code, viewer),
+            name: typeof source.name === 'string' && source.name ? source.name : 'Quyền truy cập',
+            description: typeof source.description === 'string' ? source.description : null,
+            groupName:
+              typeof source.groupName === 'string' && source.groupName
+                ? source.groupName
+                : 'Quyền khác',
+            sortOrder: typeof source.sortOrder === 'number' ? source.sortOrder : 0,
+          }
+        })
       : []
-  if (path === 'admin/users')
-    return page(value, ['memberId', 'name', 'email', 'status', 'roleId', 'role'])
+  if (path === 'admin/users') {
+    const source = object(value)
+    return {
+      ...page(value, []),
+      items: Array.isArray(source.items)
+        ? source.items.map((member) => {
+            const item = object(member)
+            return {
+              ...pick(item, ['memberId', 'name', 'email', 'status', 'role']),
+              roleSelection:
+                typeof item.roleId === 'string' && item.roleId
+                  ? adminReference('role', item.roleId, viewer)
+                  : null,
+            }
+          })
+        : null,
+    }
+  }
   if (/^admin\/users\/[^/]+\/(role|access)$/.test(path)) return true
   if (/^(payout|payment)-accounts(?:\/[^/]+\/default)?$/.test(path))
     return Array.isArray(value)

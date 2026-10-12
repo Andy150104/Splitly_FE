@@ -1,2 +1,2 @@
-import AdminUsers from '../../../../components/workspace/AdminUsers'
-export default AdminUsers
+import { AdminUsersView } from '../../_components/WorkspaceViews'
+export default AdminUsersView

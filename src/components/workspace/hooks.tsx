@@ -3,23 +3,12 @@
 import { createContext, useContext, useCallback, useEffect, useState } from 'react'
 import { api } from '../../lib/api/client'
 import type { User } from '../../lib/api/session'
-import type { PermissionView } from '../../lib/api/views'
 
-export const WorkspaceContext = createContext<{
-  user: User
-  permissions: PermissionView | null
-  reloadPermissions: () => void
-}>({
+export const WorkspaceContext = createContext<{ user: User }>({
   user: { email: '', displayName: '' },
-  permissions: null,
-  reloadPermissions: () => {},
 })
 export function useWorkspace() {
-  const state = useContext(WorkspaceContext)
-  return {
-    ...state,
-    can: (code: string) => state.permissions?.effectivePermissionCodes?.includes(code) === true,
-  }
+  return useContext(WorkspaceContext)
 }
 export function useApi<T>(path: string | null, poll: boolean | ((data: T) => boolean) = false) {
   const [resource, setResource] = useState<{ path: string; data: T } | null>(null)

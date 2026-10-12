@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { mockWorkspace, permissions } from './helpers/workspace'
+import { mockWorkspace, provisionSession } from './helpers/workspace'
 
 test('grouped navigation folds without hiding routes in compact mode', async ({ page }, info) => {
   await mockWorkspace(page)
@@ -107,22 +107,20 @@ test('permission load failure shows one toast and retry restores the workspace',
   page,
 }) => {
   await mockWorkspace(page)
-  let requests = 0
-  await page.route('**/api/auth/me/permissions', (route) => {
-    requests++
-    return requests === 1
-      ? route.fulfill({
-          status: 503,
-          json: { message: 'Chưa tải được quyền truy cập. Hãy thử lại.' },
-        })
-      : route.fulfill({ json: { data: { effectivePermissionCodes: permissions } } })
-  })
+  await page.context().addCookies([
+    {
+      name: 'mo_access',
+      value: 'fixture-unavailable',
+      url: process.env.WORKSPACE_TEST_BASE_URL!,
+      httpOnly: true,
+    },
+  ])
   await page.goto('/dashboard')
   await expect(page.locator('.splitly-notification')).toHaveCount(1)
   await expect(page.locator('.splitly-notification')).toContainText('Chưa tải được quyền truy cập.')
+  await provisionSession(page)
   await page.getByRole('button', { name: 'Thử lại', exact: true }).click()
   await expect(
     page.getByRole('button', { name: 'Tổng quan khoản chung Không gian của bạn' }),
   ).toBeVisible()
-  expect(requests).toBe(2)
 })

@@ -1,3 +1,4 @@
+import 'server-only'
 import { cookies } from 'next/headers'
 import { createHmac, timingSafeEqual, randomBytes } from 'node:crypto'
 import type { LoginSession } from './types'
@@ -9,6 +10,10 @@ function secret() {
     throw new Error('SESSION_SECRET is required in production')
   developmentState.moSessionSecret ||= randomBytes(32).toString('hex')
   return developmentState.moSessionSecret
+}
+// Domain separation keeps reference encryption independent of profile signatures.
+export function deriveSessionKey(purpose: string) {
+  return createHmac('sha256', secret()).update(purpose).digest()
 }
 export interface User {
   email: string

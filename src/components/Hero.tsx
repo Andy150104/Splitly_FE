@@ -16,12 +16,14 @@ import {
   useScroll,
   useTransform,
 } from 'motion/react'
-import type { MotionValue } from 'motion/react'
+import type { MotionStyle, MotionValue } from 'motion/react'
 import { storyChapter, storyChapters, storyRange, storyOpacity, storyTarget } from '../lib/story'
 import type { StoryDemo } from '../lib/story'
 import StoryInteraction from './StoryInteraction'
 import { useDeferredScene } from '../hooks/useDeferredScene'
 import WalletPlaceholder from './ui/WalletPlaceholder'
+import SceneLoading from './ui/SceneLoading'
+import { useSceneLoading } from '../hooks/useSceneLoading'
 
 const WalletScene = dynamic(() => import('./WalletScene'), { ssr: false, loading: () => null })
 
@@ -118,6 +120,7 @@ export default function Hero({
   const [visible, setVisible] = useState(true)
   const sceneReady = useDeferredScene(visible)
   const [sceneRendered, setSceneRendered] = useState(false)
+  const { stage: sceneStage, onStage } = useSceneLoading()
   useEffect(() => {
     if (!sceneReady) setSceneRendered(false)
   }, [sceneReady])
@@ -204,7 +207,14 @@ export default function Hero({
       ref={section}
       id="home"
       aria-labelledby="hero-title"
-      style={pinned ? { backgroundColor: backdrop } : undefined}
+      style={
+        pinned
+          ? ({
+              backgroundColor: 'var(--theme-canvas, var(--hero-backdrop))',
+              '--hero-backdrop': backdrop,
+            } as MotionStyle)
+          : undefined
+      }
     >
       <div className="hero" data-chapter={chapter} data-scene={storyChapters[chapter].id}>
         <div className="hero-topline">
@@ -333,14 +343,25 @@ export default function Hero({
             </motion.div>
             <div
               className="scene-container"
+              data-state={sceneReady && sceneRendered ? 'ready' : 'loading'}
               role="img"
               aria-label={`Cảnh 3D ${storyChapters[chapter].label.toLocaleLowerCase('vi')} — chuyển động theo thao tác cuộn`}
             >
-              <WalletPlaceholder ready={sceneReady && sceneRendered} />
-              <SceneBoundary onError={() => setSceneRendered(false)}>
+              <WalletPlaceholder
+                ready={sceneReady && sceneRendered}
+                soft={sceneStage !== 'fallback'}
+              />
+              <SceneBoundary
+                onError={() => {
+                  setSceneRendered(false)
+                  onStage('fallback')
+                }}
+              >
                 {sceneReady && (
                   <WalletScene
                     onReady={setSceneRendered}
+                    onStage={onStage}
+                    active={visible}
                     reducedMotion={reducedMotion || !pinned}
                     progress={progress}
                     inspectionTurn={inspectionTurn}
@@ -350,6 +371,7 @@ export default function Hero({
                 )}
               </SceneBoundary>
             </div>
+            <SceneLoading stage={sceneStage} />
             {pinned && (
               <div className="scene-gesture-hint" aria-hidden="true">
                 <span /> KÉO NHẸ ĐỂ NHÌN · CUỘN ĐỂ TIẾP CÂU CHUYỆN

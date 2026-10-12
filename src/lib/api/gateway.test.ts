@@ -1,5 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+// Next enforces this boundary at build time; gateway tests run in Node.
+vi.mock('server-only', () => ({}))
+
 const mocks = vi.hoisted(() => ({
   user: { email: 'owner@example.com', displayName: 'Owner' } as {
     email: string
@@ -14,12 +17,15 @@ vi.mock('next/headers', () => ({
     get: (name: string) => (mocks.store.has(name) ? { value: mocks.store.get(name) } : undefined),
   }),
 }))
-vi.mock('./session', () => ({
+vi.mock('./session', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./session')>()),
   getCurrentUser: async () => mocks.user,
   setSession: mocks.setSession,
   clearSession: mocks.clearSession,
 }))
 import { GET, POST, PATCH, PUT } from '../../app/api/[...path]/route'
+import { adminReference, readAdminReference } from './admin-references.server'
+import type { AdminReference } from './views'
 
 const context = (path: string) => ({ params: Promise.resolve({ path: path.split('/') }) })
 const adminCodes = [
@@ -37,6 +43,7 @@ const granted = (codes = adminCodes) =>
   Response.json({ success: true, data: { effectivePermissionCodes: codes } })
 beforeEach(() => {
   vi.stubEnv('BACKEND_API_URL', 'http://backend.test')
+  vi.stubEnv('SESSION_SECRET', 'local-gateway-reference-test')
   mocks.user = { email: 'owner@example.com', displayName: 'Owner' }
   mocks.store.clear()
   mocks.store.set('mo_access', 'expired')
@@ -80,6 +87,37 @@ describe('same-origin API gateway', () => {
       paymentOrderId: 'p1',
       amount: 240000,
       diagnostic: {},
+    })
+  })
+  it('strips internal privileges from legacy responses at every nesting level', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      Response.json({
+        data: {
+          paymentOrderId: 'p1',
+          roleCode: 'Administrator',
+          effectivePermissionCodes: ['System.Configure'],
+          entries: [
+            {
+              amount: 240000,
+              rolePermissionCodes: ['Users.Read'],
+              grantedPermissionCodes: ['Users.UpdateRole'],
+              deniedPermissionCodes: ['Bills.Read'],
+              defaultPermissionCodes: ['Permissions.Read'],
+              permissionCodes: ['System.Configure'],
+              privileges: ['internal-admin'],
+              EffectivePermissionCodes: ['System.Configure'],
+            },
+          ],
+        },
+      }),
+    )
+    const response = await GET(
+      new Request('http://localhost/api/payment-orders/p1'),
+      context('payment-orders/p1'),
+    )
+    expect((await response.json()).data).toEqual({
+      paymentOrderId: 'p1',
+      entries: [{ amount: 240000 }],
     })
   })
   it.each(['auth/google', 'auth/verify-login-code'])(
@@ -156,7 +194,12 @@ describe('same-origin API gateway', () => {
   ])('forwards the authenticated admin read %s to its exact backend path', async (path) => {
     vi.mocked(fetch)
       .mockResolvedValueOnce(granted())
-      .mockResolvedValue(Response.json({ success: true, data: [] }))
+      .mockResolvedValue(
+        Response.json({
+          success: true,
+          data: path.endsWith('/user-1/permissions') ? { effectivePermissionCodes: [] } : [],
+        }),
+      )
     const response = await GET(new Request(`http://localhost/api/${path}`), context(path))
     expect(response.status).toBe(200)
     expect(vi.mocked(fetch).mock.calls[1][0]).toEqual(expect.stringContaining(`/api/${path}`))
@@ -207,8 +250,8 @@ describe('same-origin API gateway', () => {
     expect(response.status).toBe(401)
     expect(fetch).not.toHaveBeenCalled()
   })
-  it.each(['auth/me/permissions', 'admin/users/member-1/permissions'])(
-    'sends only the effective permission codes for %s',
+  it.each(['admin/users/member-1/permissions'])(
+    'projects only the browser data needed for %s',
     async (path) => {
       if (path.startsWith('admin/')) vi.mocked(fetch).mockResolvedValueOnce(granted())
       vi.mocked(fetch).mockResolvedValue(
@@ -226,10 +269,15 @@ describe('same-origin API gateway', () => {
         }),
       )
       const response = await GET(new Request(`http://localhost/api/${path}`), context(path))
-      expect(await response.json()).toEqual({
-        success: true,
-        data: { effectivePermissionCodes: ['Bills.Read'] },
-      })
+      const result = await response.json()
+      expect(result.success).toBe(true)
+      expect(result.data.permissions).toHaveLength(1)
+      expect(
+        readAdminReference('permission', result.data.permissions[0].value, mocks.user!.email),
+      ).toBe('Bills.Read')
+      expect(JSON.stringify(result)).not.toMatch(
+        /Bills.Read|private|rolePermissionCodes|effectivePermissionCodes/,
+      )
     },
   )
   it('removes unnecessary role metadata without losing select values', async () => {
@@ -252,28 +300,45 @@ describe('same-origin API gateway', () => {
       new Request('http://localhost/api/admin/users/roles'),
       context('admin/users/roles'),
     )
-    expect((await response.json()).data).toEqual([{ roleId: 'role-1', name: 'User' }])
-  })
-  it('limits session grants to frontend actions while admin editing retains every grant', async () => {
-    const effectivePermissionCodes = [
-      'Bills.Read',
-      'System.Configure',
-      'PaymentAccounts.Update',
-      'Bills.Read',
-    ]
-    vi.mocked(fetch).mockResolvedValueOnce(Response.json({ data: { effectivePermissionCodes } }))
-    const session = await GET(
-      new Request('http://localhost/api/auth/me/permissions'),
-      context('auth/me/permissions'),
+    const data = (await response.json()).data
+    expect(data).toHaveLength(1)
+    expect(data[0].name).toBe('User')
+    expect(readAdminReference('role', data[0].value, mocks.user!.email)).toBe('role-1')
+    expect(JSON.stringify(data)).not.toMatch(
+      /roleId|role-1|isSystem|defaultPermissionCodes|description|"code"/,
     )
-    expect((await session.json()).data).toEqual({ effectivePermissionCodes: ['Bills.Read'] })
+  })
+  it.each(['GET', 'POST', 'PATCH', 'PUT', 'DELETE'])(
+    'does not expose the session permission endpoint to browsers through %s',
+    async (method) => {
+      const response = await GET(
+        new Request('http://localhost/api/auth/me/permissions', { method }),
+        context('auth/me/permissions'),
+      )
+      expect(response.status).toBe(404)
+      expect(fetch).not.toHaveBeenCalled()
+      expect(JSON.stringify(await response.json())).not.toMatch(
+        /actions|effectivePermissionCodes|Bills.Read/,
+      )
+    },
+  )
+  it('preserves every grant in the authorized admin editor', async () => {
+    const effectivePermissionCodes = ['Bills.Read', 'System.Configure', 'PaymentAccounts.Update']
     vi.mocked(fetch).mockResolvedValueOnce(granted())
     vi.mocked(fetch).mockResolvedValueOnce(Response.json({ data: { effectivePermissionCodes } }))
-    const editor = await GET(
+    const response = await GET(
       new Request('http://localhost/api/admin/users/member-1/permissions'),
       context('admin/users/member-1/permissions'),
     )
-    expect((await editor.json()).data).toEqual({ effectivePermissionCodes })
+    const data = (await response.json()).data
+    expect(
+      data.permissions.map((reference: AdminReference) =>
+        readAdminReference('permission', reference.value, mocks.user!.email),
+      ),
+    ).toEqual(effectivePermissionCodes)
+    expect(JSON.stringify(data)).not.toMatch(
+      /Bills.Read|System.Configure|PaymentAccounts.Update|effectivePermissionCodes/,
+    )
   })
   it('omits internal permission identifiers and diagnostics from the editor catalog', async () => {
     vi.mocked(fetch).mockResolvedValueOnce(granted())
@@ -297,16 +362,19 @@ describe('same-origin API gateway', () => {
       new Request('http://localhost/api/admin/users/permissions'),
       context('admin/users/permissions'),
     )
-    expect((await response.json()).data).toEqual([
+    const data = (await response.json()).data
+    expect(data).toEqual([
       {
-        code: 'Bills.Read',
+        id: expect.any(String),
+        value: expect.any(String),
         name: 'Xem hóa đơn',
         description: 'Xem chi tiết',
-        groupCode: 'Bills',
         groupName: 'Hóa đơn',
         sortOrder: 10,
       },
     ])
+    expect(readAdminReference('permission', data[0].value, mocks.user!.email)).toBe('Bills.Read')
+    expect(JSON.stringify(data)).not.toMatch(/Bills.Read|permissionId|groupCode|audit/)
   })
   it.each(['1234567890', '********7890', '1234'])(
     'never sends the unmasked payout account %s',
@@ -463,6 +531,17 @@ describe('same-origin API gateway', () => {
     expect(response.status).toBe(403)
     expect(fetch).toHaveBeenCalledOnce()
   })
+  it('fails closed when valid grants are mixed with malformed entries', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      Response.json({ data: { effectivePermissionCodes: ['Users.Read', true] } }),
+    )
+    const response = await GET(
+      new Request('http://localhost/api/admin/users'),
+      context('admin/users'),
+    )
+    expect(response.status).toBe(403)
+    expect(fetch).toHaveBeenCalledOnce()
+  })
   it('does not retain permissions across requests after access is revoked', async () => {
     vi.mocked(fetch)
       .mockResolvedValueOnce(granted())
@@ -493,15 +572,36 @@ describe('same-origin API gateway', () => {
     ['admin/support-requests/request-1/status', 'PATCH', 'SupportRequests.Update'],
   ])('requires the action permission for %s', async (path, method, permission) => {
     const handler = method === 'PUT' ? PUT : PATCH
-    const request = () => new Request(`http://localhost/api/${path}`, { method, body: '{}' })
+    const body = path.endsWith('/permissions')
+      ? { permissions: [adminReference('permission', 'Bills.Read', mocks.user!.email).value] }
+      : path.endsWith('/status')
+        ? { status: 'Resolved' }
+        : {
+            role: adminReference('role', 'role-1', mocks.user!.email).value,
+            ...(method === 'PUT' ? { blocked: true } : {}),
+          }
+    const request = () =>
+      new Request(`http://localhost/api/${path}`, { method, body: JSON.stringify(body) })
     vi.mocked(fetch).mockResolvedValueOnce(granted(['Users.Read', 'SupportRequests.Read']))
     expect((await handler(request(), context(path))).status).toBe(403)
     expect(fetch).toHaveBeenCalledOnce()
     vi.mocked(fetch)
       .mockResolvedValueOnce(granted([permission]))
-      .mockResolvedValueOnce(Response.json({ data: true }))
+      .mockResolvedValueOnce(
+        Response.json({
+          data: path.endsWith('/permissions') ? { effectivePermissionCodes: ['Bills.Read'] } : true,
+        }),
+      )
     expect((await handler(request(), context(path))).status).toBe(200)
     expect(fetch).toHaveBeenCalledTimes(3)
+    const forwarded = JSON.parse(vi.mocked(fetch).mock.calls[2][1]!.body as string)
+    expect(forwarded).toEqual(
+      path.endsWith('/permissions')
+        ? { effectivePermissionCodes: ['Bills.Read'] }
+        : path.endsWith('/status')
+          ? { status: 'Resolved' }
+          : { roleId: 'role-1', ...(method === 'PUT' ? { blocked: true } : {}) },
+    )
   })
   it('shares only the active permission lookup between concurrent admin requests', async () => {
     let release!: (response: Response) => void
@@ -525,6 +625,76 @@ describe('same-origin API gateway', () => {
     expect(responses.map((response) => response.status)).toEqual([200, 200])
     expect(fetch).toHaveBeenCalledTimes(3)
   })
+  it('uses matching opaque role selections in the directory and role catalog', async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(granted())
+      .mockResolvedValueOnce(
+        Response.json({
+          data: {
+            items: [
+              {
+                memberId: 'member-1',
+                name: 'Linh',
+                email: 'linh@example.com',
+                status: 'Active',
+                role: 'Thành viên',
+                roleId: 'internal-role-1',
+                privateMetadata: 'private',
+              },
+            ],
+            totalCount: 1,
+          },
+        }),
+      )
+      .mockResolvedValueOnce(granted())
+      .mockResolvedValueOnce(
+        Response.json({
+          data: [{ roleId: 'internal-role-1', name: 'Thành viên', code: 'internal-role-code' }],
+        }),
+      )
+    const directory = await GET(
+      new Request('http://localhost/api/admin/users'),
+      context('admin/users'),
+    )
+    const catalog = await GET(
+      new Request('http://localhost/api/admin/users/roles'),
+      context('admin/users/roles'),
+    )
+    const member = (await directory.json()).data.items[0]
+    const role = (await catalog.json()).data[0]
+    expect(member.roleSelection.id).toBe(role.id)
+    expect(member.roleSelection.value).not.toBe(role.value)
+    expect(member.role).toBe('Thành viên')
+    expect(JSON.stringify([member, role])).not.toMatch(/internal-role|roleId|privateMetadata/)
+  })
+  it.each(['forged', 'different-viewer', 'wrong-kind', 'raw-payload', 'invalid-json'])(
+    'rejects %s admin selections before forwarding a write',
+    async (variant) => {
+      vi.mocked(fetch).mockResolvedValueOnce(granted())
+      const value =
+        variant === 'different-viewer'
+          ? adminReference('permission', 'Bills.Read', 'other@example.com').value
+          : variant === 'wrong-kind'
+            ? adminReference('role', 'role-1', mocks.user!.email).value
+            : 'Bills.Read'
+      const body =
+        variant === 'invalid-json'
+          ? '{'
+          : JSON.stringify(
+              variant === 'raw-payload'
+                ? { effectivePermissionCodes: ['Bills.Read'] }
+                : { permissions: [value] },
+            )
+      const path = 'admin/users/member-1/permissions'
+      const response = await PATCH(
+        new Request(`http://localhost/api/${path}`, { method: 'PATCH', body }),
+        context(path),
+      )
+      expect(response.status).toBe(400)
+      expect(fetch).toHaveBeenCalledOnce()
+      expect(await response.text()).not.toMatch(/Bills.Read|effectivePermissionCodes|role-1|v1\./)
+    },
+  )
   it('returns a confirmation without leaking an OTP or upstream profile when sending a login code', async () => {
     vi.mocked(fetch).mockResolvedValue(
       Response.json({

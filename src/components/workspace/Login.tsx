@@ -3,29 +3,25 @@
 import Link from 'next/link'
 import Script from 'next/script'
 import dynamic from 'next/dynamic'
+import { ArrowLeft } from 'lucide-react'
 import { useSplitlyNavigation } from '../RouteTransition'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { send } from '../../lib/api/client'
 import { Field } from '../ui/Field'
 import { Notice } from '../ui/Feedback'
 import { Reveal } from '../ui/Motion'
 import Brand from '../ui/Brand'
+import ThemeToggle from '../ui/ThemeToggle'
 import Atmosphere from '../ui/Atmosphere'
 import { useDeferredScene } from '../../hooks/useDeferredScene'
+import WalletPlaceholder from '../ui/WalletPlaceholder'
+import SceneLoading from '../ui/SceneLoading'
+import { useSceneLoading } from '../../hooks/useSceneLoading'
 
-function ScenePlaceholder() {
-  return (
-    <div className="login-sculpture login-spatial-scene login-scene-loading" aria-hidden="true">
-      <div className="login-sculpture-fallback">
-        <Brand compact />
-      </div>
-    </div>
-  )
-}
 const LoginScene = dynamic(() => import('./LoginScene'), {
   ssr: false,
-  loading: ScenePlaceholder,
+  loading: () => null,
 })
 
 type GoogleWindow = Window & {
@@ -64,6 +60,14 @@ export default function Login({
   const sceneFrame = useRef<HTMLDivElement>(null)
   const lock = useRef(false)
   const sceneReady = useDeferredScene(true, '(min-width: 901px)')
+  const [sceneRendered, setSceneRendered] = useState(false)
+  const { stage: sceneStage, onStage, reset: resetSceneLoading } = useSceneLoading()
+  useEffect(() => {
+    if (!sceneReady) {
+      setSceneRendered(false)
+      resetSceneLoading()
+    }
+  }, [sceneReady, resetSceneLoading])
   async function act(path: string, body: unknown, finish = true) {
     if (lock.current) return
     lock.current = true
@@ -120,9 +124,12 @@ export default function Login({
       <div className="ws-login-layout">
         <div className="ws-login-scene-backdrop" ref={sceneFrame} aria-hidden="true" />
         <section className="ws-login-story">
-          <Link href="/" className="ws-brand" aria-label="Splitly — Trang chủ">
-            <Brand />
-          </Link>
+          <div className="ws-login-brand-row">
+            <Link href="/" className="ws-brand" aria-label="Splitly — Trang chủ">
+              <Brand />
+            </Link>
+            <ThemeToggle />
+          </div>
           <Reveal className="ws-login-intro" initiallyVisible>
             <span className="ws-eyebrow">KHOẢN CHUNG, CÙNG NHAU.</span>
             <h1>
@@ -136,7 +143,20 @@ export default function Login({
               Splitly giữ mọi khoản chung thật rõ ràng.
             </p>
             <div className="ws-login-spatial-space">
-              {sceneReady ? <LoginScene frameRef={sceneFrame} /> : <ScenePlaceholder />}
+              <div
+                className="login-sculpture-fallback"
+                data-state={sceneReady && sceneRendered ? 'ready' : 'loading'}
+                aria-hidden="true"
+              >
+                <WalletPlaceholder
+                  ready={sceneReady && sceneRendered}
+                  soft={sceneStage !== 'fallback'}
+                />
+              </div>
+              <SceneLoading stage={sceneStage} />
+              {sceneReady && (
+                <LoginScene frameRef={sceneFrame} onReady={setSceneRendered} onStage={onStage} />
+              )}
             </div>
             <div className="ws-login-ledger">
               <div>
@@ -156,8 +176,8 @@ export default function Login({
           <small>TIỀN GỌN GÀNG. ĐỜI THẢNH THƠI.</small>
         </section>
         <section className="ws-login-form">
-          <Link href="/" className="ws-back">
-            ← Về trang chủ
+          <Link href="/" className="ws-back login-home-link">
+            <ArrowLeft size={15} aria-hidden="true" /> Về trang chủ
           </Link>
           <Reveal className="ws-auth-card" initiallyVisible>
             <span className="ws-eyebrow">KHÔNG GIAN CỦA BẠN</span>

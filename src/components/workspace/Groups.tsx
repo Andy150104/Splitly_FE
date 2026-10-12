@@ -4,8 +4,9 @@ import Select from '../ui/Select'
 
 import Link from 'next/link'
 import { useRef, useState } from 'react'
-import type { FormEvent } from 'react'
-import { ArrowLeft, X } from 'lucide-react'
+import type { FormEvent, ReactNode } from 'react'
+import { bindControl } from './slots'
+import { ArrowLeft } from 'lucide-react'
 import { money, parseEmails, send } from '../../lib/api/client'
 import type { Group, GroupItem, PageResult } from '../../lib/api/types'
 import WorkspaceModal, { ConfirmDialog } from '../ui/WorkspaceModal'
@@ -14,14 +15,11 @@ import { Empty, ErrorState, Loading, Notice } from '../ui/Feedback'
 import { Field } from '../ui/Field'
 import { PageHeading } from '../ui/PageHeading'
 import { Status } from '../ui/Status'
-import { useApi, useWorkspace } from './hooks'
+import { useApi } from './hooks'
 
-export default function Groups() {
-  const { can } = useWorkspace()
+export default function Groups({ createButton }: { createButton: ReactNode }) {
   const [page, setPage] = useState(1)
-  const query = useApi<PageResult<GroupItem>>(
-    can('Groups.Read') ? `groups?pageNumber=${page}&pageSize=12` : null,
-  )
+  const query = useApi<PageResult<GroupItem>>(`groups?pageNumber=${page}&pageSize=12`)
   const [adding, setAdding] = useState(false)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
@@ -54,11 +52,7 @@ export default function Groups() {
         title="Nhóm của bạn."
         description="Lưu những người cùng chia để tạo hóa đơn nhanh hơn."
       >
-        {can('Groups.Create') && (
-          <button className="ws-button" aria-haspopup="dialog" onClick={() => setAdding(true)}>
-            Tạo nhóm mới
-          </button>
-        )}
+        {bindControl(createButton, { onClick: () => setAdding(true) })}
       </PageHeading>
       <Notice message={error} />
       <WorkspaceModal
@@ -145,8 +139,19 @@ export default function Groups() {
     </>
   )
 }
-export function GroupDetail({ groupId }: { groupId: string }) {
-  const { can } = useWorkspace()
+export function GroupDetail({
+  groupId,
+  closeButton,
+  addMemberButton,
+  removeMemberButton,
+  createBillLink,
+}: {
+  groupId: string
+  closeButton: ReactNode
+  addMemberButton: ReactNode
+  removeMemberButton: ReactNode
+  createBillLink: ReactNode
+}) {
   const query = useApi<Group>(`groups/${groupId}`)
   const [emails, setEmails] = useState('')
   const [error, setError] = useState('')
@@ -209,16 +214,12 @@ export function GroupDetail({ groupId }: { groupId: string }) {
       >
         <div className="ws-group-heading-actions">
           <Status value={group.status} />
-          {group.isOwner && active && can('Groups.Delete') && (
-            <button
-              className="ws-button ws-button-secondary"
-              disabled={pending}
-              aria-haspopup="dialog"
-              onClick={() => setConfirm('close')}
-            >
-              Đóng nhóm
-            </button>
-          )}
+          {group.isOwner &&
+            active &&
+            bindControl(closeButton, {
+              disabled: pending,
+              onClick: () => setConfirm('close'),
+            })}
         </div>
       </PageHeading>
       <Notice message={error} />
@@ -239,32 +240,24 @@ export function GroupDetail({ groupId }: { groupId: string }) {
               <span className="ws-status is-neutral">
                 {m.role === 'Owner' ? 'Chủ nhóm' : 'Thành viên'}
               </span>
-              {group.isOwner && active && can('Groups.ManageMembers') && m.role !== 'Owner' && (
-                <button
-                  aria-label={`Xóa ${m.email} khỏi nhóm`}
-                  disabled={pending}
-                  onClick={() => setConfirm(m.memberId)}
-                >
-                  <X size={17} />
-                </button>
-              )}
+              {group.isOwner &&
+                active &&
+                m.role !== 'Owner' &&
+                bindControl(removeMemberButton, {
+                  'aria-label': `Xóa ${m.email} khỏi nhóm`,
+                  disabled: pending,
+                  onClick: () => setConfirm(m.memberId),
+                })}
             </div>
           ))}
-          {group.isOwner && active && can('Groups.ManageMembers') && (
-            <button
-              className="ws-button ws-button-secondary ws-group-add-trigger"
-              aria-haspopup="dialog"
-              onClick={() => setAddingMember(true)}
-            >
-              Thêm người cùng chia
-            </button>
-          )}
+          {group.isOwner &&
+            active &&
+            bindControl(addMemberButton, { onClick: () => setAddingMember(true) })}
         </section>
         <GroupBills
           key={groupId}
-          groupId={groupId}
           bills={group.bills || []}
-          canCreate={active && can('Bills.Create')}
+          createBillLink={active ? createBillLink : null}
         />
       </div>
       <WorkspaceModal
@@ -327,13 +320,11 @@ export function GroupDetail({ groupId }: { groupId: string }) {
 }
 
 function GroupBills({
-  groupId,
   bills,
-  canCreate,
+  createBillLink,
 }: {
-  groupId: string
   bills: NonNullable<Group['bills']>
-  canCreate: boolean
+  createBillLink: ReactNode
 }) {
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('')
@@ -435,11 +426,7 @@ function GroupBills({
           </button>
         </div>
       )}
-      {canCreate && (
-        <Link className="ws-button ws-full" href={`/bills/new?group=${groupId}`}>
-          Tạo hóa đơn cho nhóm
-        </Link>
-      )}
+      {createBillLink}
     </section>
   )
 }

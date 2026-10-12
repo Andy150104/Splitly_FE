@@ -30,6 +30,14 @@ Form login hiển thị từ HTML server. Cảnh 3D tải sau khi trang paint; m
 | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Google OAuth client ID; nếu để trống, đăng nhập bằng mã email vẫn dùng được. Cấu hình authorized JavaScript origin cho URL frontend trong Google Console. |
 | `ENABLE_DEV_LOGIN`             | `true` để mở đăng nhập seed ở local. Mặc định `false`, luôn tắt trong production.                                                                         |
 
+## Chế độ sáng / tối
+
+Nút mặt trời/mặt trăng ở thanh điều hướng landing, hàng logo login và topbar workspace chuyển chế độ cho toàn ứng dụng, gồm modal, popup, lịch và thông báo. Dark là mặc định và giữ bảng màu hiện có; light dùng nền trắng xanh, chữ xanh than, accent xanh dương và màu trạng thái đủ tương phản. Landing và login đổi cả vật liệu, nhãn, ánh sáng 3D, ảnh dự phòng và minh họa CSS từ tím sang xanh trong light mode; chuyển về dark trả lại màu gốc.
+
+Đổi theme dùng vòng tròn lan ra từ tâm nút khi mở light mode, thu lại khi về dark, với nhịp tăng/giảm tốc trong 760ms. Canvas 3D chỉ render khung hình màu mới trong lúc hiệu ứng chạy, sau đó tiếp tục chuyển động. Thiết bị bật giảm chuyển động hoặc trình duyệt thiếu View Transitions API đổi ngay; bấm liên tiếp giữ lựa chọn mới nhất và không làm mất dữ liệu form. Kiểm tra bằng `npx playwright test tests/theme-transition.spec.ts` sau khi build.
+
+Lựa chọn lưu ở `localStorage['splitly.theme']`, đồng bộ giữa các tab và được áp dụng trước khung hình đầu khi tải lại. Nếu trình duyệt không cho lưu, nút vẫn hoạt động trong lượt mở hiện tại. `src/theme.css` định nghĩa token light; các file CSS cũ dùng `var(--theme-…, màu-dark-gốc)` nên không cần thay bảng màu dark. Logic ở `src/hooks/useTheme.ts`, nút dùng chung ở `src/components/ui/ThemeToggle.tsx`. Chạy `npm run test:e2e -- tests/theme.spec.ts` để kiểm tra đổi chế độ, persistence, tương phản và overlay trên desktop/mobile.
+
 ## Luồng sử dụng
 
 - Landing page giới thiệu sản phẩm, không tải dữ liệu cá nhân và không mở popup ví demo.
@@ -44,7 +52,7 @@ Form login hiển thị từ HTML server. Cảnh 3D tải sau khi trang paint; m
 - `/admin/users`: tìm/phân trang người dùng, danh mục vai trò/quyền, đổi vai trò, cấp quyền hiệu lực và chặn/mở truy cập theo quyền backend.
 - `/admin/support-requests`: lọc/phân trang yêu cầu, mở chi tiết và cập nhật trạng thái/kết quả xử lý. Giải quyết hoặc từ chối cần ghi chú.
 
-Các nút quản lý và điều hướng quản trị hiện theo `effectivePermissionCodes` của backend. Backend quyết định quyền cuối cùng và kiểm tra quyền sở hữu. Webhook và auto payout do backend xử lý. Xem [bảng đối chiếu flow/API](docs/api-flow-coverage.md) để phân biệt UI tham khảo với endpoint vận hành nội bộ/legacy.
+Server chọn các nút quản lý và điều hướng theo mã quyền BE, rồi gửi các control được phép hiển thị xuống client. Backend quyết định quyền cuối cùng và kiểm tra quyền sở hữu. Webhook và auto payout do backend xử lý. Xem [bảng đối chiếu flow/API](docs/api-flow-coverage.md) để phân biệt UI tham khảo với endpoint vận hành nội bộ/legacy.
 
 ## API và phiên đăng nhập
 
@@ -52,9 +60,15 @@ Các nút quản lý và điều hướng quản trị hiện theo `effectivePer
 
 `BACKEND_API_URL` phải được cấu hình rõ trong môi trường; gateway không gửi dữ liệu đến một URL ngrok mặc định. `src/lib/api/responses.ts` rút gọn dữ liệu quyền, vai trò, ngân hàng và chi tiết hóa đơn trước khi gửi về trình duyệt. Số tài khoản trong danh sách được che, lookup chỉ trả tên đã xác minh; lỗi không chuyển tiếp response chẩn đoán của ngân hàng. `views.ts` khai báo contract UI, còn `types.ts` giữ schema upstream được sinh từ Swagger. API quản trị kiểm tra quyền hiệu lực từ backend trước khi lấy dữ liệu, chỉ gộp các kiểm tra đồng thời và không cache quyền qua các request đã hoàn thành.
 
-Quyền phiên chỉ chứa hành động được frontend sử dụng, được khai báo trong `capabilities.ts`. Danh mục vai trò chỉ tải khi mở người dùng; danh mục quyền và các grant của người đó chỉ tải khi mở thẻ quyền. Bộ chỉnh quyền giữ toàn bộ grant để không xóa nhầm quyền nghiệp vụ chưa có màn hình frontend. Component riêng nằm trong `src/components/workspace/admin/PermissionsForm.tsx`.
+Browser không gọi `auth/me/permissions` và gateway trả 404 cho endpoint này. `permissions.server.ts` đọc quyền hiệu lực trực tiếp từ BE; layout chọn navigation, `src/app/(workspace)/_components/WorkspaceViews.tsx` dựng các nút/link/field/panel được phép. Chỉ các slot giao diện được truyền xuống client; không gửi bảng quyền qua JSON, props hay hydration. Context workspace chỉ có user. Khi tự đổi quyền/vai trò, `router.refresh()` dựng lại giao diện theo quyền mới.
 
-Dữ liệu cần cho UI vẫn đọc được trong DevTools: tên/email khi quản lý người dùng, mã quyền để bật hành động, số tài khoản do người dùng nhập trong request xác minh/lưu, QR và link thanh toán. Không thể giấu dữ liệu này bằng CSS hay mã hóa trong frontend. Backend vẫn phải kiểm tra quyền sở hữu từng hóa đơn/tài khoản; việc rút gọn response không thay thế kiểm tra đó. Xem [quy tắc privacy và gateway](docs/skills/splitly-development/references/api-privacy.md).
+Mã kiểm tra giữ đúng BE, như `Bills.Create` và `Users.UpdateRole`, để dễ debug. Module quyền, gọi upstream và rút gọn response có `server-only`; Next từ chối client import chúng. Xem [luồng quyền và cách debug](docs/api-permissions.md). Access hết hạn trong render được chuyển qua `/api/auth/refresh-session` để ghi cookie rồi quay về trang đang mở; route này không trả token hoặc grant.
+
+Danh mục vai trò chỉ tải khi mở người dùng; danh mục quyền và grant của người đó chỉ tải khi mở thẻ quyền và có quyền đọc tương ứng. Bộ chỉnh quyền quản trị giữ toàn bộ grant để không xóa nhầm quyền nghiệp vụ chưa có màn UI. Component ở `src/components/workspace/admin/PermissionsForm.tsx`.
+
+Response quản trị chỉ gửi tên hiển thị và mã tham chiếu; không gửi `roleId`, mã quyền BE hay metadata nội bộ. `admin-references.server.ts` tạo mã chọn ổn định và giá trị mã hóa gắn với người quản trị; gateway kiểm tra quyền rồi chuyển lựa chọn về `roleId`/`effectivePermissionCodes` đúng contract BE. Khóa chỉ nằm ở server, dùng `SESSION_SECRET` hiện có. Không đổi schema upstream hoặc bỏ grant chưa có trong danh mục.
+
+Dữ liệu cần cho UI vẫn đọc được trong DevTools: control được dựng, tên/email và danh mục quyền khi quản trị được phép, số tài khoản do người dùng nhập trong request xác minh/lưu, QR và link thanh toán. Không thể giấu dữ liệu này bằng CSS hay mã hóa trong frontend. Backend vẫn phải kiểm tra quyền sở hữu từng hóa đơn/tài khoản; việc rút gọn response không thay thế kiểm tra đó. Xem [quy tắc privacy và gateway](docs/skills/splitly-development/references/api-privacy.md).
 
 Kiểm tra Origin so sánh với Host của request, tránh chặn nhầm `localhost:3000` khi Next dev chạy nội bộ ở `0.0.0.0:3000`. Request từ host khác vẫn bị chặn.
 
@@ -87,7 +101,9 @@ npm run build
 npm run start
 ```
 
-Kiểm tra E2E dùng Chrome đã cài, gồm desktop và viewport iPhone. Test quản lý tự tạo cookie thử bằng `SESSION_SECRET` trong `.env.local` và mock API; không gửi email, tạo hóa đơn hay thanh toán trên backend thật. Unit test kiểm tra gateway, bảo vệ token, refresh/logout và xử lý contract. Test landing giữ kiểm tra 3D, scroll, WebGL fallback và accessibility.
+Kiểm tra E2E dùng Chrome đã cài, gồm desktop và viewport iPhone. Test quản lý chạy production riêng ở :3210 với session secret fixture; server đọc quyền/DTO quản trị từ BE fixture :3211, còn API nghiệp vụ khác được mock trong browser. Test mã tham chiếu đi qua gateway local và xác nhận payload quản trị giả lập. Không tái sử dụng server người dùng hoặc gửi email, tạo hóa đơn hay thanh toán trên BE thật. `npm run test:e2e` build trước; khi dùng `npx playwright test` cần build trước một lần. Unit test kiểm tra gateway, bảo vệ token, refresh/logout và xử lý contract. Test landing giữ kiểm tra 3D, scroll, WebGL fallback và accessibility.
+
+Chụp UI bằng `scripts/capture-api-design.mjs` sau khi build: mở BE fixture với `node tests/helpers/permissions-backend.mjs`, rồi mở frontend ở terminal khác với `npm exec -- cross-env NODE_ENV=production BACKEND_API_URL=http://127.0.0.1:3211 SESSION_SECRET=splitly-local-playwright-session-fixture next start --hostname 127.0.0.1 --port 3210`. Ở terminal thứ ba chạy `node --experimental-strip-types scripts/capture-api-design.mjs`; đóng hai server fixture khi hoàn tất. Không dùng secret fixture cho môi trường thật.
 
 Đã kiểm tra đọc dữ liệu thật qua backend và gateway. Google/OTP cần tài khoản người dùng để kiểm tra đăng nhập tương tác; PayOS/webhook/payout cần giao dịch backend thật để xác nhận toàn bộ chuỗi thanh toán.
 

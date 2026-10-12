@@ -3,7 +3,8 @@
 import Select from '../ui/Select'
 
 import { useRef, useState } from 'react'
-import type { FormEvent } from 'react'
+import type { FormEvent, ReactNode } from 'react'
+import { bindControl } from './slots'
 import Link from 'next/link'
 import { send } from '../../lib/api/client'
 import type { PageResult, SupportRequest } from '../../lib/api/types'
@@ -12,7 +13,7 @@ import { Empty, ErrorState, Loading, Notice } from '../ui/Feedback'
 import { Field } from '../ui/Field'
 import { PageHeading } from '../ui/PageHeading'
 import { Status } from '../ui/Status'
-import { useApi, useWorkspace } from './hooks'
+import { useApi } from './hooks'
 
 const states = [
   { value: 'Pending', label: 'Chờ tiếp nhận' },
@@ -26,25 +27,15 @@ const types = [
   { value: 'PayoutIssue', label: 'Nhận tiền' },
   { value: 'AccountIssue', label: 'Tài khoản & quyền' },
 ]
-export default function AdminSupport() {
-  const { can } = useWorkspace()
+export default function AdminSupport({ editorForm }: { editorForm: ReactNode }) {
   const [status, setStatus] = useState('')
   const [type, setType] = useState('')
   const [page, setPage] = useState(1)
   const [selected, setSelected] = useState<SupportRequest | null>(null)
   const [message, setMessage] = useState('')
   const query = useApi<PageResult<SupportRequest>>(
-    can('SupportRequests.Read')
-      ? `admin/support-requests?status=${status}&type=${type}&page=${page}&pageSize=12`
-      : null,
+    `admin/support-requests?status=${status}&type=${type}&page=${page}&pageSize=12`,
   )
-  if (!can('SupportRequests.Read'))
-    return (
-      <Empty
-        title="Chưa có quyền xem yêu cầu hỗ trợ"
-        description="Liên hệ quản trị viên để mở quyền truy cập."
-      />
-    )
   return (
     <>
       <PageHeading
@@ -150,6 +141,7 @@ export default function AdminSupport() {
           <Reveal key={selected.id}>
             <RequestEditor
               request={selected}
+              editorForm={editorForm}
               onClose={() => setSelected(null)}
               onSaved={() => {
                 setMessage('Đã cập nhật kết quả xử lý yêu cầu.')
@@ -167,12 +159,13 @@ function RequestEditor({
   request,
   onClose,
   onSaved,
+  editorForm,
 }: {
   request: SupportRequest
+  editorForm: ReactNode
   onClose: () => void
   onSaved: () => void
 }) {
-  const { can } = useWorkspace()
   const [status, setStatus] = useState(request.status || 'Pending')
   const [note, setNote] = useState(request.resolutionNote || '')
   const [error, setError] = useState('')
@@ -226,36 +219,45 @@ function RequestEditor({
         <p className="ws-muted">Mã thanh toán: {request.paymentOrderId}</p>
       )}
       <Notice message={error} />
-      {can('SupportRequests.Update') ? (
-        <form className="ws-form" onSubmit={submit}>
-          <Field label="Trạng thái xử lý">
-            <Select value={status} disabled={pending} onValueChange={(value) => setStatus(value)}>
-              {states.map((state) => (
-                <option key={state.value} value={state.value}>
-                  {state.label}
-                </option>
-              ))}
-            </Select>
-          </Field>
-          <Field label="Kết quả xử lý" hint="Bắt buộc khi giải quyết hoặc từ chối yêu cầu.">
-            <textarea
-              value={note}
-              disabled={pending}
-              required={['Resolved', 'Dismissed'].includes(status)}
-              maxLength={2000}
-              onChange={(event) => setNote(event.target.value)}
-              placeholder="Ghi lại cách xử lý yêu cầu…"
-            />
-          </Field>
-          <button
-            className="ws-button"
-            disabled={
-              pending || (status === request.status && note === (request.resolutionNote || ''))
-            }
-          >
-            {pending ? 'Đang lưu…' : 'Lưu trạng thái'}
-          </button>
-        </form>
+      {editorForm ? (
+        bindControl(editorForm, {
+          onSubmit: submit,
+          children: (
+            <>
+              <Field label="Trạng thái xử lý">
+                <Select
+                  value={status}
+                  disabled={pending}
+                  onValueChange={(value) => setStatus(value)}
+                >
+                  {states.map((state) => (
+                    <option key={state.value} value={state.value}>
+                      {state.label}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              <Field label="Kết quả xử lý" hint="Bắt buộc khi giải quyết hoặc từ chối yêu cầu.">
+                <textarea
+                  value={note}
+                  disabled={pending}
+                  required={['Resolved', 'Dismissed'].includes(status)}
+                  maxLength={2000}
+                  onChange={(event) => setNote(event.target.value)}
+                  placeholder="Ghi lại cách xử lý yêu cầu…"
+                />
+              </Field>
+              <button
+                className="ws-button"
+                disabled={
+                  pending || (status === request.status && note === (request.resolutionNote || ''))
+                }
+              >
+                {pending ? 'Đang lưu…' : 'Lưu trạng thái'}
+              </button>
+            </>
+          ),
+        })
       ) : (
         <>
           <Status value={request.status} />

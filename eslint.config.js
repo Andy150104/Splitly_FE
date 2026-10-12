@@ -28,4 +28,21 @@ export default tseslint.config(
       ...reactHooks.configs.recommended.rules,
     },
   },
+  {
+    files: ['src/components/**/*.{ts,tsx}', 'src/hooks/**/*.{ts,tsx}', 'src/App.tsx'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/*.server', '**/*.server.ts', '**/responses'],
+              message:
+                'Client UI must not import server permission checks, upstream requests or response projections.',
+            },
+          ],
+        },
+      ],
+    },
+  },
 )

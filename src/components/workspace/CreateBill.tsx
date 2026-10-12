@@ -6,14 +6,14 @@ import DatePicker from '../ui/DatePicker'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
-import type { FormEvent } from 'react'
+import type { FormEvent, ReactNode } from 'react'
+import { bindControl, fillControl } from './slots'
 import { api, localDate, money, parseEmails, send } from '../../lib/api/client'
 import type { Group, GroupItem, PageResult, PayoutAccount } from '../../lib/api/types'
 import type { BillView } from '../../lib/api/views'
-import { AccountForm } from './Accounts'
 import WorkspaceModal from '../ui/WorkspaceModal'
 import { motion, useReducedMotion } from 'motion/react'
-import { Empty, Loading, Notice } from '../ui/Feedback'
+import { Loading, Notice } from '../ui/Feedback'
 import { Field } from '../ui/Field'
 import { PageHeading } from '../ui/PageHeading'
 import { useApi, useWorkspace } from './hooks'
@@ -27,11 +27,21 @@ const steps = [
 export default function CreateBill({
   draftId,
   initialGroupId,
+  groupField,
+  accountField,
+  addAccountButton,
+  accountForm,
+  submitButtons,
 }: {
   draftId?: string
   initialGroupId?: string
+  groupField: ReactNode
+  accountField: ReactNode
+  addAccountButton: ReactNode
+  accountForm: ReactNode
+  submitButtons: ReactNode[]
 }) {
-  const { can, user } = useWorkspace()
+  const { user } = useWorkspace()
   const reduced = useReducedMotion()
   const router = useRouter()
   const [step, setStep] = useState(0)
@@ -56,9 +66,9 @@ export default function CreateBill({
   const [initializing, setInitializing] = useState(Boolean(draftId))
   const lock = useRef(false)
   const savedGroup = useRef(initialGroupId || '')
-  const groups = useApi<PageResult<GroupItem>>(can('Groups.Read') ? 'groups?pageSize=200' : null)
-  const group = useApi<Group>(groupId ? `groups/${groupId}` : null)
-  const accounts = useApi<PayoutAccount[]>(can('PayoutAccounts.Read') ? 'payout-accounts' : null)
+  const groups = useApi<PageResult<GroupItem>>(groupField ? 'groups?pageSize=200' : null)
+  const group = useApi<Group>(groupField && groupId ? `groups/${groupId}` : null)
+  const accounts = useApi<PayoutAccount[]>(accountField ? 'payout-accounts' : null)
   useEffect(() => {
     if (!draftId) return
     let active = true
@@ -205,16 +215,6 @@ export default function CreateBill({
       setPending(false)
     }
   }
-  const permission = ['Bills.Create', 'Bills.ManageMembers', 'Bills.Calculate', 'Bills.Publish'][
-    step
-  ]
-  if (!can('Bills.Create') && !draftId)
-    return (
-      <Empty
-        title="Chưa có quyền tạo hóa đơn"
-        description="Liên hệ quản trị viên để được hỗ trợ."
-      />
-    )
   return (
     <>
       <Link className="ws-back" href="/bills">
@@ -317,26 +317,28 @@ export default function CreateBill({
                     />
                   </Field>
                 </div>
-                {can('Groups.Read') && (
-                  <Field label="Nhóm · tùy chọn">
-                    <Select
-                      value={groupId}
-                      onValueChange={(value) => {
-                        setGroupId(value)
-                        setGroupMembers([])
-                      }}
-                    >
-                      <option value="">Hóa đơn riêng, không thuộc nhóm</option>
-                      {groups.data?.items
-                        ?.filter((g) => g.status !== 'Closed')
-                        .map((g) => (
-                          <option key={g.groupId} value={g.groupId}>
-                            {g.name}
-                          </option>
-                        ))}
-                    </Select>
-                  </Field>
-                )}
+                {fillControl(groupField, {
+                  children: (
+                    <>
+                      <Select
+                        value={groupId}
+                        onValueChange={(value) => {
+                          setGroupId(value)
+                          setGroupMembers([])
+                        }}
+                      >
+                        <option value="">Hóa đơn riêng, không thuộc nhóm</option>
+                        {groups.data?.items
+                          ?.filter((g) => g.status !== 'Closed')
+                          .map((g) => (
+                            <option key={g.groupId} value={g.groupId}>
+                              {g.name}
+                            </option>
+                          ))}
+                      </Select>
+                    </>
+                  ),
+                })}
                 <Field label="Ghi chú · tùy chọn">
                   <textarea
                     maxLength={2000}
@@ -481,31 +483,27 @@ export default function CreateBill({
                     </div>
                   ))}
                 </div>
-                <Field label="Tài khoản nhận tiền">
-                  <Select
-                    value={selectedAccount}
-                    required
-                    onValueChange={(value) => setAccountId(value)}
-                  >
-                    <option value="">Chọn tài khoản nhận tiền</option>
-                    {accounts.data?.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.bankName} · {a.accountNumberMasked}
-                        {a.isDefault ? ' · Mặc định' : ''}
-                      </option>
-                    ))}
-                  </Select>
-                </Field>
+                {fillControl(accountField, {
+                  children: (
+                    <>
+                      <Select
+                        value={selectedAccount}
+                        required
+                        onValueChange={(value) => setAccountId(value)}
+                      >
+                        <option value="">Chọn tài khoản nhận tiền</option>
+                        {accounts.data?.map((a) => (
+                          <option key={a.id} value={a.id}>
+                            {a.bankName} · {a.accountNumberMasked}
+                            {a.isDefault ? ' · Mặc định' : ''}
+                          </option>
+                        ))}
+                      </Select>
+                    </>
+                  ),
+                })}
                 <Notice message={accounts.error} />
-                {can('PayoutAccounts.Create') && (
-                  <button
-                    type="button"
-                    className="ws-text-button"
-                    onClick={() => setAddingAccount(true)}
-                  >
-                    Thêm tài khoản nhận tiền
-                  </button>
-                )}
+                {bindControl(addAccountButton, { onClick: () => setAddingAccount(true) })}
                 <div className="ws-info">
                   <p>
                     Khi phát hành, mỗi người nhận email mời thanh toán. Trạng thái được cập nhật tự
@@ -526,15 +524,15 @@ export default function CreateBill({
               >
                 Quay lại
               </button>
-              <button
-                className="ws-button"
-                aria-busy={pending}
-                disabled={
-                  pending || (!can(permission) && !(step === 0 && billId && can('Bills.Update')))
-                }
-              >
-                {pending ? 'Đang lưu…' : step === 3 ? 'Phát hành hóa đơn' : 'Lưu & tiếp tục'}
-              </button>
+              {bindControl(submitButtons[step], {
+                'aria-busy': pending,
+                disabled: pending,
+                children: pending
+                  ? 'Đang lưu…'
+                  : step === 3
+                    ? 'Phát hành hóa đơn'
+                    : 'Lưu & tiếp tục',
+              })}
             </div>
             {billId && (
               <Link className="ws-draft-link" href={`/bills/${billId}`}>
@@ -573,15 +571,15 @@ export default function CreateBill({
         busy={savingAccount}
         onClose={() => setAddingAccount(false)}
       >
-        <AccountForm
-          onBusy={setSavingAccount}
-          onCancel={() => setAddingAccount(false)}
-          onSaved={(a) => {
-            setAccountId(a.id)
+        {bindControl(accountForm, {
+          onBusy: setSavingAccount,
+          onCancel: () => setAddingAccount(false),
+          onSaved: (account: PayoutAccount) => {
+            setAccountId(account.id)
             setAddingAccount(false)
             accounts.reload()
-          }}
-        />
+          },
+        })}
       </WorkspaceModal>
     </>
   )

@@ -2,6 +2,59 @@ import { createHmac } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import type { Page } from '@playwright/test'
 
+const fixtureChoices = new Map<string, string>()
+export function fixtureReference(kind: 'role' | 'permission', raw: string) {
+  const id = createHmac('sha256', 'local-ui-fixture').update(`${kind}:${raw}`).digest('base64url')
+  const value = `fixture-choice.${id}`
+  fixtureChoices.set(value, raw)
+  return { id, value }
+}
+// UI fixtures model the public DTO independently of the server crypto implementation.
+export function fixtureAdminData(path: string, data: unknown): unknown {
+  const source = data as Record<string, unknown>
+  if (path === '/api/admin/users/roles' && Array.isArray(data))
+    return data.map((role) => ({
+      ...fixtureReference('role', role.roleId),
+      name: role.name || 'Vai trò',
+    }))
+  if (path === '/api/admin/users/permissions' && Array.isArray(data))
+    return data.map((permission) => ({
+      ...fixtureReference('permission', permission.code),
+      name: permission.name || 'Quyền truy cập',
+      description: permission.description || null,
+      groupName: permission.groupName || 'Quyền khác',
+      sortOrder: permission.sortOrder || 0,
+    }))
+  if (
+    /^\/api\/admin\/users\/[^/]+\/permissions$/.test(path) &&
+    Array.isArray(source?.effectivePermissionCodes)
+  )
+    return {
+      permissions: source.effectivePermissionCodes.map((code) =>
+        fixtureReference('permission', code as string),
+      ),
+    }
+  if (path === '/api/admin/users' && Array.isArray(source?.items))
+    return {
+      ...source,
+      items: source.items.map(({ roleId, ...member }) => ({
+        ...member,
+        roleSelection: roleId ? fixtureReference('role', roleId) : null,
+      })),
+    }
+  return data
+}
+export function fixtureAdminBody(body: Record<string, unknown>) {
+  if (Array.isArray(body.permissions))
+    return { effectivePermissionCodes: body.permissions.map((value) => fixtureChoices.get(value)) }
+  if (typeof body.role === 'string')
+    return {
+      roleId: fixtureChoices.get(body.role),
+      ...('blocked' in body ? { blocked: body.blocked } : {}),
+    }
+  return body
+}
+
 export const permissions = [
   'Bills.Read',
   'Bills.Create',
@@ -86,32 +139,40 @@ export function fixtureBill(overrides: Record<string, unknown> = {}) {
     ...overrides,
   }
 }
-export async function provisionSession(page: Page) {
-  const env = readFileSync('.env.local', 'utf8')
+export async function provisionSession(page: Page, granted: unknown = permissions) {
+  const env = process.env.SESSION_SECRET ? '' : readFileSync('.env.local', 'utf8')
   const secret = process.env.SESSION_SECRET || env.match(/^SESSION_SECRET=(.+)$/m)?.[1]?.trim()
   if (!secret) throw new Error('Set SESSION_SECRET before running workspace UI tests')
   const payload = Buffer.from(
     JSON.stringify({ ...owner, expires: Date.now() + 3600_000 }),
   ).toString('base64url')
   const signature = createHmac('sha256', secret).update(payload).digest('base64url')
+  const baseUrl = process.env.WORKSPACE_TEST_BASE_URL || 'http://localhost:3000'
   await page.context().addCookies([
     {
       name: 'mo_profile',
       value: `${payload}.${signature}`,
-      url: 'http://localhost:3000',
+      url: baseUrl,
+      httpOnly: true,
+      sameSite: 'Lax',
+    },
+    {
+      name: 'mo_access',
+      value: `fixture.${Buffer.from(JSON.stringify(granted)).toString('base64url')}`,
+      url: baseUrl,
       httpOnly: true,
       sameSite: 'Lax',
     },
   ])
 }
 export async function mockWorkspace(page: Page, granted = permissions) {
-  await provisionSession(page)
+  await provisionSession(page, granted)
   await page.route('**/api/**', async (route) => {
     const path = new URL(route.request().url()).pathname
     let data: unknown = []
     if (path === '/api/auth/me/permissions')
-      data = { effectivePermissionCodes: granted, email: owner.email }
-    else if (path === '/api/bills')
+      throw new Error('Session permission endpoint must never be requested by the browser')
+    if (path === '/api/bills')
       data = {
         items: [fixtureBill()],
         totalCount: 1,

@@ -3,8 +3,10 @@ import { CatmullRomCurve3, Shape, Vector3 } from 'three'
 import { satin, softMetal, studio } from './materials'
 import useSurfaceGrain from './useSurfaceGrain'
 import { landingLeather } from './landingMaterials'
+import { useSceneColor } from './SceneTheme'
 
 export default function WalletPocket({ finish = 'studio' }: { finish?: 'studio' | 'leather' }) {
+  const color = useSceneColor()
   const grain = useSurfaceGrain()
   const { shape, seam } = useMemo(() => {
     const path = new Shape()
@@ -52,7 +54,13 @@ export default function WalletPocket({ finish = 'studio' }: { finish?: 'studio' 
           ]}
         />
         <meshPhysicalMaterial
-          {...(finish === 'leather' ? landingLeather : { color: studio.violet, ...satin })}
+          {...(finish === 'leather'
+            ? {
+                ...landingLeather,
+                color: color(landingLeather.color),
+                sheenColor: color(landingLeather.sheenColor),
+              }
+            : { color: color(studio.violet), ...satin })}
           bumpMap={grain}
           bumpScale={finish === 'leather' ? 0.025 : 0.012}
         />
@@ -60,7 +68,7 @@ export default function WalletPocket({ finish = 'studio' }: { finish?: 'studio' 
       <mesh>
         <tubeGeometry args={[seam, 160, 0.007, 6, true]} />
         <meshPhysicalMaterial
-          color={finish === 'leather' ? '#977ca9' : studio.lavender}
+          color={finish === 'leather' ? color('#977ca9') : color(studio.lavender)}
           {...(finish === 'leather' ? { metalness: 0, roughness: 0.85 } : softMetal)}
         />
       </mesh>

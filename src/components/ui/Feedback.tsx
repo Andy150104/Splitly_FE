@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import type { ReactNode } from 'react'
 import Link from 'next/link'
 import Skeleton from './Skeleton'
 import { useNotify } from './Notifications'
@@ -39,11 +40,13 @@ export function Empty({
   description,
   href,
   action,
+  actionSlot,
 }: {
   title: string
   description: string
   href?: string
   action?: string
+  actionSlot?: ReactNode
 }) {
   return (
     <div className="ws-empty">
@@ -54,6 +57,7 @@ export function Empty({
           {action}
         </Link>
       )}
+      {actionSlot}
     </div>
   )
 }
