@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="vi" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b0b12" />
+    <meta name="robots" content="noindex" />
+    <title>Không thể kết nối — Splitly</title>
+    <link rel="stylesheet" href="/offline.css" />
+    <style>
+      html[data-theme='light'] {
+        --theme-canvas: #f4f8fc;
+        --theme-ink: #1b2e45;
+        --theme-muted: #50647b;
+        --theme-accent: #1d5fae;
+        --theme-on-accent: #fff;
+        --theme-line: #cdddeb;
+        --theme-surface-soft: #e6eff9;
+        --theme-surface: #fff;
+        --theme-art-ink: #203c59;
+        --theme-art-deep: #274c73;
+        --theme-art-base: #4a80b8;
+        --theme-art-edge: #88afd5;
+        --theme-art-pale: #c6dcf1;
+        --theme-art-highlight: #e5f1fc;
+      }
+    </style>
+    <script>
+      try {
+        if (localStorage.getItem('splitly.theme') === 'light') {
+          document.documentElement.dataset.theme = 'light'
+          document.querySelector('meta[name="theme-color"]').content = '#f4f8fc'
+        }
+      } catch {}
+    </script>
+  </head>
+  <body>
+    <main class="splitly-offline">
+      <!-- SPLITLY_OFFLINE_SCREEN -->
+    </main>
+    <script>
+      const button = document.querySelector('.splitly-offline-retry')
+      const buttonLabel = button.querySelector('span')
+      document.querySelector('.splitly-offline-page').addEventListener('click', (event) => {
+        if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
+          return
+        const link = event.target.closest('a[href^="#offline-"]')
+        const target = link && document.querySelector(link.getAttribute('href'))
+        if (!target) return
+        event.preventDefault()
+        target.scrollIntoView({ block: 'start' })
+      })
+      let checking = false
+      let restoring = false
+      async function checkConnection() {
+        if (checking || restoring || !navigator.onLine || document.hidden) return
+        checking = true
+        button.disabled = true
+        buttonLabel.textContent = 'Đang kiểm tra…'
+        const controller = new AbortController()
+        const timeout = setTimeout(() => controller.abort(), 6000)
+        try {
+          const response = await fetch('/api/connectivity', {
+            method: 'HEAD',
+            cache: 'no-store',
+            signal: controller.signal,
+          })
+          if (response.status === 204 && navigator.onLine) {
+            restoring = true
+            // Keep the original route/query when this document is a navigation fallback.
+            if (location.pathname === '/offline.html') location.replace('/')
+            else location.reload()
+          }
+        } catch {
+          // Keep the cached screen visible and try again when the connection recovers.
+        } finally {
+          clearTimeout(timeout)
+          checking = false
+          button.disabled = false
+          buttonLabel.textContent = 'Thử lại'
+        }
+      }
+      button.addEventListener('click', checkConnection)
+      window.addEventListener('online', checkConnection)
+      window.addEventListener('focus', checkConnection)
+      document.addEventListener('visibilitychange', checkConnection)
+      setInterval(checkConnection, 3000)
+      checkConnection()
+    </script>
+  </body>
+</html>

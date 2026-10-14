@@ -169,6 +169,7 @@ export async function mockWorkspace(page: Page, granted = permissions) {
   await provisionSession(page, granted)
   await page.route('**/api/**', async (route) => {
     const path = new URL(route.request().url()).pathname
+    if (path === '/api/connectivity') return route.continue()
     let data: unknown = []
     if (path === '/api/auth/me/permissions')
       throw new Error('Session permission endpoint must never be requested by the browser')

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import type { ReactNode } from 'react'
 import RouteTransition from '../components/RouteTransition'
+import OfflineStatus from '../components/OfflineStatus'
 import Notifications from '../components/ui/Notifications'
 import { themeBootstrap } from '../lib/theme'
 import '@fontsource/be-vietnam-pro/latin-400.css'
@@ -23,6 +24,7 @@ import '../splitly.css'
 import '../refinement.css'
 import '../universe.css'
 import '../theme.css'
+import '../../public/offline.css'
 
 export const metadata: Metadata = {
   title: 'Splitly — Tiền gọn gàng. Đời thảnh thơi.',
@@ -43,6 +45,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <Notifications>
           <RouteTransition>{children}</RouteTransition>
         </Notifications>
+        <OfflineStatus />
       </body>
     </html>
   )

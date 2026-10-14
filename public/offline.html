@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="vi" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b0b12" />
+    <meta name="robots" content="noindex" />
+    <title>Không thể kết nối — Splitly</title>
+    <link rel="stylesheet" href="/offline.css" />
+    <style>
+      html[data-theme='light'] {
+        --theme-canvas: #f4f8fc;
+        --theme-ink: #1b2e45;
+        --theme-muted: #50647b;
+        --theme-accent: #1d5fae;
+        --theme-on-accent: #fff;
+        --theme-line: #cdddeb;
+        --theme-surface-soft: #e6eff9;
+        --theme-surface: #fff;
+        --theme-art-ink: #203c59;
+        --theme-art-deep: #274c73;
+        --theme-art-base: #4a80b8;
+        --theme-art-edge: #88afd5;
+        --theme-art-pale: #c6dcf1;
+        --theme-art-highlight: #e5f1fc;
+      }
+    </style>
+    <script>
+      try {
+        if (localStorage.getItem('splitly.theme') === 'light') {
+          document.documentElement.dataset.theme = 'light'
+          document.querySelector('meta[name="theme-color"]').content = '#f4f8fc'
+        }
+      } catch {}
+    </script>
+  </head>
+  <body>
+    <main class="splitly-offline">
+      <div class="splitly-offline-page" id="offline-home">
+        <header class="splitly-offline-header">
+          <a class="splitly-offline-brand" href="#offline-home" aria-label="Splitly — Trang đầu"
+            ><span class="splitly-brand" aria-hidden="true"
+              ><svg viewBox="0 0 32 32" fill="none">
+                <path
+                  d="M26 5H14a9 9 0 0 0 0 18h4"
+                  stroke="currentColor"
+                  stroke-width="5"
+                  stroke-linecap="round"
+                ></path>
+                <path
+                  d="M6 27h12a9 9 0 0 0 0-18h-4"
+                  stroke="currentColor"
+                  stroke-width="5"
+                  stroke-linecap="round"
+                  opacity=".5"
+                ></path></svg
+              ><span class="splitly-brand-name"
+                >Splitly<span class="splitly-brand-period">.</span></span
+              ></span
+            ></a
+          >
+          <nav class="splitly-offline-nav" aria-label="Điều hướng Splitly">
+            <a href="#offline-home">Trang đầu</a><a href="#offline-discover">Khám phá</a
+            ><a href="#offline-dreams">Cùng nhau</a><a href="#offline-about">Câu chuyện</a>
+          </nav>
+          <span class="splitly-offline-connection"
+            ><svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="lucide lucide-wifi-off"
+              aria-hidden="true"
+            >
+              <path d="M12 20h.01"></path>
+              <path d="M8.5 16.429a5 5 0 0 1 7 0"></path>
+              <path d="M5 12.859a10 10 0 0 1 5.17-2.69"></path>
+              <path d="M19 12.859a10 10 0 0 0-2.007-1.523"></path>
+              <path d="M2 8.82a15 15 0 0 1 4.177-2.643"></path>
+              <path d="M22 8.82a15 15 0 0 0-11.288-3.764"></path>
+              <path d="m2 2 20 20"></path>
+            </svg>
+            Ngoại tuyến</span
+          >
+        </header>
+        <div class="splitly-offline-body">
+          <div class="splitly-offline-topline" aria-hidden="true">
+            <span>ÍT LO TOAN. NHIỀU ĐIỀU ĐẸP.</span
+            ><span
+              >MỘT NHỊP NGHỈ NHỎ
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="lucide lucide-arrow-up-right"
+              >
+                <path d="M7 7h10v10"></path>
+                <path d="M7 17 17 7"></path></svg
+            ></span>
+          </div>
+          <section class="splitly-offline-hero" aria-labelledby="offline-title">
+            <div class="splitly-offline-copy">
+              <span class="splitly-offline-eyebrow"><span></span> KẾT NỐI ĐANG TẠM GIÁN ĐOẠN</span>
+              <h1 id="offline-title">Không thể <br /><span>kết nối</span></h1>
+              <p class="splitly-offline-lead">Mình chờ bạn trở lại.</p>
+              <p id="offline-description">
+                Bạn đang ngoại tuyến. Kiểm tra kết nối Wi-Fi hoặc dữ liệu di động để tiếp tục những
+                điều đang dang dở cùng Splitly.
+              </p>
+              <button class="splitly-offline-retry" type="button" autofocus="">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="lucide lucide-refresh-cw"
+                  aria-hidden="true"
+                >
+                  <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+                  <path d="M21 3v5h-5"></path>
+                  <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
+                  <path d="M8 16H3v5"></path></svg
+                ><span>Thử lại</span
+                ><svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="lucide lucide-arrow-up-right"
+                  aria-hidden="true"
+                >
+                  <path d="M7 7h10v10"></path>
+                  <path d="M7 17 17 7"></path>
+                </svg>
+              </button>
+              <p class="splitly-offline-hint" role="status" aria-live="polite">
+                <span aria-hidden="true">✳</span>Trang sẽ tự tải lại khi có kết nối mạng.
+              </p>
+            </div>
+            <div class="splitly-offline-art" aria-hidden="true">
+              <span class="splitly-offline-orbit"></span
+              ><span class="splitly-offline-orbit is-inner"></span
+              ><span class="splitly-offline-art-label">TIỀN GỌN GÀNG. ĐỜI THẢNH THƠI.</span>
+              <div class="wallet-placeholder" data-state="loading" aria-hidden="true">
+                <svg class="wallet-placeholder-art" viewBox="0 0 500 500" fill="none">
+                  <defs>
+                    <linearGradient
+                      id="_R_ia_-leather"
+                      x1="120"
+                      y1="180"
+                      x2="400"
+                      y2="420"
+                      gradientUnits="userSpaceOnUse"
+                    >
+                      <stop stop-color="var(--theme-art-edge, #8265af)"></stop>
+                      <stop offset="0.5" stop-color="var(--theme-art-base, #5f4782)"></stop>
+                      <stop offset="1" stop-color="var(--theme-art-deep, #39294f)"></stop>
+                    </linearGradient>
+                    <linearGradient id="_R_ia_-silver" x1="0" y1="0" x2="1" y2="1">
+                      <stop stop-color="var(--theme-art-highlight, #eee5fa)"></stop>
+                      <stop offset="0.48" stop-color="var(--theme-art-edge, #a99abf)"></stop>
+                      <stop offset="1" stop-color="var(--theme-art-base, #514360)"></stop>
+                    </linearGradient>
+                  </defs>
+                  <g transform="rotate(-10 250 250)">
+                    <rect
+                      x="105"
+                      y="108"
+                      width="252"
+                      height="226"
+                      rx="16"
+                      fill="var(--theme-art-ink, #282033)"
+                      stroke="var(--theme-art-base, #74618f)"
+                    ></rect>
+                    <rect
+                      x="95"
+                      y="97"
+                      width="252"
+                      height="226"
+                      rx="16"
+                      fill="var(--theme-art-highlight, #ded3ee)"
+                      stroke="var(--theme-art-highlight, #eae2f3)"
+                    ></rect>
+                    <text
+                      x="120"
+                      y="154"
+                      fill="var(--theme-art-deep, #483751)"
+                      font-family="Be Vietnam Pro, sans-serif"
+                      font-size="30"
+                      font-weight="600"
+                    >
+                      Splitly
+                    </text>
+                    <rect
+                      x="301"
+                      y="120"
+                      width="26"
+                      height="20"
+                      rx="4"
+                      fill="url(#_R_ia_-silver)"
+                    ></rect>
+                    <path
+                      d="M120 181H315M120 193H225"
+                      stroke="var(--theme-art-edge, #b2a2c7)"
+                      stroke-width="2"
+                    ></path>
+                    <g transform="rotate(27 347 244)">
+                      <path
+                        d="M323 106H405V289L400 294L395 289L390 294L385 289L380 294L375 289L370 294L365 289L360 294L355 289L350 294L345 289L340 294L335 289L330 294L323 289V106Z"
+                        fill="var(--theme-art-highlight, #eee9f0)"
+                      ></path>
+                      <path
+                        d="M337 126H390M337 149H382M337 172H390M337 195H369"
+                        stroke="var(--theme-art-edge, #b5a9bf)"
+                        stroke-width="3"
+                      ></path>
+                    </g>
+                    <rect
+                      x="101"
+                      y="208"
+                      width="283"
+                      height="197"
+                      rx="23"
+                      fill="var(--theme-art-ink, #23192f)"
+                      stroke="var(--theme-art-base, #77618f)"
+                      stroke-width="2"
+                    ></rect>
+                    <rect
+                      x="94"
+                      y="198"
+                      width="283"
+                      height="197"
+                      rx="23"
+                      fill="url(#_R_ia_-leather)"
+                      stroke="var(--theme-art-edge, #b297d1)"
+                      stroke-width="2"
+                    ></rect>
+                    <rect
+                      x="107"
+                      y="211"
+                      width="256"
+                      height="170"
+                      rx="16"
+                      stroke="var(--theme-art-pale, #ba9ed3)"
+                      stroke-opacity="0.6"
+                      stroke-dasharray="3 4"
+                    ></rect>
+                    <text
+                      x="122"
+                      y="277"
+                      fill="var(--theme-art-highlight, #efe5fa)"
+                      font-family="Be Vietnam Pro, sans-serif"
+                      font-size="36"
+                      font-weight="600"
+                    >
+                      Splitly
+                    </text>
+                    <path
+                      d="M122 352H190"
+                      stroke="var(--theme-art-pale, #c9b1e4)"
+                      stroke-width="3"
+                      stroke-linecap="round"
+                    ></path>
+                    <rect
+                      x="329"
+                      y="265"
+                      width="63"
+                      height="39"
+                      rx="9"
+                      fill="var(--theme-art-deep, #322343)"
+                      stroke="var(--theme-art-edge, #957bb6)"
+                      stroke-width="2"
+                    ></rect>
+                    <circle cx="349" cy="284" r="7" fill="url(#_R_ia_-silver)"></circle>
+                  </g>
+                  <g transform="translate(397 372)">
+                    <circle
+                      r="36"
+                      fill="var(--theme-art-deep, #423052)"
+                      stroke="url(#_R_ia_-silver)"
+                      stroke-width="5"
+                    ></circle>
+                    <circle r="29" stroke="var(--theme-art-edge, #a797b8)"></circle>
+                    <path
+                      d="M10 -17C-3 -27 -21 -15 -10 -3C-5 2 5 -2 9 4C20 19 1 28 -11 16"
+                      stroke="var(--theme-art-highlight, #dfd2ef)"
+                      stroke-width="5"
+                      stroke-linecap="round"
+                    ></path>
+                  </g>
+                  <circle
+                    cx="87"
+                    cy="167"
+                    r="20"
+                    fill="var(--theme-art-deep, #382945)"
+                    stroke="url(#_R_ia_-silver)"
+                    stroke-width="4"
+                  ></circle>
+                  <path
+                    d="M93 157C83 151 74 159 82 167C86 171 93 166 95 173C98 181 87 185 81 178"
+                    stroke="var(--theme-art-pale, #ded1ee)"
+                    stroke-width="3"
+                    stroke-linecap="round"
+                  ></path>
+                </svg>
+              </div>
+              <span class="splitly-offline-art-status"
+                ><svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="lucide lucide-wifi-off"
+                >
+                  <path d="M12 20h.01"></path>
+                  <path d="M8.5 16.429a5 5 0 0 1 7 0"></path>
+                  <path d="M5 12.859a10 10 0 0 1 5.17-2.69"></path>
+                  <path d="M19 12.859a10 10 0 0 0-2.007-1.523"></path>
+                  <path d="M2 8.82a15 15 0 0 1 4.177-2.643"></path>
+                  <path d="M22 8.82a15 15 0 0 0-11.288-3.764"></path>
+                  <path d="m2 2 20 20"></path>
+                </svg>
+                MỘT CHÚT NỮA THÔI.</span
+              ><span class="splitly-offline-art-footnote">Một khoảng dừng. Rồi mình tiếp tục.</span>
+            </div>
+          </section>
+          <section
+            class="splitly-offline-discover"
+            id="offline-discover"
+            aria-label="Khám phá Splitly"
+          >
+            <div class="splitly-offline-section-label">
+              <span>VẪN LÀ KHÔNG GIAN CỦA BẠN</span><span>01 — 03</span>
+            </div>
+            <div class="splitly-offline-cards">
+              <article>
+                <span class="splitly-offline-card-number">01 / KHOẢN CHUNG</span>
+                <h2>Chia khoản chung.<br />Nhẹ chuyện tính toán.</h2>
+                <p>Hóa đơn rõ ràng, mỗi người một phần. Những khoản chung về đúng chỗ.</p>
+              </article>
+              <article id="offline-dreams">
+                <span class="splitly-offline-card-number">02 / CÙNG NHAU</span>
+                <h2>Cùng một nhóm.<br />Bớt một nỗi lo.</h2>
+                <p>Từ một bữa ăn đến một chuyến đi, cùng nhau giữ mọi thứ gọn gàng.</p>
+              </article>
+              <article>
+                <span class="splitly-offline-card-number">03 / ĐIỀU ĐẸP PHÍA TRƯỚC</span>
+                <h2>Mỗi ngày một chút.<br />Thảnh thơi thêm nhiều.</h2>
+                <p>Dành một khoảng nhỏ cho những điều riêng, để tiền bạc nhẹ đầu hơn.</p>
+              </article>
+            </div>
+          </section>
+          <footer class="splitly-offline-footer" id="offline-about">
+            <span class="splitly-brand" aria-hidden="true"
+              ><svg viewBox="0 0 32 32" fill="none">
+                <path
+                  d="M26 5H14a9 9 0 0 0 0 18h4"
+                  stroke="currentColor"
+                  stroke-width="5"
+                  stroke-linecap="round"
+                ></path>
+                <path
+                  d="M6 27h12a9 9 0 0 0 0-18h-4"
+                  stroke="currentColor"
+                  stroke-width="5"
+                  stroke-linecap="round"
+                  opacity=".5"
+                ></path></svg
+              ><span class="splitly-brand-name"
+                >Splitly<span class="splitly-brand-period">.</span></span
+              ></span
+            >
+            <p>Không cần bắt đầu thật giỏi. Chỉ cần bắt đầu thật gọn.</p>
+            <a href="#offline-home"
+              >Về đầu trang
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="lucide lucide-arrow-up-right"
+                aria-hidden="true"
+              >
+                <path d="M7 7h10v10"></path>
+                <path d="M7 17 17 7"></path></svg
+            ></a>
+          </footer>
+        </div>
+      </div>
+    </main>
+    <script>
+      const button = document.querySelector('.splitly-offline-retry')
+      const buttonLabel = button.querySelector('span')
+      document.querySelector('.splitly-offline-page').addEventListener('click', (event) => {
+        if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
+          return
+        const link = event.target.closest('a[href^="#offline-"]')
+        const target = link && document.querySelector(link.getAttribute('href'))
+        if (!target) return
+        event.preventDefault()
+        target.scrollIntoView({ block: 'start' })
+      })
+      let checking = false
+      let restoring = false
+      async function checkConnection() {
+        if (checking || restoring || !navigator.onLine || document.hidden) return
+        checking = true
+        button.disabled = true
+        buttonLabel.textContent = 'Đang kiểm tra…'
+        const controller = new AbortController()
+        const timeout = setTimeout(() => controller.abort(), 6000)
+        try {
+          const response = await fetch('/api/connectivity', {
+            method: 'HEAD',
+            cache: 'no-store',
+            signal: controller.signal,
+          })
+          if (response.status === 204 && navigator.onLine) {
+            restoring = true
+            // Keep the original route/query when this document is a navigation fallback.
+            if (location.pathname === '/offline.html') location.replace('/')
+            else location.reload()
+          }
+        } catch {
+          // Keep the cached screen visible and try again when the connection recovers.
+        } finally {
+          clearTimeout(timeout)
+          checking = false
+          button.disabled = false
+          buttonLabel.textContent = 'Thử lại'
+        }
+      }
+      button.addEventListener('click', checkConnection)
+      window.addEventListener('online', checkConnection)
+      window.addEventListener('focus', checkConnection)
+      document.addEventListener('visibilitychange', checkConnection)
+      setInterval(checkConnection, 3000)
+      checkConnection()
+    </script>
+  </body>
+</html>

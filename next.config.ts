@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
   headers() {
     return [
       {
+        source: '/sw.js',
+        headers: [{ key: 'Cache-Control', value: 'no-store, must-revalidate' }],
+      },
+      {
         source: '/login',
         headers: [
           { key: 'Cross-Origin-Opener-Policy', value: 'same-origin-allow-popups' },

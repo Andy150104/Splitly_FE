@@ -10,7 +10,7 @@
   },
   "scripts": {
     "dev": "cross-env NODE_ENV=development next dev --hostname 0.0.0.0 --port 3000",
-    "build": "cross-env NODE_ENV=production next build",
+    "build": "node scripts/generate-offline-screen.mjs && cross-env NODE_ENV=production next build",
     "start": "cross-env NODE_ENV=production next start --hostname 0.0.0.0 --port 3000",
     "typecheck": "cross-env NODE_ENV=production next typegen && tsc --noEmit",
     "clean": "node scripts/clean.mjs",
