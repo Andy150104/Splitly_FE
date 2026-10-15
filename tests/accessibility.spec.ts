@@ -9,7 +9,12 @@ test('landing and login meet structural accessibility checks', async ({ page }) 
     await page.locator(selector).scrollIntoViewIfNeeded()
   }
   await page.waitForTimeout(900)
-  const home = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
+  const home = await new AxeBuilder({ page })
+    // This faint backdrop word is decorative, aria-hidden and conveys no information.
+    // Keep all readable copy and interactive controls in the contrast audit.
+    .exclude('.story-resolution-word[aria-hidden="true"]')
+    .withTags(['wcag2a', 'wcag2aa'])
+    .analyze()
   expect(home.violations).toEqual([])
   await page.getByRole('button', { name: 'Bắt đầu cùng Splitly', exact: true }).last().click()
   await expect(page.getByLabel('Email của bạn')).toBeVisible()

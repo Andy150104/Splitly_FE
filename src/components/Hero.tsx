@@ -1,14 +1,7 @@
 import { Component, useEffect, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import type { ReactNode } from 'react'
-import {
-  ArrowDown,
-  ArrowDownRight,
-  ArrowUpRight,
-  MoveUpRight,
-  Rotate3D,
-  Sparkles,
-} from 'lucide-react'
+import { ArrowDown, ArrowUpRight, Rotate3D } from 'lucide-react'
 import {
   motion,
   useMotionValueEvent,
@@ -219,9 +212,7 @@ export default function Hero({
       <div className="hero" data-chapter={chapter} data-scene={storyChapters[chapter].id}>
         <div className="hero-topline">
           <span>ÍT LO TOAN. NHIỀU ĐIỀU ĐẸP.</span>
-          <span>
-            MỘT KHỞI ĐẦU NHẸ TÊNH <MoveUpRight size={13} />
-          </span>
+          <span>MỘT KHỞI ĐẦU NHẸ TÊNH</span>
         </div>
         <div className="hero-main">
           <motion.div
@@ -245,7 +236,7 @@ export default function Hero({
               <p>
                 Một khoản chung. Một hóa đơn. Một điều đang để dành.
                 <br />
-                Cuộn xuống — mọi thứ sẽ tự tìm về đúng chỗ.
+                Cuộn xuống để xem mọi thứ tìm về đúng chỗ.
               </p>
               <button
                 onClick={onOpenWallet}
@@ -255,7 +246,6 @@ export default function Hero({
                 Bắt đầu cùng Splitly <ArrowUpRight size={20} />
               </button>
               <div className="hero-note">
-                <span className="little-star">✳</span>
                 <span>
                   Không cần bắt đầu thật giỏi.
                   <br />
@@ -392,9 +382,6 @@ export default function Hero({
               style={pinned ? { opacity: annotationsOpacity } : undefined}
             >
               <div className="floating-label label-income">
-                <span className="tiny-icon">
-                  <ArrowDownRight size={17} />
-                </span>
                 <div>
                   <span>Một bữa ăn cùng nhau</span>
                   <b>3 người · 240.000 ₫ / người</b>
@@ -410,10 +397,8 @@ export default function Hero({
               </div>
               <div className="art-caption">
                 <span className="hand-note">Ví nhỏ, ước mơ to.</span>
-                <ArrowUpRight size={31} strokeWidth={1} />
               </div>
               <div className="round-stamp">
-                <Sparkles size={21} />
                 <span>
                   TIỀN CÓ CHỖ
                   <br />

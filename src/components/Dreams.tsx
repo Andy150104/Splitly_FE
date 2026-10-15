@@ -1,4 +1,4 @@
-import { ArrowUpRight, Camera, MoveUpRight, Plane, Umbrella } from 'lucide-react'
+import { ArrowUpRight, Camera, Plane, Umbrella } from 'lucide-react'
 import Reveal from './Reveal'
 import type { Goal } from '../types'
 
@@ -12,7 +12,6 @@ export default function Dreams({ goals, onGoal }: { goals: Goal[]; onGoal: (id: 
           <br />
           <span className="dream-heading-last">
             NGÀY MAI <span>RỘNG HƠN.</span>
-            <MoveUpRight strokeWidth={1} />
           </span>
         </h2>
         <p>
@@ -42,7 +41,6 @@ export default function Dreams({ goals, onGoal }: { goals: Goal[]; onGoal: (id: 
                   <div className="dream-object">
                     <Icon strokeWidth={1.3} />
                   </div>
-                  <span className="dream-art-star">✳</span>
                   {goal.kind === 'travel' && <div className="luggage-lines" />}
                   {goal.kind === 'rainy' && (
                     <>
@@ -63,18 +61,13 @@ export default function Dreams({ goals, onGoal }: { goals: Goal[]; onGoal: (id: 
                 </div>
                 <div className="dream-progress-label">
                   <span>Tạo nhóm của bạn</span>
-                  <b>
-                    <ArrowUpRight size={17} />
-                  </b>
                 </div>
               </button>
             </Reveal>
           )
         })}
       </div>
-      <Reveal className="dreams-note">
-        <span>✳</span>Điều đẹp đẽ bắt đầu từ những lần cùng nhau.
-      </Reveal>
+      <Reveal className="dreams-note">Điều đẹp đẽ bắt đầu từ những lần cùng nhau.</Reveal>
     </section>
   )
 }

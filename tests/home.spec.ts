@@ -26,6 +26,29 @@ test('FAQ, concept cards and mobile menu stay usable', async ({ page }, info) =>
   await page.getByRole('button', { name: 'Dữ liệu của mình được lưu ở đâu?' }).click()
   await expect(page.locator('#faq-2')).toBeHidden()
   await expect(page.locator('#faq-1')).toContainText('hệ thống')
+  // Preserve the two illustrated sections the owner supplied as the UI reference.
+  for (const theme of ['dark', 'light'] as const) {
+    await expect(page.locator('html')).toHaveAttribute('data-theme', theme)
+    await page.locator('#details').scrollIntoViewIfNeeded()
+    await expect(page.locator('.feature-card')).toHaveCount(3)
+    await page.screenshot({
+      path: `QA/original-ui/${info.project.name}-${theme}-features.png`,
+      scale: 'css',
+    })
+    await page.locator('#workspace').scrollIntoViewIfNeeded()
+    await expect(page.locator('.app-preview')).toBeVisible()
+    await expect(page.locator('.preview-chart .bar-chart')).toBeVisible()
+    await page.screenshot({
+      path: `QA/original-ui/${info.project.name}-${theme}-preview.png`,
+      scale: 'css',
+    })
+    await page
+      .getByRole('button', {
+        name: theme === 'dark' ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối',
+        exact: true,
+      })
+      .click()
+  }
   await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }))
   if (info.project.name.includes('mobile')) {
     await page.getByRole('button', { name: 'Mở menu', exact: true }).click()

@@ -29,6 +29,27 @@ test('login stays legible and accessible after the color refresh', async ({ page
 test('dashboard sections toggle and navigation opens or collapses', async ({ page }, info) => {
   await mockWorkspace(page)
   await page.goto('/dashboard')
+  for (const theme of ['dark', 'light'] as const) {
+    if (info.project.name === 'mobile-chrome')
+      await page.getByRole('button', { name: 'Mở menu', exact: true }).click()
+    await page.locator('.ws-sidebar').screenshot({
+      path: `QA/sidebar/${info.project.name}-${theme}-original.png`,
+      scale: 'css',
+      animations: 'disabled',
+    })
+    if (info.project.name === 'mobile-chrome')
+      await page.getByRole('button', { name: 'Đóng menu', exact: true }).click()
+    await page
+      .getByRole('button', {
+        name: theme === 'dark' ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối',
+        exact: true,
+      })
+      .click()
+    await expect(page.locator('html')).toHaveAttribute(
+      'data-theme',
+      theme === 'dark' ? 'light' : 'dark',
+    )
+  }
   const overview = page.getByRole('button', { name: 'Tổng quan khoản chung Không gian của bạn' })
   await expect(overview).toHaveAttribute('aria-expanded', 'true')
   await overview.click()
@@ -50,6 +71,11 @@ test('dashboard sections toggle and navigation opens or collapses', async ({ pag
   if (info.project.name === 'desktop-chrome') {
     await page.getByRole('button', { name: 'Thu gọn sidebar' }).click()
     await expect(page.locator('.workspace')).toHaveClass(/is-sidebar-collapsed/)
+    await page.locator('.ws-sidebar').screenshot({
+      path: 'QA/sidebar/desktop-collapsed-original.png',
+      scale: 'css',
+      animations: 'disabled',
+    })
     await page.reload()
     await expect(page.getByRole('button', { name: 'Mở rộng sidebar' })).toBeVisible()
     await page.getByRole('link', { name: 'Tài khoản nhận tiền', exact: true }).click()

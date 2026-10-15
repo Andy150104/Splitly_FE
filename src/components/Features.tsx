@@ -1,5 +1,5 @@
 import type { PointerEvent } from 'react'
-import { ArrowUpRight, Check, ArrowDownLeft, Wallet, Plus } from 'lucide-react'
+import { ArrowUpRight, Check, ArrowDownLeft } from 'lucide-react'
 import Reveal from './Reveal'
 
 export default function Features({
@@ -30,7 +30,6 @@ export default function Features({
       <div className="section-wrap">
         <Reveal className="section-kicker">
           <span>CHẠM VÀO TỪNG PHẦN</span>
-          <span className="mini-sun">✳</span>
           <span>NHỮNG VIỆC NHỎ, ĐƯỢC LÀM THẬT GỌN</span>
         </Reveal>
         <Reveal className="features-intro">
@@ -40,7 +39,7 @@ export default function Features({
             <span>GIỜ CHẠM THỬ TỪNG PHẦN.</span>
           </h2>
           <p>
-            Nhóm bạn, hóa đơn và tài khoản nhận tiền — mọi khoản chung đều có chỗ.
+            Nhóm bạn, hóa đơn và tài khoản nhận tiền, mọi khoản chung đều có chỗ.
             <br />
             Bắt đầu từ một khoản nhỏ, để những lần cùng nhau luôn thật thảnh thơi.
           </p>
@@ -53,13 +52,12 @@ export default function Features({
                 onClick={() => onOpenWallet('transactions')}
                 aria-label="Khám phá nhóm cùng chia"
               >
-                <span className="feature-index">01 — NHÓM CÙNG CHIA</span>
+                <span className="feature-index">01 / NHÓM CÙNG CHIA</span>
                 <div className="feature-art balance-art" aria-hidden="true">
                   <div className="art-disc" />
                   <div className="mini-bank-card">
                     <div>
                       <span>Splitly</span>
-                      <Wallet size={20} />
                     </div>
                     <small>SỐ DƯ CỦA BẠN</small>
                     <b>
@@ -75,7 +73,6 @@ export default function Features({
                       Một ngày thật tốt<b>+ 4.500.000 ₫</b>
                     </div>
                   </div>
-                  <span className="art-spark spark-one">✳</span>
                 </div>
                 <div className="feature-card-bottom">
                   <h3>
@@ -102,7 +99,7 @@ export default function Features({
                 onClick={() => onOpenWallet('bills')}
                 aria-label="Khám phá quản lý hóa đơn"
               >
-                <span className="feature-index">02 — HÓA ĐƠN</span>
+                <span className="feature-index">02 / HÓA ĐƠN</span>
                 <div className="feature-art bills-art" aria-hidden="true">
                   <div className="art-disc" />
                   <div className="paper-receipt">
@@ -154,7 +151,7 @@ export default function Features({
                 onClick={() => onOpenWallet('overview')}
                 aria-label="Khám phá tài khoản nhận tiền"
               >
-                <span className="feature-index">03 — NHẬN TIỀN</span>
+                <span className="feature-index">03 / NHẬN TIỀN</span>
                 <div className="feature-art saving-art" aria-hidden="true">
                   <div className="art-disc" />
                   <div className="savings-jar">
@@ -167,10 +164,7 @@ export default function Features({
                     <div className="jar-coin jar-coin-three">₫</div>
                   </div>
                   <div className="falling-coin">₫</div>
-                  <span className="art-spark spark-two">✳</span>
-                  <div className="savings-tag">
-                    <Plus size={14} /> TIỀN VỀ ĐÚNG CHỖ
-                  </div>
+                  <div className="savings-tag">TIỀN VỀ ĐÚNG CHỖ</div>
                 </div>
                 <div className="feature-card-bottom">
                   <h3>
@@ -193,9 +187,7 @@ export default function Features({
         </div>
         <div className="feature-footnote">
           <span>TIỀN BẠC KHÔNG CẦN PHỨC TẠP.</span>
-          <span>
-            CUỘC SỐNG CŨNG VẬY. <ArrowDownLeft size={16} />
-          </span>
+          <span>CUỘC SỐNG CŨNG VẬY.</span>
         </div>
       </div>
       <div className="scallop-edge" aria-hidden="true" />

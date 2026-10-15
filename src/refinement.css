@@ -1,4 +1,8 @@
 /* Splitly: coherent surfaces, meaningful loading, and one liquid transition. */
+.splitly-landing .skip-link {
+  color: var(--theme-art-ink, #241b35);
+}
+
 .sr-only {
   position: absolute;
   width: 1px;

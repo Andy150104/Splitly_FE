@@ -1,12 +1,4 @@
-import {
-  ArrowDownLeft,
-  ArrowUpRight,
-  Coffee,
-  Plus,
-  ShieldCheck,
-  SlidersHorizontal,
-  Sprout,
-} from 'lucide-react'
+import { ArrowDownLeft, ArrowUpRight, Coffee, Plus } from 'lucide-react'
 import Reveal from './Reveal'
 import { currency, summarize, totalBalance } from '../lib/finance'
 import type { FinanceState } from '../types'
@@ -39,7 +31,7 @@ export default function OverviewPreview({
         <p>
           Hóa đơn đã tạo, những người cùng chia.
           <br />
-          Nhìn rõ những khoản đã thanh toán —
+          Nhìn rõ những khoản đã thanh toán,
           <br />
           để biết phần còn lại cần làm gì.
         </p>
@@ -47,12 +39,8 @@ export default function OverviewPreview({
           Thử một ngày cùng Splitly <ArrowUpRight size={20} />
         </button>
         <div className="preview-values">
-          <span>
-            <ShieldCheck size={17} /> Thanh toán QR · Theo dõi rõ ràng
-          </span>
-          <span>
-            <Sprout size={17} /> Bắt đầu thật đơn giản
-          </span>
+          <span>Thanh toán QR · Theo dõi rõ ràng</span>
+          <span>Bắt đầu thật đơn giản</span>
         </div>
       </Reveal>
       <Reveal className="preview-stage" delay={0.15}>
@@ -66,18 +54,14 @@ export default function OverviewPreview({
           <div className="preview-greeting">
             <div>
               <small>MỘT NGÀY THẬT ĐẸP ĐỂ BẮT ĐẦU</small>
-              <h3>
-                Chào bạn, thảnh thơi nhé <span>✳</span>
-              </h3>
+              <h3>Chào bạn, thảnh thơi nhé</h3>
             </div>
-            <SlidersHorizontal size={18} />
           </div>
           <div className="preview-balance">
             <div>
               <span>Tổng số dư hiện tại</span>
               <strong>{currency(totalBalance(state))}</strong>
             </div>
-            <span className="balance-flower">✳</span>
             <div className="preview-income">
               <span>
                 <ArrowDownLeft size={14} /> Thu nhập <b>{currency(summary.income)}</b>

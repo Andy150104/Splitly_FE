@@ -28,9 +28,9 @@ Gọi API trình duyệt qua `api<T>()` hoặc `send<T>()` và `/api/...`. Token
 
 ## Thiết kế và tương tác
 
-Hướng thiết kế hiện tại là nền charcoal, accent tím/lavender, typography rõ, ánh sáng nhẹ và 3D có chủ đích. Icon phục vụ thao tác. Giữ landing, login và dashboard cùng một hệ màu; tránh mảng sáng có chữ nhạt hoặc hiệu ứng che nội dung.
+Áp dụng [design.md](references/design.md) khi thiết kế hoặc sửa UI. Giữ UI gốc: dark charcoal tím/lavender, light xanh, typography Be Vietnam Pro/Barlow Condensed, các thẻ minh họa, dashboard preview và cảnh 3D. Với yêu cầu giảm cảm giác UI do AI dựng, chỉ chỉnh icon trang trí/ký hiệu thừa, fade-in hàng loạt và dấu câu trong nội dung được chỉ ra; không thay bố cục hoặc palette gốc theo điểm detector.
 
-- Đọc cascade trước khi sửa màu/layout; `refinement.css` được import sau `splitly.css`. Scope `.splitly-landing`, `.workspace`, `.ws-login` hoặc `.ws-modal` để tránh tác động ngoài màn đang sửa.
+- Đọc cascade trước khi sửa màu/layout; `refinement.css` nằm sau `splitly.css`, `theme.css` quản lý chế độ sáng. Scope `.splitly-landing`, `.workspace`, `.ws-login` hoặc `.ws-modal` để tránh tác động ngoài màn đang sửa. Không thêm stylesheet thay toàn bộ identity khi chỉ cần cleanup chi tiết.
 - Giữ shell cuộn trong `.ws-main`, sidebar thu gọn trên desktop và drawer trên mobile. Nút quan trọng phải tiếp cận được khi viewport thấp hoặc modal có nội dung dài.
 - Modal dùng portal và native dialog: có nút đóng/hủy, Escape, trả focus về trigger, chặn đóng khi đang lưu. Thao tác hủy hóa đơn/đóng nhóm/xóa người chỉ gọi API sau xác nhận trong UI.
 - Skeleton tải từng resource độc lập; refresh cùng URL giữ dữ liệu cũ, đổi URL không hiển thị nhầm resource. Hủy request cũ và bỏ qua response đã hết hiệu lực.

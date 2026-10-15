@@ -1,4 +1,4 @@
-import { ArrowUpRight, Check, Plus, RotateCcw, Users } from 'lucide-react'
+import { ArrowUpRight, Check, Plus } from 'lucide-react'
 import type { StoryDemo } from '../lib/story'
 
 const money = (amount: number) => `${amount.toLocaleString('vi-VN')} ₫`
@@ -20,7 +20,6 @@ export default function StoryInteraction({
       {chapter === 1 && (
         <>
           <div className="experiment-heading">
-            <Users size={17} />
             <span>Bữa tối cùng nhau · 720.000 ₫</span>
           </div>
           <div className="split-options" role="group" aria-label="Số người chia tiền">
@@ -53,7 +52,6 @@ export default function StoryInteraction({
           >
             {demo.paid ? <Check size={17} /> : <Plus size={17} />}
             {demo.paid ? 'Đã xong. Nhẹ đầu rồi.' : 'Thử đánh dấu đã trả'}
-            {demo.paid && <RotateCcw size={13} />}
           </button>
           <span className="experiment-footnote" role="status">
             {demo.paid

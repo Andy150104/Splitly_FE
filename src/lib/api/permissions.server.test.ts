@@ -80,7 +80,7 @@ describe('server-rendered workspace permissions', () => {
   it('redirects an expired access token to a cookie-writing route while preserving the destination', async () => {
     mocks.upstream.mockResolvedValueOnce(new Response(null, { status: 401 }))
     await expect(getWorkspacePermissions()).rejects.toThrow(
-      'redirect:/api/auth/refresh-session?next=%2Fbills%2Fnew%3Fdraft%3Ddraft-1',
+      'redirect:/auth/refresh?next=%2Fbills%2Fnew%3Fdraft%3Ddraft-1',
     )
     expect(mocks.setSession).not.toHaveBeenCalled()
   })
@@ -103,6 +103,7 @@ describe('server render session refresh', () => {
     )
     expect(mocks.setSession).toHaveBeenCalledWith(session, mocks.user)
     expect(response.status).toBe(303)
+    expect(response.headers.get('cache-control')).toBe('no-store')
     expect(response.headers.get('location')).toBe('http://localhost/bills/bill-1')
     expect(await response.text()).toBe('')
   })
@@ -114,6 +115,8 @@ describe('server render session refresh', () => {
     '/\n/attacker.test',
     '/.//attacker.test',
     '/api/auth/refresh-session',
+    '/auth/refresh',
+    '/auth/refresh/again',
   ])('does not redirect to an unsafe or recursive destination %s', async (next) => {
     mocks.refresh.mockResolvedValueOnce(session)
     mocks.upstream.mockResolvedValueOnce(new Response(null, { status: 200 }))

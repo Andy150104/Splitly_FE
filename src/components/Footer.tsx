@@ -1,4 +1,4 @@
-import { ArrowUp, ArrowUpRight, Heart, Plus, Minus } from 'lucide-react'
+import { ArrowUp, ArrowUpRight, Plus, Minus } from 'lucide-react'
 import { useState } from 'react'
 import Reveal from './Reveal'
 import Brand from './ui/Brand'
@@ -87,9 +87,7 @@ export default function Footer({
           </div>
           <div className="footer-bottom">
             <span>© {year} Splitly Chăm chút những điều nhỏ.</span>
-            <button onClick={onAbout}>
-              Một chút về Splitly <Heart size={12} />
-            </button>
+            <button onClick={onAbout}>Một chút về Splitly</button>
             <a href="#home">
               LÊN ĐẦU TRANG <ArrowUp size={14} />
             </a>

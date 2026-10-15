@@ -17,6 +17,8 @@ export async function GET(request: Request) {
       !value.includes('\\') &&
       destination.origin === url.origin &&
       !destination.pathname.startsWith('//') &&
+      destination.pathname !== '/auth/refresh' &&
+      !destination.pathname.startsWith('/auth/refresh/') &&
       !destination.pathname.startsWith('/api/')
     )
       next = destination.pathname + destination.search + destination.hash
@@ -24,6 +26,11 @@ export async function GET(request: Request) {
     // Invalid destinations fall back to the workspace home.
   }
   const login = `/login?next=${encodeURIComponent(next)}`
+  const redirect = (path: string) =>
+    new Response(null, {
+      status: 303,
+      headers: { Location: new URL(path, url.origin).href, 'Cache-Control': 'no-store' },
+    })
   const user = await getCurrentUser()
   const token = (await cookies()).get('mo_refresh')?.value
   try {
@@ -37,12 +44,12 @@ export async function GET(request: Request) {
       )
       if (permissions.status !== 401) {
         await setSession(session, user)
-        return Response.redirect(new URL(next, url.origin), 303)
+        return redirect(next)
       }
     }
   } catch {
     // Clear an unusable session without returning upstream diagnostics.
   }
   await clearSession()
-  return Response.redirect(new URL(login, url.origin), 303)
+  return redirect(login)
 }

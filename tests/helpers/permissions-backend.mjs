@@ -6,6 +6,23 @@ createServer(async (request, response) => {
   response.setHeader('Content-Type', 'application/json')
   response.setHeader('Cache-Control', 'no-store')
   if (request.url === '/health') return response.end('{}')
+  if (request.url === '/api/auth/refresh' && request.method === 'POST') {
+    let body = ''
+    for await (const chunk of request) body += chunk
+    const { refreshToken } = JSON.parse(body)
+    if (refreshToken?.startsWith('fixture-refresh.'))
+      return response.end(
+        JSON.stringify({
+          data: {
+            accessToken: refreshToken.replace('fixture-refresh.', 'fixture.'),
+            refreshToken,
+            refreshTokenExpiresAtUtc: new Date(Date.now() + 3600_000).toISOString(),
+          },
+        }),
+      )
+    response.writeHead(401)
+    return response.end(JSON.stringify({ success: false }))
+  }
   const token = (request.headers.authorization || '').replace(/^Bearer /, '')
   if (token === 'fixture-unavailable') {
     response.writeHead(503)

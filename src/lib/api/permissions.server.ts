@@ -33,8 +33,7 @@ export const getWorkspacePermissions = cache(async () => {
   }
   if (response.status === 401) {
     const next = (await headers()).get('x-mo-path') || '/dashboard'
-    if (store.get('mo_refresh')?.value)
-      redirect(`/api/auth/refresh-session?next=${encodeURIComponent(next)}`)
+    if (store.get('mo_refresh')?.value) redirect(`/auth/refresh?next=${encodeURIComponent(next)}`)
     redirect(`/login?next=${encodeURIComponent(next)}`)
   }
   const result = data as { success?: boolean; data?: { effectivePermissionCodes?: unknown } } | null
